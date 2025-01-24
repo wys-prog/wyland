@@ -1,0 +1,25 @@
+[gd_scene load_steps=2 format=3 uid="uid://bhurqeyplunxn"]
+
+[ext_resource type="Texture2D" uid="uid://di3pyq1o74rre" path="res://icon.svg" id="1_s3n36"]
+
+[node name="FileObject" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Preview" type="TextureButton" parent="."]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+texture_normal = ExtResource("1_s3n36")
+stretch_mode = 0
+
+[node name="Label" type="Label" parent="."]
+layout_mode = 0
+offset_top = 128.0
+offset_right = 128.0
+offset_bottom = 151.0
+text = "Name"

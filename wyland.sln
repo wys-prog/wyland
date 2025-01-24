@@ -1,0 +1,19 @@
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wyland", "wyland.csproj", "{899BCCE1-B5D5-406B-AE13-1608267C9A74}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+	Debug|Any CPU = Debug|Any CPU
+	ExportDebug|Any CPU = ExportDebug|Any CPU
+	ExportRelease|Any CPU = ExportRelease|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{899BCCE1-B5D5-406B-AE13-1608267C9A74}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{899BCCE1-B5D5-406B-AE13-1608267C9A74}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{899BCCE1-B5D5-406B-AE13-1608267C9A74}.ExportDebug|Any CPU.ActiveCfg = ExportDebug|Any CPU
+		{899BCCE1-B5D5-406B-AE13-1608267C9A74}.ExportDebug|Any CPU.Build.0 = ExportDebug|Any CPU
+		{899BCCE1-B5D5-406B-AE13-1608267C9A74}.ExportRelease|Any CPU.ActiveCfg = ExportRelease|Any CPU
+		{899BCCE1-B5D5-406B-AE13-1608267C9A74}.ExportRelease|Any CPU.Build.0 = ExportRelease|Any CPU
+	EndGlobalSection
+EndGlobal
