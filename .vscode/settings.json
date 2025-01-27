@@ -1,3 +1,8 @@
 {
-  "godotTools.editorPath.godot4": "/home/wys/Godot/Godot"
+  "godotTools.editorPath.godot4": "/home/wys/Godot/Godot",
+  "files.associations": {
+    "*.nas": "x86 and x86_64 Assembly",
+    "*.h": "c",
+    "vector": "cpp"
+  }
 }
