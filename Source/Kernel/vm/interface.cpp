@@ -20,7 +20,7 @@ typedef struct kokuyo_vm {
   kokuyo vm_instance;
 } kokuyo_vm;
 
-EXPORT_API extern "C" kokuyo_vm *kokuyo_create() {
+extern "C" EXPORT_API kokuyo_vm *kokuyo_create() {
   kokuyo_vm *new_vm = (kokuyo_vm *)malloc(sizeof(kokuyo_vm));
   if (new_vm != NULL) {
     new_vm->vm_instance = kokuyo();
@@ -28,13 +28,13 @@ EXPORT_API extern "C" kokuyo_vm *kokuyo_create() {
   return new_vm;
 }
 
-EXPORT_API extern "C" void kokuyo_destroy(kokuyo_vm *vm) {
+extern "C" EXPORT_API void kokuyo_destroy(kokuyo_vm *vm) {
   if (vm != NULL) {
     free(vm);
   }
 }
 
-EXPORT_API extern "C" void kokuyo_invoke(kokuyo_vm *vm, const char *_disk) {
+extern "C" EXPORT_API void kokuyo_invoke(kokuyo_vm *vm, const char *_disk) {
   std::ifstream file(_disk);
 
   if (!file) throw std::invalid_argument("No such file: " + std::string(_disk));
