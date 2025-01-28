@@ -13,17 +13,17 @@
 #include <string>
 #include <vector>
 
-#include "kokuyo.hpp"
+#include "Debuyo.hpp"
 #include "exportapi.h"
 
 typedef struct kokuyo_vm {
-  kokuyo vm_instance;
+  Dobuyo vm_instance;
 } kokuyo_vm;
 
 extern "C" EXPORT_API kokuyo_vm *kokuyo_create() {
   kokuyo_vm *new_vm = (kokuyo_vm *)malloc(sizeof(kokuyo_vm));
   if (new_vm != NULL) {
-    new_vm->vm_instance = kokuyo();
+    return nullptr;
   }
   return new_vm;
 }
@@ -53,3 +53,34 @@ extern "C" EXPORT_API void kokuyo_invoke(kokuyo_vm *vm, const char *_disk) {
   vm->vm_instance.invoke(disk);
 }
 
+extern "C" EXPORT_API uint64_t kokuyo_get_ip(kokuyo_vm *vm) {
+  return vm->vm_instance.get_ip();
+}
+
+extern "C" EXPORT_API uint64_t kokuyo_get_memory(kokuyo_vm *vm) {
+  return vm->vm_instance.get_memory();
+}
+
+extern "C" EXPORT_API std::string kokuyo_get_registers(kokuyo_vm *vm) {
+  return vm->vm_instance.get_registers();
+}
+
+extern "C" EXPORT_API std::string kokuyo_get_callstack(kokuyo_vm *vm) {
+  return vm->vm_instance.get_callstack();
+}
+
+extern "C" EXPORT_API std::string kokuyo_get_stack(kokuyo_vm *vm) {
+  return vm->vm_instance.get_stack();
+}
+
+extern "C" EXPORT_API bool kokuyo_is_halted(kokuyo_vm *vm) {
+  return vm->vm_instance.is_halted();
+}
+
+extern "C" EXPORT_API void kokuyo_step(kokuyo_vm *vm) {
+  vm->vm_instance.step();
+}
+
+extern "C" EXPORT_API void kokuyo_end(kokuyo_vm *vm) {
+  vm->vm_instance.end();
+}
