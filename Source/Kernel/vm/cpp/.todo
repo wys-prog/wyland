@@ -1,0 +1,17 @@
+[ ] C Interface
+[ ] C# Class
+[ ] Fix this: 
+================================================================
+handle_crash: Program crashed with signal 11
+Engine version: Godot Engine v4.3.stable.mono.official (77dcf97d82cbfe4e4615475fa52ca03da645dbd8)
+Dumping the backtrace. Please include this when reporting the bug to the project developer.
+[1] /usr/lib/dotnet/shared/Microsoft.NETCore.App/8.0.12/libcoreclr.so(+0x6068bc) [0x79869d4068bc] (??:0)
+[2] /usr/lib/dotnet/shared/Microsoft.NETCore.App/8.0.12/libcoreclr.so(+0x605ef5) [0x79869d405ef5] (??:0)
+[3] /lib/x86_64-linux-gnu/libc.so.6(+0x45320) [0x7986d4845320] (??:0)
+[4] std::vector<unsigned char, std::allocator<unsigned char> >::capacity() const (??:0)
+[5] std::vector<unsigned char, std::allocator<unsigned char> >::operator=(std::vector<unsigned char, std::allocator<unsigned char> > const&) (??:0)
+[6] Dobuyo::invoke(std::vector<unsigned char, std::allocator<unsigned char> > const&) (??:0)
+[7] Source/Kernel/vm/bin/dobuyo.so(dobuyo_invoke+0x1c3) [0x7986ca816140] (??:0)
+[8] [0x79861eb4be1e] (??:0)
+-- END OF BACKTRACE --
+================================================================
