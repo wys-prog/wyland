@@ -15,6 +15,8 @@
 #include <functional>
 #include <unordered_map>
 
+#include "stdc.h"
+
 namespace kokuyo {
   uint64_t to_uint64(uint8_t* data) {
     uint64_t result = 0;
@@ -109,8 +111,18 @@ namespace kokuyo {
     },
     {
       "std:date", [](array<uint64_t, 32> &regs, array<uint64_t, 4096> &, std::vector<uint8_t> &memory)  {
+        std::time_t now = std::time(nullptr);
+        std::tm *localTime = std::localtime(&now);
+        _std_kokuyo_get_encoded_time(localTime, regs[0]);
+      }
+    },
+  };
+
+  std::unordered_map<std::string, std::function<void(array<uint64_t, 32>&, array<uint64_t, 4096>&, std::vector<uint8_t> &)>> stdsystem = {
+    {
+      "std:system", [](array<uint64_t, 32> &regs, array<uint64_t, 4096> &, std::vector<uint8_t> &memory)  {
         
       }
-    }
+    },
   };
 }
