@@ -121,8 +121,17 @@ namespace kokuyo {
   std::unordered_map<std::string, std::function<void(array<uint64_t, 32>&, array<uint64_t, 4096>&, std::vector<uint8_t> &)>> stdsystem = {
     {
       "std:system", [](array<uint64_t, 32> &regs, array<uint64_t, 4096> &, std::vector<uint8_t> &memory)  {
-        
+        char *buff = new char[regs[0]];
+        for (uint64_t i = 0; i < regs[0]; i++) buff[i] = memory[regs[1]+i];
+        std::system(buff);
+        delete[] buff;
       }
     },
+    {
+      "std:os_name", [](array<uint64_t, 32> &regs, array<uint64_t, 4096> &, std::vector<uint8_t> &memory)  {
+        _std_kokuyo_os_str64(regs[0]);
+      }
+    }, 
+    
   };
 }

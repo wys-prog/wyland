@@ -4,6 +4,20 @@
 #include <cstdint>
 #include <ctime>
 
+/* std-c’s types */
+
+/* union to cast a char[8] to an uint64_t */
+/* defined specialy for OS informations */
+union _std_kokuyo_os_union {
+  uint64_t brut;      /* uint64_t */
+  char     ascii[8];  /* ASCII */
+};
+
+/* std-c’s functions */
+void cpystr(const char *__str, char *buff, size_t buff_size) {
+  for (size_t i = 0; i < buff_size; i++) buff[i] = __str[i];
+}
+
 /* Time encoding */
 #define _std_kokuyo_encode_time(year, month, day, hour, minute, second, buff)  \
   buff = 0;                                                                    \
@@ -23,7 +37,8 @@
 /* System information */
 #ifdef _WIN32
 #define _std_kokuyo_os_string "Windows"
-#define _std_kokuyo_os_code 0x00
+#define _std_kokuyo_os_code   0x00
+#define _std_kokuyo_os_str64(u) _std_kokuyo_os_union __u = {}; cpystr("Windows", __u.ascii, 7); u = __u.brut;
 
 #include <windows.h>
 
@@ -38,6 +53,7 @@
 #elif defined(__linux__)
 #define _std_kokuyo_os_string "Linux"
 #define _std_kokuyo_os_code 0x01
+#define _std_kokuyo_os_str64(u) _std_kokuyo_os_union __u = {}; cpystr("Linux", __u.ascii, 5); u = __u.brut;
 
 #include <sys/sysinfo.h>
 #include <unistd.h>
@@ -49,6 +65,7 @@
 #elif defined(__APPLE__)
 #define _std_kokuyo_os_string "Apple"
 #define _std_kokuyo_os_code 0x02
+#define _std_kokuyo_os_str64(u) _std_kokuyo_os_union __u = {}; cpystr("Apple", __u.ascii, 5); u = __u.brut;
 
 #include <sys/sysctl.h>
 #define _std_kokuyo_cpu_count                                                  \
