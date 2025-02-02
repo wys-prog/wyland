@@ -72,7 +72,7 @@ namespace kokuyo
       return cast_array<uint64_t>(buff, 8);
     }
 
-    std::unordered_map<std::string, std::function<uint64_t(array<uint64_t, 32>&, array<uint64_t, 4096>&, std::vector<uint8_t> &)>> stable;
+    std::unordered_map<std::string, std::function<void(array<uint64_t, 32>&, array<uint64_t, 4096>&, std::vector<uint8_t> &)>> stable;
 
     std::unordered_map<uint8_t, std::function<void()>> ftable = {
       {0x00, [this]() {}}, // NOP
