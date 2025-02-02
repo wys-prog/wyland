@@ -70,6 +70,7 @@
     "queue": "cpp",
     "stack": "cpp",
     "fstream": "cpp",
-    "iostream": "cpp"
+    "iostream": "cpp",
+    "typeindex": "cpp"
   }
 }

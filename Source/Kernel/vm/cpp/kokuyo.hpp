@@ -4,6 +4,8 @@
 // Modified version of Kokuyo specifically built for the Wyland project.
 // This code is open-source and free to use, modify, and distribute.
 
+#pragma once
+
 #include <cstdint>
 #include <functional>
 #include <sstream>
@@ -24,8 +26,7 @@
 #define FLAGS_LT (-1)
 #define FLAGS_GT (1)
 
-namespace kokuyo
-{
+namespace kokuyo {
   template <typename T>
   T cast_array(uint8_t *buff, uint64_t len) {
     T tmp = T(); 
@@ -45,7 +46,8 @@ namespace kokuyo
   class stack_overflow  : public std::exception {};
 
   template <typename __Ty, size_t __s>
-  struct array {
+  class array {
+  public:
     __Ty data[__s];
 
     __Ty &operator[](size_t i) {
