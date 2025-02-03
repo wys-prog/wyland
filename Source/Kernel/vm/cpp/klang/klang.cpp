@@ -66,6 +66,12 @@ namespace kokuyo {
     };
 
     class dylib : private object {
+    private:
+      /* Open a dynamic linked librarie (file in .so, .dll & .dylib) */
+      void open(const std::string &path) { 
+        
+      }
+
     public:
       dylib &operator=(const dylib &dl) {
         this->set(dl.get(), typeof_dylib);
