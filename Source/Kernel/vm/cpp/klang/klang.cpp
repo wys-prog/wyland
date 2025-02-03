@@ -19,6 +19,8 @@
 #include <filesystem>
 #include <unordered_map>
 
+#include "dlb.h"
+
 namespace kokuyo {
   namespace klang {
 
@@ -41,7 +43,7 @@ namespace kokuyo {
          of the class. By knowing the type, we can simply call a member, wich is stored
          on an unordered map. The public call method asks you a string (for function’s name)
          and a vector (of arguments). */
-      std::unordered_map<std::string, std::function<void(std::vector<std::any>)>> members;
+      std::unordered_map<std::string, std::function<std::any(std::vector<std::any>)>> members;
 
     public:
       object &operator=(const object &obj) {
@@ -67,17 +69,59 @@ namespace kokuyo {
 
     class dylib : private object {
     private:
-      /* Open a dynamic linked librarie (file in .so, .dll & .dylib) */
-      void open(const std::string &path) { 
-        
+      /* Handle to the current dynamic librarie. */
+      DLibHandle handle;
+
+      /* Open a dynamic librarie (file in .so, .dll & .dylib) */
+      void open(const std::string &path) {
+        handle = dlb_open(path.c_str());
+      }
+
+      /* Close the dynamic librarie. */
+      void close() {
+        dlb_close(handle);
+      }
+
+      /* Get a generic function from the dynamic librarie. */
+      void *getf(const std::string &fname) {
+        return dlb_get_function(handle, fname.c_str());
       }
 
     public:
+      dylib() {
+        members["open"] = [this](std::vector<std::any> argv) {
+          /* Handle arguments */
+          try {
+            open(std::any_cast<std::string>(argv[0]));
+          } catch (const std::bad_any_cast &e) {
+            throw std::runtime_error(e.what());
+          } catch (const std::exception &e) {
+            throw std::runtime_error(e.what()); /* If the vector is too fit, etc. */
+          }
+
+          return std::any{}; /* Nothing to return. */
+        };
+
+        members["close"] = [this](std::vector<std::any> argv) {
+          close();
+          return std::any{}; /* Nothing to return. */
+        };
+
+        members["getf"] = [this](std::vector<std::any> argv) {
+          try {
+            return getf(std::any_cast<std::string>(argv[0]));
+          } catch (const std::bad_any_cast &e) {
+            throw std::runtime_error(e.what());
+          } catch(const std::exception& e) {
+            throw std::runtime_error(e.what());
+          }
+        };
+      }
+
       dylib &operator=(const dylib &dl) {
         this->set(dl.get(), typeof_dylib);
         return *this;
       }
-
 
     };
 
