@@ -172,21 +172,22 @@ namespace kokuyo {
           regs[a] = regs[a] & regs[b];
         }
       },
-      {0x13, [this] {
+      {0x13, [this]() {
           // SYSCALL
           std::string function_name = "";
           char c;
           while (c) function_name += c;
 
-          auto argc = read64();
-          uint8_t *buff = new uint8_t[argc];
+          if (stable.find(function_name) != stable.end()) stable[function_name](regs, stack, program);
+          else regs[0] = uint64_t(-1);
+        }
+      },
+      {0x14, [this]() {
+          // STORE (byte)src (qword)dst 
+          auto src = read8();
+          auto dst = read64();
 
-          for (uint64_t i = 0; i < argc; i++) buff[i] = read8();
-
-          //if (stable.find(function_name) != stable.end()) regs[31] = stable[function_name](buff);
-          //else regs[31] = std::numeric_limits<int>::max();
-
-          delete[] buff;
+          program[dst] = regs[src];
         }
       },
       {0xFF, [this]() {
@@ -212,6 +213,12 @@ namespace kokuyo {
       program.clear();
     }
 
-    
+    void append_ftable(std::unordered_map<std::string, std::function<void(array<uint64_t, 32>&, array<uint64_t, 4096>&, std::vector<uint8_t> &)>> map) {
+      stable.insert(map.begin(), map.end());
+    }
+
+    void append_function(const std::string &name, std::function<void(array<uint64_t, 32>&, array<uint64_t, 4096>&, std::vector<uint8_t> &)> fn) {
+      stable[name] = fn;
+    }
   };
 } // namespace kokuyo

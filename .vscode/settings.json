@@ -71,6 +71,7 @@
     "stack": "cpp",
     "fstream": "cpp",
     "iostream": "cpp",
-    "typeindex": "cpp"
+    "typeindex": "cpp",
+    "filesystem_update4": "cpp"
   }
 }
