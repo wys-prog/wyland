@@ -8,7 +8,7 @@
 // Kokūkyō Virtual Machine.
 
 #include <any>
-#include <tuple>
+#include <regex>
 #include <vector>
 #include <string>
 #include <fstream>
@@ -67,11 +67,12 @@ namespace kokuyo {
 
     };
 
-    class dylib : private object {
+    class dylib {
     private:
       /* Handle to the current dynamic librarie. */
       DLibHandle handle;
-
+  
+    public:
       /* Open a dynamic librarie (file in .so, .dll & .dylib) */
       void open(const std::string &path) {
         handle = dlb_open(path.c_str());
@@ -86,43 +87,6 @@ namespace kokuyo {
       void *getf(const std::string &fname) {
         return dlb_get_function(handle, fname.c_str());
       }
-
-    public:
-      dylib() {
-        members["open"] = [this](std::vector<std::any> argv) {
-          /* Handle arguments */
-          try {
-            open(std::any_cast<std::string>(argv[0]));
-          } catch (const std::bad_any_cast &e) {
-            throw std::runtime_error(e.what());
-          } catch (const std::exception &e) {
-            throw std::runtime_error(e.what()); /* If the vector is too fit, etc. */
-          }
-
-          return std::any{}; /* Nothing to return. */
-        };
-
-        members["close"] = [this](std::vector<std::any> argv) {
-          close();
-          return std::any{}; /* Nothing to return. */
-        };
-
-        members["getf"] = [this](std::vector<std::any> argv) {
-          try {
-            return getf(std::any_cast<std::string>(argv[0]));
-          } catch (const std::bad_any_cast &e) {
-            throw std::runtime_error(e.what());
-          } catch(const std::exception& e) {
-            throw std::runtime_error(e.what());
-          }
-        };
-      }
-
-      dylib &operator=(const dylib &dl) {
-        this->set(dl.get(), typeof_dylib);
-        return *this;
-      }
-
     };
 
     typedef struct {
@@ -130,12 +94,22 @@ namespace kokuyo {
       std::string ID;
       std::string name;
       std::unordered_map<std::string, object> scope;
+      std::unordered_map<std::string, dylib>  libs;
     } task;
 
     class runtime {
     private:
       std::string env;
       std::vector<task> tasks;
+
+      void split_tasks(std::istream &is) {
+        std::string line, word;
+        int level = 0;
+
+        while (std::getline(is, line)) {
+          
+        }
+      }
     public:
     };
 
