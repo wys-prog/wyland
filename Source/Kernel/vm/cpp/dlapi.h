@@ -34,22 +34,23 @@ LibHandle dynlib_open(const char *libPath) {
   return handle;
 }
 
-FuncType *dynlib_get_function(LibHandle libHandle, const char *funcName) {
+FuncType dynlib_get_function(LibHandle libHandle, const char *funcName) {
   if (!libHandle || !funcName)
-    return NULL;
+    return nullptr;
 
 #if defined(_WIN32) || defined(_WIN64)
-  FuncType *func = (FuncType *)GetProcAddress(libHandle, funcName);
+  FuncType func = (FuncType)GetProcAddress(libHandle, funcName);
 #else
-  FuncType *func = dlsym(libHandle, funcName);
+  FuncType func = (FuncType)dlsym(libHandle, funcName);
 #endif
 
   if (!func) {
     printf("Unable to find function: %s\n", funcName);
   }
 
-  return (FuncType)func; 
+  return func; 
 }
+
 
 void dynlib_close(LibHandle libHandle) {
   if (!libHandle)

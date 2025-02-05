@@ -9,7 +9,6 @@
 #include <cstdint>
 #include <functional>
 #include <sstream>
-#include <stdfloat>
 #include <string>
 #include <typeindex>
 #include <typeinfo>

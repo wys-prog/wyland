@@ -41,7 +41,7 @@ public:
     std::unordered_map<std::string, LibHandle> handles;
 
     for (size_t i = 0; i < argv.size(); i++) {
-      if (argv[i] == "-i") input = argv[i];
+      if (argv[i] == "-i") input = argv[++i];
       else if (argv[i] == "-inc") {
         /* inc <WHAT?> <WHERE?> */
         std::string what = argv[i++], where = std::filesystem::absolute(argv[i++]);
@@ -73,9 +73,12 @@ public:
 };
 
 int main(int argc, char const *argv[]) {
+  std::cout << "Kokuyo/Wylma Virtual Machine - 1.0" << std::endl;
   vm_handle handle(argc, argv);
 
   handle.handle();
+  std::cout << "Invoking core..." << std::endl;
+  
   handle.run();
 
   return 0;
