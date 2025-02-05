@@ -12,6 +12,8 @@
 #endif
 
 #include <stdio.h>
+typedef uint64_t (*FuncType)(uint8_t *);
+
 
 LibHandle dynlib_open(const char *libPath) {
   if (!libPath)
@@ -32,21 +34,21 @@ LibHandle dynlib_open(const char *libPath) {
   return handle;
 }
 
-void *dynlib_get_function(LibHandle libHandle, const char *funcName) {
+FuncType *dynlib_get_function(LibHandle libHandle, const char *funcName) {
   if (!libHandle || !funcName)
     return NULL;
 
 #if defined(_WIN32) || defined(_WIN64)
-  void *func = (void *)GetProcAddress(libHandle, funcName);
+  FuncType *func = (FuncType *)GetProcAddress(libHandle, funcName);
 #else
-  void *func = dlsym(libHandle, funcName);
+  FuncType *func = dlsym(libHandle, funcName);
 #endif
 
   if (!func) {
     printf("Unable to find function: %s\n", funcName);
   }
 
-  return func;
+  return (FuncType)func; 
 }
 
 void dynlib_close(LibHandle libHandle) {
