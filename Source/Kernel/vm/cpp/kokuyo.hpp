@@ -73,7 +73,7 @@ namespace kokuyo {
       return cast_array<uint64_t>(buff, 8);
     }
 
-    std::unordered_map<std::string, std::function<uint64_t(uint8_t *)>> stable;
+    std::unordered_map<std::string, std::function<uint64_t(uint64_t, uint8_t *)>> stable;
 
     std::unordered_map<uint8_t, std::function<void()>> ftable = {
       {0x00, [this]() {}}, // NOP
@@ -186,7 +186,7 @@ namespace kokuyo {
             i++;
           }
           /* Call the function */
-          if (stable.find(function_name) != stable.end()) stable[function_name](argv);
+          if (stable.find(function_name) != stable.end()) stable[function_name](argc, argv);
           else regs[0] = uint64_t(-1); /* Null pointing function, error. */
           /* Delete arguments vector */
           delete[] argv;
@@ -223,11 +223,11 @@ namespace kokuyo {
       program.clear();
     }
 
-    void append_ftable(std::unordered_map<std::string, std::function<uint64_t(uint8_t *)>> map) {
+    void append_ftable(std::unordered_map<std::string, std::function<uint64_t(uint64_t, uint8_t*)>> map) {
       stable.insert(map.begin(), map.end());
     }
 
-    void append_function(const std::string &name, std::function<uint64_t(uint8_t *)>  &fn) {
+    void append_function(const std::string &name, std::function<uint64_t(uint64_t, uint8_t*)>  &fn) {
       stable[name] = fn;
     }
   };
