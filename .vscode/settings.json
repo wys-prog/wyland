@@ -1,5 +1,5 @@
 {
-  "godotTools.editorPath.godot4": "/home/wys/Godot/Godot",
+  "godotTools.editorPath.godot4": "/Applications/Godot_mono.app",
   "files.associations": {
     "*.nas": "x86 and x86_64 Assembly",
     "*.h": "c",
@@ -72,6 +72,11 @@
     "fstream": "cpp",
     "iostream": "cpp",
     "typeindex": "cpp",
-    "filesystem_update4": "cpp"
+    "filesystem_update4": "cpp",
+    "__hash_table": "cpp",
+    "__node_handle": "cpp",
+    "__split_buffer": "cpp",
+    "execution": "cpp",
+    "iomanip": "cpp"
   }
 }

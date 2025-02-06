@@ -1,5 +1,0 @@
----
-triple:          'arm64-apple-darwin'
-binary-path:     '/Users/wys/Documents/wyland/Source/Kernel/vm/cpp/kokuyo'
-relocations:     []
-...
