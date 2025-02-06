@@ -12,7 +12,7 @@
 #endif
 
 #include <stdio.h>
-typedef uint64_t (*FuncType)(uint8_t *);
+typedef uint64_t (*FuncType)(uint64_t, uint8_t *);
 
 
 LibHandle dynlib_open(const char *libPath) {

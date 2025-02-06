@@ -48,7 +48,7 @@ public:
 
         if (handles.find(where) == handles.end()) 
           handles[where] = dynlib_open(where.c_str());
-        std::function<uint64_t(uint8_t*)> myfunc = (*dynlib_get_function(handles[where], what.c_str()));
+        std::function<uint64_t(uint64_t, uint8_t*)> myfunc = (*dynlib_get_function(handles[where], what.c_str()));
 
         vm.append_function(what, myfunc);
         std::cout << "Added function " << what << " from " << where << std::endl; 
