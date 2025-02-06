@@ -200,6 +200,13 @@ namespace kokuyo {
           program[dst] = regs[src];
         }
       },
+      {0x15, [this](){
+          // LEA (byte)dst, (qword)src
+          auto dst = read8();
+          auto src = read64();
+          regs[dst] = program[src];
+        }
+      },
       {0xFF, [this]() {
           halt = true;
         }
