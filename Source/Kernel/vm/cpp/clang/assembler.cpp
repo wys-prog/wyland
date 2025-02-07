@@ -15,8 +15,35 @@ std::string lower(const std::string &str) {
   return buff;
 }
 
-class compiler {
+std::string upper(const std::string &str) {
+  std::string buff = "";
+  for (const auto &c : str) {
+    buff += std::toupper(c);
+  }
+  return buff;
+}
+
+bool is_int(const std::string &str) {
+  for (const auto &c : str) {
+    if (!isdigit(c)) return false;
+  }
+
+  return true;
+}
+
+bool is_number(const std::string &str) {
+  for (const auto &c : str) {
+    if (!isdigit(c) && c != '.') return false;
+  }
+
+  return true;
+}
+
+class assembler {
 private:
+  std::istream &input;
+  std::ostream &output;
+
   std::unordered_map<std::string, uint8_t> table = {
     {"nop", NOP}, {"load", LOAD}, {"store", STORE}, 
     {"mov", MOV}, {"add", ADD}, {"sub", SUB}, {"mul", MUL}, 
@@ -27,56 +54,39 @@ private:
     {"syscall", SYSCALL}, {"halt", HALT},
   };
 
-    std::unordered_map<std::string, uint8_t> registers = {
-    {"r0", 0}, {"r1", 1}, {"r2", 2}, {"r3", 3},
-    {"r4", 4}, {"r5", 5}, {"r6", 6}, {"r7", 7},
-    {"r8", 8}, {"r9", 9}, {"r10", 10}, {"r11", 11},
-    {"r12", 12}, {"r13", 13}, {"r14", 14}, {"r15", 15},
-    {"r16", 16}, {"r17", 17}, {"r18", 18}, {"r19", 19},
-    {"r20", 20}, {"r21", 21}, {"r22", 22}, {"r23", 23},
-    {"r24", 24}, {"r25", 25}, {"r26", 26}, {"r27", 27},
-    {"r28", 28}, {"r29", 29}, {"r30", 30}, {"r31", 31},
-  };
+  void end(std::istringstream &iss) {
+    if (!iss.eof()) {
+      std::cerr << "Warn: Extra token (not compiled) after end of instruction. To compile them, create a new line." << std::endl;
+    }
+  }
 
-  std::istream &input;
-  std::ostream &output;
+  void write(std::vector<uint8_t> ops) {
+    output.write(reinterpret_cast<const char*>(ops.data()), ops.size());
+  }
 
-  void translate() {
-    std::string line;
-    while (std::getline(input, line)) {
-      std::istringstream iss(line);
-      std::string word;
+  void compile_line(const std::string &line) {
+    std::istringstream iss(line);
+    std::string word;
 
-      while (iss >> word) {
-        if (table.find(lower(word)) == table.end()) {
-          char buff[1] = {table[lower(word)]};
-          output.write(buff, 1);
-        } else if (word.starts_with(';')) {
-          std::getline(iss, line); // Skip the line.
-        } else if (word.starts_with('$')) {
-          if (registers.find(lower(word.substr(1))) != registers.end()) {
-            char buff[1] = {registers[lower(word.substr(1))]};
-            output.write(buff, 1);
-          }
-        } else if (lower(word) == "@int") {
-          int64_t i;
-          iss >> i;
-          if (iss.fail()) throw std::invalid_argument("Not a number");
-          output.write(reinterpret_cast<const char*>(i), sizeof(i));
-        } else if (lower(word) == "@uint") {
-          uint64_t i;
-          iss >> i;
-          if (iss.fail()) throw std::invalid_argument("Not a number");
-          output.write(reinterpret_cast<const char*>(i), sizeof(i));
-        } else { // Unknown symbol. Represents data.
-          char *buff = new char[word.size()];
-          output.write(buff, word.size());
-          delete[] buff; 
-        }
-        
+    while (iss >> word) {
+      if (word == "nop") {
+        write({table["nop"]});
+      } else if (word == "load") {
+
+      } else {
+        std::cerr << "Unknown symbol: " << word << ". \nLine: " << line << std::endl;
+        return;
       }
+
+      end(iss);
     }
   }
 
 public:
+  void compile() {
+    std::string line;
+    while (std::getline(input, line)) {
+
+    }
+  }
 };
