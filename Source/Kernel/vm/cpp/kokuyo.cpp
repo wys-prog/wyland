@@ -52,6 +52,21 @@ public:
 
         vm.append_function(what, myfunc);
         std::cout << "Added function " << what << " from " << where << std::endl; 
+      } else if (argv[i] == "-incs") {
+        std::vector<std::string> whats;
+        std::string where, tmp;
+
+        while (tmp != ".") whats.push_back(argv[i++]);
+        where = argv[i++];
+
+        if (handles.find(where) == handles.end()) 
+          handles[where] = dynlib_open(where.c_str());
+
+        for (const auto &what : whats) {
+          std::function<uint64_t(uint64_t, uint8_t*)> myfunc = (*dynlib_get_function(handles[where], what.c_str()));
+          vm.append_function(what, myfunc);
+          std::cout << "Added function " << what << " from " << where << std::endl; 
+        }
       }
     }
     
