@@ -42,7 +42,6 @@ namespace kokuyo {
 
   class bad_register    : public std::exception {};
   class bad_instruction : public std::exception {};
-  class stack_overflow  : public std::exception {};
 
   template <typename __Ty, size_t __s>
   class array {
@@ -57,6 +56,9 @@ namespace kokuyo {
 
   class kokuyoVM {
   private:
+    std::vector<std::string> tracer{};
+    uint64_t i = 0;
+
     array<uint64_t, 32> regs; // 32 registers 
     size_t   ip;
     array<uint64_t, 4096> stack;
@@ -82,7 +84,10 @@ namespace kokuyo {
           uint64_t data = read64();
 
           if (r < 32) regs[r] = data;
-          else throw bad_register();
+          else {
+            tracer.push_back("bad register: " + std::to_string(r));
+            throw bad_register();
+          }
         }
       }, 
       {0x02, [this]() { // MOV
@@ -214,16 +219,20 @@ namespace kokuyo {
     };
 
   public:
-    void invoke(const std::vector<uint8_t> &in) {
+    void invoke(const std::vector<uint8_t> &in, uint64_t _ip = 0x0000000000000000) {
       program = in;
-      ip = 0x0000000000000000;
+      ip = _ip;
       halt = false;
 
       while (!halt) {
         auto c = read8();
         
         if (ftable.find(c) != ftable.end()) ftable[c]();
-        else throw bad_instruction();
+        else {
+          tracer.push_back("bad instruction: " + std::to_string(int(c)));
+          tracer.push_back("IP: " + std::to_string(ip));
+          throw bad_instruction();
+        }
       }
 
       callstack.clear();
@@ -236,6 +245,14 @@ namespace kokuyo {
 
     void append_function(const std::string &name, std::function<uint64_t(uint64_t, uint8_t*)>  &fn) {
       stable[name] = fn;
+    }
+
+    std::vector<std::string> &get_trace() {
+      return tracer;
+    }
+
+    uint64_t get_ip() {
+      return ip;
     }
   };
 } // namespace kokuyo

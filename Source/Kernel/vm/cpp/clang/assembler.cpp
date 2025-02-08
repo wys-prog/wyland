@@ -72,7 +72,7 @@ private:
       if (word == "nop") {
         write({table["nop"]});
       } else if (word == "load") {
-
+        
       } else {
         std::cerr << "Unknown symbol: " << word << ". \nLine: " << line << std::endl;
         return;

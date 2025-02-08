@@ -77,7 +77,24 @@ public:
   }
 
   void run() {
-    vm.invoke(program);
+    try {
+      vm.invoke(program);
+    } catch(const std::exception &e) {
+      vm.get_trace()
+      .push_back(typeid(e).name() + std::string(" what():\t") + std::string(e.what()));
+      
+      try {
+        vm.invoke(program, vm.get_ip());
+      } catch(const std::exception &e) {
+        vm.get_trace()
+        .push_back(typeid(e).name() + std::string(" what():\t") + std::string(e.what()));
+        for (size_t i = 0; i < vm.get_trace().size(); i++) 
+          std::cout << i << ": " << vm.get_trace()[i] << std::endl;
+          exit(-1);
+      }
+      
+    }
+    
   }
 
   vm_handle(int argc, char const *_argv[]) {

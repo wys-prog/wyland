@@ -6,11 +6,11 @@
       "command": "/usr/bin/g++",
       "args": [
         "-fdiagnostics-color=always",
-        "-g",
         "${file}",
         "-o",
-        "${fileDirname}/${fileBasenameNoExtension}",
-        "-std=c++23"
+        "/Users/wys/Documents/wyland/Source/Kernel/vm/cpp/debug/vm/${fileBasenameNoExtension}",
+        "-std=c++23", 
+       // "-v",
       ],
       "options": {
         "cwd": "${fileDirname}"
