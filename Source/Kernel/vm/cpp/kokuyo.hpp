@@ -39,9 +39,8 @@ namespace kokuyo {
     return tmp;
   }
 
-
-  class bad_register    : public std::exception {};
-  class bad_instruction : public std::exception {};
+  class invalid_register : public std::exception {};
+  class bad_instruction  : public std::exception {};
 
   template <typename __Ty, size_t __s>
   class array {
@@ -56,17 +55,33 @@ namespace kokuyo {
 
   class kokuyoVM {
   private:
-    std::vector<std::string> tracer{};
+    std::vector<std::string> tracer{"Tracer created"};
     uint64_t i = 0;
 
     array<uint64_t, 32> regs; // 32 registers 
-    size_t   ip;
+    uint64_t ip;
     array<uint64_t, 4096> stack;
-    char     flags;
+    char flags;
     wylma::stack<uint64_t, 2048> callstack;
-    bool     halt = false;
+    bool halt = false;
 
     std::vector<uint8_t> program;
+
+    void testreg(uint8_t r) {
+      if (r >= 32) {
+        tracer.push_back("Invalid register. @r is too big (max: 32)");
+        tracer.push_back("Given @r: " + std::to_string((int)r));
+        throw invalid_register();
+      }
+    }
+
+    void testaddr(uint64_t a) {
+      if (a > program.size()) {
+        tracer.push_back("Index is out of virtual memory size.");
+        tracer.push_back("Address: " + std::to_string(a) + " size: " + std::to_string(program.size()));
+        throw std::out_of_range("Too big address");
+      }
+    }
 
     uint8_t read8() { return program[ip++]; }
 
@@ -83,11 +98,8 @@ namespace kokuyo {
           uint8_t r = read8();
           uint64_t data = read64();
 
-          if (r < 32) regs[r] = data;
-          else {
-            tracer.push_back("bad register: " + std::to_string(r));
-            throw bad_register();
-          }
+          testreg(r);
+          regs[r] = data;
         }
       }, 
       {0x02, [this]() { // MOV
@@ -117,31 +129,38 @@ namespace kokuyo {
         }
       },
       {0x08, [this]() { // JMP
-          ip = read64();
+          auto next = read64();  
+          testaddr(next);
+          ip = next;
         }
       },
       {0x09, [this]() { // JE 
           auto next = read64();
+          testaddr(next);
           ip = (flags == FLAGS_EQ ? next : ip);
         }
       }, 
       {0x0A, [this]() { // JNE
           auto next = read64();
+          testaddr(next);
           ip = (flags != FLAGS_EQ ? next : ip);
         }
       },
       {0x0B, [this]() { // JG 
           auto next = read64();
+          testaddr(next);
           ip = (flags == FLAGS_GT ? next : ip);
         }
       }, 
       {0x0C, [this]() { // JL
           auto next = read64();
+          testaddr(next);
           ip = (flags == FLAGS_LT ? next : ip);
         }
       },
       {0x0D, [this]() { // CMP
           auto a = read8(), b = read8();
+          testreg(a); testreg(b);
           if (regs[a] == regs[b]) flags = FLAGS_EQ;
           else if (regs[a] > regs[b]) flags = FLAGS_GT;
           else flags = FLAGS_LT;
@@ -150,7 +169,9 @@ namespace kokuyo {
       {0x0E, [this]() {
           // CALL
           callstack.push(ip);
-          ip = read64();
+          auto next = read64();
+          testaddr(next);
+          ip = next;
         }
       },
       {0x0F, [this]() {
@@ -161,18 +182,21 @@ namespace kokuyo {
       {0x10, [this]() {
           // XOR
           auto a = read8(),  b = read8();
+          testreg(a); testreg(b);
           regs[a] = regs[a] ^ regs[b];
         }
       },
       {0x11,  [this]() {
           // OR
           auto a = read8(),  b = read8();
+          testreg(a); testreg(b);
           regs[a] = regs[a] | regs[b];
         }
       },
       {0x12,  [this]() {
           // AND
           auto a = read8(),  b = read8();
+          testreg(a); testreg(b);
           regs[a] = regs[a] & regs[b];
         }
       },
@@ -202,6 +226,9 @@ namespace kokuyo {
           auto src = read8();
           auto dst = read64();
 
+          testreg(src);
+          testaddr(dst);
+
           program[dst] = regs[src];
         }
       },
@@ -209,6 +236,9 @@ namespace kokuyo {
           // LEA (byte)dst, (qword)src
           auto dst = read8();
           auto src = read64();
+
+          testreg(dst);
+          testaddr(src);
           regs[dst] = program[src];
         }
       },
@@ -220,6 +250,7 @@ namespace kokuyo {
 
   public:
     void invoke(const std::vector<uint8_t> &in, uint64_t _ip = 0x0000000000000000) {
+      tracer.push_back("Invoked");
       program = in;
       ip = _ip;
       halt = false;
@@ -229,7 +260,7 @@ namespace kokuyo {
         
         if (ftable.find(c) != ftable.end()) ftable[c]();
         else {
-          tracer.push_back("bad instruction: " + std::to_string(int(c)));
+          tracer.push_back("Bad instruction: " + std::to_string(int(c)));
           tracer.push_back("IP: " + std::to_string(ip));
           throw bad_instruction();
         }

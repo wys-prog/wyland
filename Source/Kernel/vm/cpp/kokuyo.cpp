@@ -21,10 +21,14 @@ private:
   std::vector<std::string> argv;
   std::vector<uint8_t> program;
   std::string input;
+  std::function<void()> tocall = [](){return;};
 
   void handle_inputs() {
     std::ifstream file(input);
-    if (!file) throw std::runtime_error("Unable to open input: " + input);
+    if (!file) {
+      tocall = [&]() {throw std::runtime_error("Unable to open input: " + input); };
+      return;
+    }
 
     while (!file.eof()) {
       char buff[1] = {0};
@@ -34,6 +38,12 @@ private:
     }
 
     file.close();
+  }
+
+  void printstack() {
+    for (size_t i = 0; i < vm.get_trace().size(); i++) {
+      std::cout << i << ": " << vm.get_trace()[i] << std::endl;
+    } 
   }
 
 public:
@@ -56,7 +66,7 @@ public:
         std::vector<std::string> whats;
         std::string where, tmp;
 
-        while (tmp != ".") whats.push_back(argv[i++]);
+        while (tmp != "/") whats.push_back(argv[i++]);
         where = argv[i++];
 
         if (handles.find(where) == handles.end()) 
@@ -76,31 +86,31 @@ public:
     handle_inputs();
   }
 
-  void run() {
+  int run() {
+    int ext = 0;
+    
     try {
+      tocall();
+      if (!std::filesystem::exists(input)) throw std::runtime_error("No such file: " + input);
       vm.invoke(program);
     } catch(const std::exception &e) {
       vm.get_trace()
       .push_back(typeid(e).name() + std::string(" what():\t") + std::string(e.what()));
-      
-      try {
-        vm.invoke(program, vm.get_ip());
-      } catch(const std::exception &e) {
-        vm.get_trace()
-        .push_back(typeid(e).name() + std::string(" what():\t") + std::string(e.what()));
-        for (size_t i = 0; i < vm.get_trace().size(); i++) 
-          std::cout << i << ": " << vm.get_trace()[i] << std::endl;
-          exit(-1);
-      }
-      
+      ext++;
     }
-    
+
+    printstack();
+    return ext;
   }
 
   vm_handle(int argc, char const *_argv[]) {
     for (int i = 1; i < argc; i++) {
       argv.push_back(_argv[i]);
     }
+  }
+
+  size_t size() {
+    return sizeof(this) + input.capacity() + program.capacity(); + argv.capacity();
   }
 };
 
@@ -109,9 +119,8 @@ int main(int argc, char const *argv[]) {
   vm_handle handle(argc, argv);
 
   handle.handle();
+  std::cout << "Sizeof handle: " << handle.size() << " bytes" << std::endl;
   std::cout << "Invoking core..." << std::endl;
   
-  handle.run();
-
-  return 0;
+  return handle.run();
 }
