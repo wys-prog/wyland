@@ -204,8 +204,11 @@ namespace kokuyo {
           // SYSCALL
           std::string function_name = "";
           /* Read function’s name */
-          char c;
-          while (c) function_name += c;
+          char c = read8();
+          do {
+            function_name.push_back(c);
+            c = (char)read8();
+          } while (c);
           /* Prepare arguments */
           uint8_t argc = read8(), i = 0;
           uint8_t *argv = new uint8_t[argc];
