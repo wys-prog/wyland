@@ -8,7 +8,7 @@
         "-fdiagnostics-color=always",
         "${file}",
         "-o",
-        "/Users/wys/Documents/wyland/Source/Kernel/vm/cpp/debug/vm/${fileBasenameNoExtension}",
+        "${fileDirname}/${fileBasenameNoExtension}.app",
         "-std=c++23", 
        // "-v",
       ],

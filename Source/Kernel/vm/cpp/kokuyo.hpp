@@ -210,7 +210,7 @@ namespace kokuyo {
             c = (char)read8();
           } while (c);
           /* Prepare arguments */
-          uint8_t argc = read8(), i = 0;
+          uint64_t argc = read64(), i = 0;
           uint8_t *argv = new uint8_t[argc];
           /* Load arguments */
           while (i < argc) {
