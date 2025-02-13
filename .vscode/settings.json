@@ -79,6 +79,7 @@
     "execution": "cpp",
     "iomanip": "cpp",
     "__availability": "cpp",
-    "__config": "cpp"
+    "__config": "cpp",
+    "complex": "cpp"
   }
 }
