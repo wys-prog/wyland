@@ -16,6 +16,13 @@ namespace stdfs = std::filesystem;
 namespace wyland {
   stream_writer out{{"std:out", &std::cout}, };
 
+  enum class log_level {
+    all,
+    err, 
+    onbuff_all,
+    onbuff_err,
+  };
+
   enum class wobject_type {
     res,          // Files in .res
     logfile,      // Files in .log
@@ -87,6 +94,8 @@ namespace wyland {
 
     bool eof() { return stream.eof(); }
 
+    void close() { return stream.close(); }
+
     std::fstream &get_stream() { return stream; }
 
     ~wobject() {
@@ -101,8 +110,12 @@ namespace wyland {
   public:
     VMHandle() = default;
     
-    VMHandle(const std::string &name, stdfs::path path, bool logs)  {
-      
+    VMHandle(const std::string &name, stdfs::path path, log_level loglvl)  {
+      obj.properties["name"] = "'" + name + "'";
+      obj.properties["log-type"] = std::to_string(int(loglvl));
+      obj.type = wobject_type::vm;
+      // save the file
+      obj.writeself();
     }
   };
 
@@ -112,17 +125,15 @@ namespace wyland {
     std::unordered_map<std::string, wobject> objects;
     std::unordered_map<std::string, VMHandle> handles;
 
-    std::vector<std::string> to_create = {
-      ".wyland/", ".wyland/res/", ".wyland/libs/", 
-      ".wyland/vm/", ".wyland/logs/", ".wyland/cache/", 
-      ".wyland/shell/", ".wyland/shell/bin", ".wyland/shell/templates/", 
-      ".wyland/logs/wyland.log",
-    };
-
     void init() {
       if (!stdfs::exists(".wyland")) {
         std::cout << "Initializing..." << std::endl;
-        for (auto &p : to_create) {
+        for (auto &p : {
+          ".wyland/", ".wyland/res/", ".wyland/libs/", 
+          ".wyland/vm/", ".wyland/logs/", ".wyland/cache/", 
+          ".wyland/shell/", ".wyland/shell/bin", ".wyland/shell/templates/", 
+          ".wyland/logs/wyland.log",
+        }) {
           stdfs::path path = stdfs::absolute(p);
           stdfs::create_directories(path);
           out.log("Created: ", path);
@@ -132,14 +143,16 @@ namespace wyland {
       }
     }
 
-    void create() {}
-
   public:
     
     Wyland(int argc, char *const argv[]) {
       std::ofstream wyland_log;
       wyland_log.open(".wyland/logs/wyland.log");
-      out.add_stream("std:log", wyland_log);
+
+      if (wyland_log.is_open()) {
+        out.add_stream("std:log", wyland_log);
+      } else std::cerr << "?: [e]: Failed to open log file." << std::endl;
+      
     }
 
     int WylandExit = 0;
