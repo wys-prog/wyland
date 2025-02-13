@@ -13,22 +13,48 @@
 namespace stdfs = std::filesystem;
 
 namespace wyland {
+
   enum class wobject_type {
     res,          // Files in .res
     logfile,      // Files in .log
     cachedir,     // Files in .cache
     vm,           // Files in .vm
     binfile,      // Files in .bin
+    functionlib,  // Files in .fnlib
     systemfile,   // Files in .wyls
   };
 
   class wobject {
   private:
     std::fstream stream;
+
   public:
     std::string  path;
     wobject_type type;
-  
+    std::unordered_map<std::string, std::string> properties;
+
+    void writeself() {
+      if (!is_open()) open();
+      writeline("type:" + std::to_string(int(type)));
+      for (const auto &propertie : properties) 
+        writeline(propertie.first + ":" + propertie.second);
+    }
+
+    void loadself() {
+      while (!eof()) {
+        std::string line = readline();
+        size_t endname = line.find(':');
+        if (endname == std::string::npos) {}
+        else {
+          auto pname = line.substr(0, endname);
+          auto value = line.substr(endname + 1);
+          properties[pname] = value;
+        }
+      }
+    }
+
+    bool is_open() { return stream.is_open(); }
+
     bool open() {
       stream.open(path);
       return stream.is_open();
@@ -54,6 +80,8 @@ namespace wyland {
       stream.write((const char*)data, len);
     }
 
+    bool eof() { return stream.eof(); }
+
     std::fstream &get_stream() { return stream; }
 
     ~wobject() {
@@ -61,15 +89,29 @@ namespace wyland {
     }
   };
 
+  class VMHandle {
+  private:
+    kokuyoVM vm;
+    wobject obj;
+  public:
+    VMHandle() = default;
+    
+    VMHandle(const std::string &name, stdfs::path path, bool logs)  {
+      
+    }
+  };
+
   class Wyland {
   private:
     stdfs::path workspace;
     std::unordered_map<std::string, wobject> objects;
+    std::unordered_map<std::string, VMHandle> handles;
 
     std::vector<std::string> to_create = {
       ".wyland/", ".wyland/res/", ".wyland/libs/", 
       ".wyland/vm/", ".wyland/logs/", ".wyland/cache/", 
       ".wyland/shell/", ".wyland/shell/bin", ".wyland/shell/templates/", 
+      ".wyland/logs/wyland.log",
     };
 
     void init() {
@@ -85,10 +127,21 @@ namespace wyland {
       }
     }
 
+    void create() {}
+
   public:
     
     Wyland(int argc, char *const argv[]) {
 
     }
+
+    int WylandExit = 0;
   };
 } // wyland
+
+int main(int argc, char *const argv[]) {
+  std::cout << "Wyland —— 1.1" << std::endl;
+  wyland::Wyland land(argc, argv);
+
+  return land.WylandExit;
+}

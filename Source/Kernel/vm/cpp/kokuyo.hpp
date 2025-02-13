@@ -25,7 +25,7 @@
 #define FLAGS_LT (-1)
 #define FLAGS_GT (1)
 
-namespace kokuyo {
+namespace wyland {
   template <typename T>
   T cast_array(uint8_t *buff, uint64_t len) {
     T tmp = T(); 
@@ -289,4 +289,4 @@ namespace kokuyo {
       return ip;
     }
   };
-} // namespace kokuyo
+} // namespace wyland
