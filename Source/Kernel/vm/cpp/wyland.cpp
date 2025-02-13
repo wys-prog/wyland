@@ -9,10 +9,12 @@
 
 #include "kokuyo.hpp"
 #include "dlapi.h"
+#include "wstream.hpp"
 
 namespace stdfs = std::filesystem;
 
 namespace wyland {
+  stream_writer out{{"std:out", &std::cout}, };
 
   enum class wobject_type {
     res,          // Files in .res
@@ -44,10 +46,13 @@ namespace wyland {
       while (!eof()) {
         std::string line = readline();
         size_t endname = line.find(':');
-        if (endname == std::string::npos) {}
-        else {
+        if (endname == std::string::npos) {
+          out.error("Syntax error:\t", line, ". Expected ':' token.");
+          return;
+        } else {
           auto pname = line.substr(0, endname);
           auto value = line.substr(endname + 1);
+          if (properties.find(pname) != properties.end()) out.warn("Redefinition of propertie '", pname, "'.");
           properties[pname] = value;
         }
       }
@@ -117,10 +122,10 @@ namespace wyland {
     void init() {
       if (!stdfs::exists(".wyland")) {
         std::cout << "Initializing..." << std::endl;
-        for (int i = 0; i < to_create.size(); i++) {
-          stdfs::path p = stdfs::absolute(to_create[i]);
-          stdfs::create_directories(p);
-          std::cout << i << ": Created " << p << std::endl; 
+        for (auto &p : to_create) {
+          stdfs::path path = stdfs::absolute(p);
+          stdfs::create_directories(path);
+          out.log("Created: ", path);
         }
       } else {
         std::cout << "Wyland already initialized." << std::endl;
@@ -132,7 +137,9 @@ namespace wyland {
   public:
     
     Wyland(int argc, char *const argv[]) {
-
+      std::ofstream wyland_log;
+      wyland_log.open(".wyland/logs/wyland.log");
+      out.add_stream("std:log", wyland_log);
     }
 
     int WylandExit = 0;

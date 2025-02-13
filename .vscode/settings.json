@@ -77,6 +77,8 @@
     "__node_handle": "cpp",
     "__split_buffer": "cpp",
     "execution": "cpp",
-    "iomanip": "cpp"
+    "iomanip": "cpp",
+    "__availability": "cpp",
+    "__config": "cpp"
   }
 }

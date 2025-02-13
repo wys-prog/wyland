@@ -62,7 +62,7 @@ namespace wyland {
     uint64_t ip;
     array<uint64_t, 4096> stack;
     char flags;
-    wylma::stack<uint64_t, 2048> callstack;
+    wyland::stack<uint64_t, 2048> callstack;
     bool halt = false;
 
     std::vector<uint8_t> program;

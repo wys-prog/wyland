@@ -8,7 +8,7 @@
 
 #include <stdexcept>
 
-namespace wylma {
+namespace wyland {
   template <typename T, unsigned long limit> class stack {
   private:
     T *buff;
@@ -67,4 +67,4 @@ namespace wylma {
       return buff[index];
     }
   };
-} // namespace wylma
+} // namespace wyland
