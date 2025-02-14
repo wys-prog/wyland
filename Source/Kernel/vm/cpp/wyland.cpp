@@ -10,27 +10,11 @@
 #include <cctype>
 #include <locale>
 
-void ltrim(std::string &s) {
-  s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
-    return !std::isspace(ch);
-  }));
-}
-
-void rtrim(std::string &s) {
-  s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
-    return !std::isspace(ch);
-  }).base(), s.end());
-}
-
-void trim(std::string &s) {
-  ltrim(s);
-  rtrim(s);
-}
-
 #include "kokuyo.hpp"
 #include "dlapi.h"
 #include "wstream.hpp"
 #include "wargs.hpp"
+#include "algo.hpp"
 
 namespace stdfs = std::filesystem;
 
@@ -56,14 +40,14 @@ namespace wyland {
   };
 
   std::unordered_map<std::string, wobject_type> extentions2type = {
-    {"res", wobject_type::res}, 
-    {"log", wobject_type::logfile}, 
-    {"cache", wobject_type::cache}, 
-    {"vm", wobject_type::vm}, 
-    {"bin", wobject_type::binfile}, 
-    {"fnlib", wobject_type::functionlib}, 
-    {"wyls", wobject_type::systemfile}, 
-    {"properties", wobject_type::propeties},
+    {".res", wobject_type::res}, 
+    {".log", wobject_type::logfile}, 
+    {".cache", wobject_type::cache}, 
+    {".vm", wobject_type::vm}, 
+    {".bin", wobject_type::binfile}, 
+    {".fnlib", wobject_type::functionlib}, 
+    {".wyls", wobject_type::systemfile}, 
+    {".properties", wobject_type::propeties},
   };
 
   class wobject {
@@ -198,6 +182,29 @@ namespace wyland {
     std::unordered_map<std::string, wobject> objects;
     std::unordered_map<std::string, VMHandle> handles;
 
+    int add_file(const std::string &path) {
+      try {
+        stdfs::path myPath = stdfs::absolute(path);
+        stdfs::path myDest = ".wyland/res/" + myPath.filename().string() + myPath.extension().string();
+        out.log("Adding file ", myPath, "...");
+        return (int)stdfs::copy_file(myPath, myDest);
+      } catch(const std::exception& e) {
+        out.error("C++ Exception caught: ", e.what());
+      }
+
+      return -1;
+    }
+
+    int add_files(const std::string &dir) {
+      try {
+        stdfs::copy(dir, ".wylma/res/" + dir);
+      } catch (const std::exception& e) {
+        out.error("C++ Exception caught: ", e.what());
+        return -1;
+      }
+      return 0;
+    }
+
     void init() {
       if (!stdfs::exists(".wyland")) {
         std::cout << "Initializing..." << std::endl;
@@ -234,9 +241,18 @@ namespace wyland {
         object.second.loadself();
     }
 
-    int load(const std::string element, wobject_type type) {
+    int load(const std::vector<std::string> &argv) {
+      int err = 0;
+      for (size_t i = 0; i < argv.size(); i++) {
+        if (trimRT(argv[i]) == "--f") err += add_files(argv[++i]);
+        else err += add_file(argv[i]);
+      }
 
-      return 0;
+      return err;
+    }
+
+    int loadvm(const std::vector<std::string> &argv) {
+      auto flags = select_only("--", argv);
     }
 
   public:  
