@@ -6,6 +6,26 @@
 #include <unordered_map>
 #include <vector>
 #include <filesystem>
+#include <algorithm> 
+#include <cctype>
+#include <locale>
+
+void ltrim(std::string &s) {
+  s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
+    return !std::isspace(ch);
+  }));
+}
+
+void rtrim(std::string &s) {
+  s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
+    return !std::isspace(ch);
+  }).base(), s.end());
+}
+
+void trim(std::string &s) {
+  ltrim(s);
+  rtrim(s);
+}
 
 #include "kokuyo.hpp"
 #include "dlapi.h"
@@ -30,6 +50,7 @@ namespace wyland {
     vm,           // Files in .vm
     binfile,      // Files in .bin
     functionlib,  // Files in .fnlib
+    propeties,     // Files in .propeties
     systemfile,   // Files in .wyls
   };
 
@@ -41,6 +62,7 @@ namespace wyland {
     {"bin", wobject_type::binfile}, 
     {"fnlib", wobject_type::functionlib}, 
     {"wyls", wobject_type::systemfile}, 
+    {"properties", wobject_type::propeties},
   };
 
   class wobject {
@@ -62,10 +84,13 @@ namespace wyland {
     void loadself() {
       while (!eof()) {
         std::string line = readline();
+        trim(line);
+
+        if (line.empty()) continue;
+
         size_t endname = line.find(':');
         if (endname == std::string::npos) {
           out.error("Syntax error:\t", line, ". Expected ':' token.");
-          return;
         } else {
           auto pname = line.substr(0, endname);
           auto value = line.substr(endname + 1);
@@ -79,6 +104,11 @@ namespace wyland {
 
     bool open() {
       stream.open(path);
+      if (!stream.is_open()) {
+        std::ofstream creator(path);
+        creator.close();
+        stream.open(path);
+      }
       return stream.is_open();
     }
 
@@ -132,8 +162,9 @@ namespace wyland {
   class Wyland {
   private:
     stdfs::path workspace;
-    std::unordered_map<std::string, wobject&> objects;
+    std::unordered_map<std::string, wobject> objects;
     std::unordered_map<std::string, VMHandle> handles;
+    std::unordered_map<std::string, std::function<void(std::vector<std::string>)>>ftable;
 
     void init() {
       if (!stdfs::exists(".wyland")) {
@@ -167,7 +198,7 @@ namespace wyland {
 
     void load() {
       out.log("Loading ", objects.size(), " objects...");
-      for (const auto &object : objects) 
+      for (auto &object : objects) 
         object.second.loadself();
     }
 
@@ -190,6 +221,9 @@ namespace wyland {
         WylandExit = -1;
         return;
       }
+
+      launch();
+      load();
     }
 
     int WylandExit = 0;
