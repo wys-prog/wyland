@@ -9,6 +9,7 @@
 #include <algorithm> 
 #include <cctype>
 #include <locale>
+#include <ctime>
 
 #include "kokuyo.hpp"
 #include "dlapi.h"
@@ -19,6 +20,10 @@
 namespace stdfs = std::filesystem;
 
 namespace wyland {
+  inline uint64_t timeu64() {
+    return static_cast<uint64_t>(std::time(nullptr));
+  }
+  
   stream_writer out{{"std:out", &std::cout}, };
 
   enum class log_level {
@@ -58,6 +63,7 @@ namespace wyland {
     std::string  path;
     wobject_type type;
     std::unordered_map<std::string, std::string> properties;
+    std::vector<std::string> flags;
 
     void writeself() {
       if (!is_open()) open();
@@ -76,6 +82,7 @@ namespace wyland {
         size_t endname = line.find(':');
         if (endname == std::string::npos) {
           out.error("Syntax error:\t", line, ". Expected ':' token.");
+          flags.push_back(std::runtime_error("Invalid Syntax.").what());
         } else {
           auto pname = line.substr(0, endname);
           auto value = line.substr(endname + 1);
@@ -124,23 +131,86 @@ namespace wyland {
     std::fstream &get_stream() { return stream; }
 
     wobject() = default;
-    wobject(const stdfs::path &_p) : path(_p) {}
-    wobject(const stdfs::path &_p, wobject_type _t) : path(_p), type(_t) {}
+    wobject(const stdfs::path &_p) : path(_p) { open(); }
+    wobject(const stdfs::path &_p, wobject_type _t) : path(_p), type(_t) { open(); }
   };
 
   class VMHandle {
   private:
     kokuyoVM vm;
     wobject obj;
+    wobject logfile;
+    log_level llvl;
+    std::string ID;
+
+    void check_up() {
+      if (obj.properties.find("log-file") == obj.properties.end()) {
+        out.warn("Missing 'log-file' propertie in ", obj.path, ". Creating a new log file.");
+        logfile.path = ".wylma/vm/" + obj.properties["name"] + "/logs.log";
+        logfile.open();
+        obj.properties["log-file"] = logfile.path;
+      } else {
+        logfile.path = obj.properties["log-file"];
+        logfile.open();
+      }
+
+      if (obj.properties.find("log-type") == obj.properties.end()) {
+        out.warn("Missing 'log-level' properite in ", obj.path, ". Defaulting to 1 (err).");
+        llvl = log_level::err;
+      } else {
+        try {
+          llvl = log_level(std::stoi(obj.properties["log-level"]));
+        } catch(const std::exception& e) {
+          out.error("C++ Exception: ", e.what());
+          llvl = log_level::err;
+        }
+      }
+    }
+
   public:
     VMHandle() = default;
     
-    VMHandle(const std::string &name, stdfs::path path, log_level loglvl)  {
+    VMHandle(const std::string &name, stdfs::path path, 
+      log_level loglvl, stdfs::path _logfile) : llvl(loglvl) { // Create a VM
       obj.properties["name"] = "'" + name + "'";
       obj.properties["log-type"] = std::to_string(int(loglvl));
+      obj.properties["log-file"] = _logfile;
       obj.type = wobject_type::vm;
-      // save the file
+
+      logfile.path = _logfile;
+      logfile.open();
+      ID = name + std::to_string(timeu64());
+    }
+
+    VMHandle(const stdfs::path &path) { // Load a VM
+      obj.path = path;
+      obj.loadself();
+
+      if (obj.properties.find("name") == obj.properties.end()) {
+        out.error("Missing 'name' propertie in ", obj.path, ". Cannot load the virtual machine.");
+        return;
+      }
+
+      check_up();
+
+      ID = obj.properties["name"] + std::to_string(timeu64());
+    }
+
+    void close() {
       obj.writeself();
+      obj.close();
+    }
+
+    void invoke() {
+      logfile.close();
+      std::ofstream os(logfile.path);
+      out.add_stream("VM-LogHandle", os);
+      out.info("Virtual Machine invoked...");
+    }
+
+    void kill() {
+      out.remove_stream(ID);
+      logfile.close();
     }
   };
 
@@ -236,7 +306,7 @@ namespace wyland {
         object.second.loadself();
     }
 
-    int load(const std::vector<std::string> &argv) {
+    int add(const std::vector<std::string> &argv) {
       int err = 0;
       for (size_t i = 0; i < argv.size(); i++) {
         if (trimRT(argv[i]) == "--f") err += add_files(argv[++i]);
