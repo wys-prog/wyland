@@ -144,8 +144,11 @@ namespace wyland {
     }
   };
 
-  class WylandShell {
+  class Wyland {
   private:
+    stdfs::path workspace;
+    std::unordered_map<std::string, wobject> objects;
+    std::unordered_map<std::string, VMHandle> handles;
     std::unordered_map<std::string, std::function<int(std::vector<std::string>)>> ftable;
 
     int call(const std::string &name, const std::vector<std::string> &argv) {
@@ -159,7 +162,6 @@ namespace wyland {
       return ftable[name](argv);
     }
 
-  public:
     int execute(const std::string &cmd) {
       std::string cmdcpy = cmd;
       trim(cmdcpy);
@@ -174,13 +176,6 @@ namespace wyland {
 
       return 0;
     }
-  };
-
-  class Wyland {
-  private:
-    stdfs::path workspace;
-    std::unordered_map<std::string, wobject> objects;
-    std::unordered_map<std::string, VMHandle> handles;
 
     int add_file(const std::string &path) {
       try {
@@ -255,7 +250,7 @@ namespace wyland {
       auto flags = select_only("--", argv);
     }
 
-  public:  
+  public:
 
     Wyland(int argc, char *const argv[]) {
       workspace = "./.wyland/";
@@ -280,6 +275,15 @@ namespace wyland {
     }
 
     int WylandExit = 0;
+
+    void shell() {
+      while (true) {
+        std::string line;
+        std::cout << '[' << workspace << "]\n> " << std::flush;
+        std::getline(std::cin, line);
+        execute(line);
+      }
+    }
   };
 } // wyland
 
