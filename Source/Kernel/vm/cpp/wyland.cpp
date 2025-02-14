@@ -30,6 +30,7 @@ void trim(std::string &s) {
 #include "kokuyo.hpp"
 #include "dlapi.h"
 #include "wstream.hpp"
+#include "wargs.hpp"
 
 namespace stdfs = std::filesystem;
 
@@ -50,7 +51,7 @@ namespace wyland {
     vm,           // Files in .vm
     binfile,      // Files in .bin
     functionlib,  // Files in .fnlib
-    propeties,     // Files in .propeties
+    propeties,    // Files in .propeties
     systemfile,   // Files in .wyls
   };
 
@@ -159,12 +160,43 @@ namespace wyland {
     }
   };
 
+  class WylandShell {
+  private:
+    std::unordered_map<std::string, std::function<int(std::vector<std::string>)>> ftable;
+
+    int call(const std::string &name, const std::vector<std::string> &argv) {
+      if (ftable.find(name) == ftable.end()) {
+        std::string cmd = build_command(name, argv);
+        int exit_code = std::system(cmd.c_str());
+        if (exit_code != 0) out.error("Command '", cmd, "' exited with exit code: ", exit_code);
+        return exit_code;
+      }
+
+      return ftable[name](argv);
+    }
+
+  public:
+    int execute(const std::string &cmd) {
+      std::string cmdcpy = cmd;
+      trim(cmdcpy);
+
+      if (!cmdcpy.empty()) {
+        auto argv = extract_args(cmd);
+        std::string name = std::move(argv.front()); 
+        argv.erase(argv.begin());
+
+        return call(name, argv);
+      } 
+
+      return 0;
+    }
+  };
+
   class Wyland {
   private:
     stdfs::path workspace;
     std::unordered_map<std::string, wobject> objects;
     std::unordered_map<std::string, VMHandle> handles;
-    std::unordered_map<std::string, std::function<void(std::vector<std::string>)>>ftable;
 
     void init() {
       if (!stdfs::exists(".wyland")) {
@@ -200,6 +232,11 @@ namespace wyland {
       out.log("Loading ", objects.size(), " objects...");
       for (auto &object : objects) 
         object.second.loadself();
+    }
+
+    int load(const std::string element, wobject_type type) {
+
+      return 0;
     }
 
   public:  
