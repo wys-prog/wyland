@@ -16,6 +16,7 @@
 #include "wstream.hpp"
 #include "wargs.hpp"
 #include "algo.hpp"
+#include "wbin.hpp"
 
 namespace stdfs = std::filesystem;
 
@@ -68,8 +69,8 @@ namespace wyland {
     void writeself() {
       if (!is_open()) open();
       writeline("type:" + std::to_string(int(type)));
-      for (const auto &propertie : properties) 
-        writeline(propertie.first + ":" + propertie.second);
+      for (const auto &property : properties) 
+        writeline(property.first + ":" + property.second);
     }
 
     void loadself() {
@@ -142,6 +143,7 @@ namespace wyland {
     wobject logfile;
     log_level llvl;
     std::string ID;
+    std::vector<uint8_t> input;
 
     void check_up() {
       if (obj.properties.find("log-file") == obj.properties.end()) {
@@ -160,6 +162,12 @@ namespace wyland {
       } else {
         try {
           llvl = log_level(std::stoi(obj.properties["log-level"]));
+        } catch(const std::invalid_argument& e) {
+          out.error("C++ Exception: ", e.what());
+          llvl = log_level::err;
+        } catch(const std::out_of_range& e) {
+          out.error("C++ Exception: ", e.what());
+          llvl = log_level::err;
         } catch(const std::exception& e) {
           out.error("C++ Exception: ", e.what());
           llvl = log_level::err;
@@ -167,12 +175,29 @@ namespace wyland {
       }
     }
 
+    void check_input() {
+      if (obj.properties.find("input") == obj.properties.end()) {
+        std::ifstream file(obj.properties["input"]);
+        if (file) {
+          out.info("Loading input from ", obj.properties["input"], "...");
+          wbin::read(obj.properties["input"], input);
+          return;
+        } else out.warn("Failed to open input file: ", obj.properties["input"]);
+      } else out.error("Missing 'input' property in ", obj.path, ". Cannot load input.");
+
+      out.info("Loading default input...");
+      wbin::read(".wyland/templates/disk.bin", input);
+    }
+
   public:
+    std::string get_name() { return obj.properties["name"]; }
+    log_level get_log_level() { return llvl; }
+
     VMHandle() = default;
     
     VMHandle(const std::string &name, stdfs::path path, 
       log_level loglvl, stdfs::path _logfile) : llvl(loglvl) { // Create a VM
-      obj.properties["name"] = "'" + name + "'";
+      obj.properties["name"] = name;
       obj.properties["log-type"] = std::to_string(int(loglvl));
       obj.properties["log-file"] = _logfile;
       obj.type = wobject_type::vm;
@@ -187,7 +212,7 @@ namespace wyland {
       obj.loadself();
 
       if (obj.properties.find("name") == obj.properties.end()) {
-        out.error("Missing 'name' propertie in ", obj.path, ". Cannot load the virtual machine.");
+        out.error("Missing 'name' property in ", obj.path, ". Cannot load the virtual machine.");
         return;
       }
 
@@ -201,16 +226,24 @@ namespace wyland {
       obj.close();
     }
 
-    void invoke() {
+    void load() {
       logfile.close();
       std::ofstream os(logfile.path);
-      out.add_stream("VM-LogHandle", os);
-      out.info("Virtual Machine invoked...");
+      out.add_stream(ID, os);
+      out.info("Virtual Machine loaded...");
+    }
+
+    void invoke() {
+      out.info("Invoking virtual machine ", ID, "...");
+      vm.invoke(input);
     }
 
     void kill() {
+      out.info("Killing virtual machine ", ID, "...");
       out.remove_stream(ID);
-      logfile.close();
+      out.info("Killing ", ID, "'s virtual machine handle...");
+      obj.writeself();
+      obj.close();
     }
   };
 
@@ -277,7 +310,8 @@ namespace wyland {
           ".wyland/", ".wyland/res/", ".wyland/libs/", 
           ".wyland/vm/", ".wyland/logs/", ".wyland/cache/", 
           ".wyland/shell/", ".wyland/shell/bin", ".wyland/shell/templates/", 
-          ".wyland/logs/wyland.log",
+          ".wyland/logs/wyland.log", ".wyland/logs/shell.log", 
+          ".wyland/templates/disk.bin",
          }) {
           stdfs::path path = stdfs::absolute(p);
           stdfs::create_directories(path);
@@ -317,7 +351,14 @@ namespace wyland {
     }
 
     int loadvm(const std::vector<std::string> &argv) {
-      auto flags = select_only("--", argv);
+      std::vector<VMHandle> loadedHandles;
+      out.log("Loading ", argv.size(), " elements...");
+      for (size_t i = 0; i < argv.size(); i++) {
+        loadedHandles.push_back(VMHandle(argv[i]));
+        out.log(i, "/", argv.size(), " loaded.\r");
+      }
+      #error VMHandle::load() musn't take arguments.
+      return 0;
     }
 
   public:
@@ -351,7 +392,7 @@ namespace wyland {
         std::string line;
         std::cout << '[' << workspace << "]\n> " << std::flush;
         std::getline(std::cin, line);
-        execute(line);
+        WylandExit += execute(line);
       }
     }
   };
