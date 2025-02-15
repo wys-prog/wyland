@@ -190,8 +190,18 @@ namespace wyland {
     }
 
   public:
+    static bool is_vm(const stdfs::path &path) {
+      wobject obj(path);
+      if (obj.properties.find("type") == obj.properties.end()
+       && obj.properties["type"] != std::to_string(int(wobject_type::vm))
+      ) return false;
+
+      return true;
+    }
+
     std::string get_name() { return obj.properties["name"]; }
     log_level get_log_level() { return llvl; }
+    std::string get_id() { return ID; }
 
     VMHandle() = default;
     
@@ -245,6 +255,22 @@ namespace wyland {
       obj.writeself();
       obj.close();
     }
+
+    VMHandle &operator=(const VMHandle &other) {
+      if (this != &other) {
+        vm = other.vm;
+        obj.path = other.obj.path;
+        logfile.path = other.logfile.path;
+        llvl = other.llvl;
+        ID = other.ID;
+        input = other.input;
+        // Open files.
+        obj.open();
+        logfile.open();
+      }
+
+      return *this;
+    }
   };
 
   class Wyland {
@@ -252,33 +278,6 @@ namespace wyland {
     stdfs::path workspace;
     std::unordered_map<std::string, wobject> objects;
     std::unordered_map<std::string, VMHandle> handles;
-    std::unordered_map<std::string, std::function<int(std::vector<std::string>)>> ftable;
-
-    int call(const std::string &name, const std::vector<std::string> &argv) {
-      if (ftable.find(name) == ftable.end()) {
-        std::string cmd = build_command(name, argv);
-        int exit_code = std::system(cmd.c_str());
-        if (exit_code != 0) out.error("Command '", cmd, "' exited with exit code: ", exit_code);
-        return exit_code;
-      }
-
-      return ftable[name](argv);
-    }
-
-    int execute(const std::string &cmd) {
-      std::string cmdcpy = cmd;
-      trim(cmdcpy);
-
-      if (!cmdcpy.empty()) {
-        auto argv = extract_args(cmd);
-        std::string name = std::move(argv.front()); 
-        argv.erase(argv.begin());
-
-        return call(name, argv);
-      } 
-
-      return 0;
-    }
 
     int add_file(const std::string &path) {
       try {
@@ -335,7 +334,7 @@ namespace wyland {
     }
 
     void load() {
-      out.log("Loading ", objects.size(), " objects...");
+      out.info("Loading ", objects.size(), " objects...");
       for (auto &object : objects) 
         object.second.loadself();
     }
@@ -351,13 +350,92 @@ namespace wyland {
     }
 
     int loadvm(const std::vector<std::string> &argv) {
-      std::vector<VMHandle> loadedHandles;
-      out.log("Loading ", argv.size(), " elements...");
+      uint64_t count = 0;
+      out.info("Loading ", argv.size(), " elements...");
       for (size_t i = 0; i < argv.size(); i++) {
-        loadedHandles.push_back(VMHandle(argv[i]));
+        if (!VMHandle::is_vm(argv[i])) {
+          out.error("Invalid VM file: ", argv[i]);
+          continue;
+        }
+        // Load the virtual machine
+        VMHandle handle(argv[i]);
+        handles[handle.get_id()] = handle;
         out.log(i, "/", argv.size(), " loaded.\r");
       }
-      #error VMHandle::load() musn't take arguments.
+
+      out.info("Loaded ", count, " virtual machines.");
+
+      return 0;
+    }
+
+    int unloadvm(const std::vector<std::string> &argv) {
+      uint64_t count = 0;
+      out.info("Unloading ", argv.size(), " elements...");
+      for (size_t i = 0; i < argv.size(); i++) {
+        if (handles.find(argv[i]) == handles.end()) {
+          out.error("Invalid VM ID: ", argv[i]);
+          continue;
+        }
+        // Unload the virtual machine
+        handles[argv[i]].close();
+        handles.erase(argv[i]);
+        out.info(i, "/", argv.size(), " unloaded.\r");
+      }
+
+      return 0;
+    }
+
+    int invoke(const std::vector<std::string> &argv) {
+      uint64_t count = 0;
+      out.info("Invoking ", argv.size(), " elements...");
+      for (size_t i = 0; i < argv.size(); i++) {
+        if (handles.find(argv[i]) == handles.end()) {
+          out.error("Invalid VM ID: ", argv[i]);
+          continue;
+        }
+        // Invoke the virtual machine
+        handles[argv[i]].invoke();
+        out.info(i, "/", argv.size(), " invoked.\r");
+      }
+
+      return 0;
+    }
+
+    int kill(const std::vector<std::string> &argv) {
+      uint64_t count = 0;
+      out.log("Killing ", argv.size(), " elements...");
+      for (size_t i = 0; i < argv.size(); i++) {
+        if (handles.find(argv[i]) == handles.end()) {
+          out.error("Invalid VM ID: ", argv[i]);
+          continue;
+        }
+        // Kill the virtual machine
+        handles[argv[i]].kill();
+        out.log(i, "/", argv.size(), " killed.\r");
+      }
+
+      return 0;
+    }
+
+    int listvm(const std::vector<std::string> &argv) { // Lists all VMs (loaded )
+      for (auto &VM : handles) 
+        out.log("ID: ", VM.first, " name: ", VM.second.get_name());
+      
+      out.log("Total: ", handles.size(), " virtual machines loaded.");
+
+      return 0;
+    }
+
+    int list(const std::vector<std::string> &argv) {
+      for (auto &object : objects) {
+        out.log(
+          "———————————————"
+          "Type: ", object.second.type, 
+          " Path: ", object.second.path, 
+          " Properties: ", object.second.properties.size()
+        );
+      }
+
       return 0;
     }
 
@@ -377,7 +455,7 @@ namespace wyland {
         out.error("Wyland is not initalized in this directory.");
         out.error(workspace, ": No such directory.");
         out.log("Aborting.");
-        WylandExit = -1;
+        WylandExit += -1;
         return;
       }
 
@@ -386,15 +464,6 @@ namespace wyland {
     }
 
     int WylandExit = 0;
-
-    void shell() {
-      while (true) {
-        std::string line;
-        std::cout << '[' << workspace << "]\n> " << std::flush;
-        std::getline(std::cin, line);
-        WylandExit += execute(line);
-      }
-    }
   };
 } // wyland
 
