@@ -18,15 +18,14 @@
 #include "algo.hpp"
 #include "wbin.hpp"
 
-namespace stdfs = std::filesystem;
-
 namespace wyland {
+  namespace stdfs = std::filesystem;
+  stream_writer out{{"std:out", &std::cout}, };
+
   inline uint64_t timeu64() {
     return static_cast<uint64_t>(std::time(nullptr));
   }
   
-  stream_writer out{{"std:out", &std::cout}, };
-
   enum class log_level {
     all,
     err, 
@@ -240,7 +239,7 @@ namespace wyland {
       logfile.close();
       std::ofstream os(logfile.path);
       out.add_stream(ID, os);
-      out.info("Virtual Machine loaded...");
+      out.info("Virtual Machine loaded.");
     }
 
     void invoke() {
@@ -276,8 +275,20 @@ namespace wyland {
   class Wyland {
   private:
     stdfs::path workspace;
+    stdfs::path cdir; // Current Directory
     std::unordered_map<std::string, wobject> objects;
     std::unordered_map<std::string, VMHandle> handles;
+    std::unordered_map<std::string, std::function<int(std::vector<std::string>)>> ftable;
+  
+    int call(const std::string &name, const std::vector<std::string> &argv) {
+      if (ftable.find(name) == ftable.end()) {
+        std::vector<std::string> args = argv;
+        args.insert(args.begin(), name);
+        return ftable["--e"](args);
+      }
+
+      return ftable[name](argv);
+    }
 
     int add_file(const std::string &path) {
       try {
@@ -304,20 +315,19 @@ namespace wyland {
 
     void init() {
       if (!stdfs::exists(".wyland")) {
-        std::cout << "Initializing..." << std::endl;
+        out.log("Initializing...");
         for (auto &p : {
           ".wyland/", ".wyland/res/", ".wyland/libs/", 
           ".wyland/vm/", ".wyland/logs/", ".wyland/cache/", 
           ".wyland/shell/", ".wyland/shell/bin", ".wyland/shell/templates/", 
-          ".wyland/logs/wyland.log", ".wyland/logs/shell.log", 
-          ".wyland/templates/disk.bin",
+          ".wyland/shell/configs/", ".wyland/res/system/", 
          }) {
           stdfs::path path = stdfs::absolute(p);
           stdfs::create_directories(path);
           out.log("Created: ", path);
         }
       } else {
-        std::cout << "Wyland already initialized." << std::endl;
+        out.log("Wyland is already initialized in this directory.");
       }
     }
 
@@ -430,7 +440,7 @@ namespace wyland {
       for (auto &object : objects) {
         out.log(
           "———————————————"
-          "Type: ", object.second.type, 
+          "Type: ", (int)object.second.type, 
           " Path: ", object.second.path, 
           " Properties: ", object.second.properties.size()
         );
@@ -439,9 +449,126 @@ namespace wyland {
       return 0;
     }
 
+    int shell(const std::vector<std::string> &argv) {
+      if (!stdfs::exists(".wyland/shell")) {
+        out.error("Shell is not initalized in this directory.");
+        return -1;
+      }
+
+      std::string cmd;
+      while (true) {
+        std::cout << '[' << workspace << "]\n % ";
+        std::getline(std::cin, cmd);
+        execute(cmd);
+      }
+
+      return WylandExit;
+    }
+
+    int run(const std::vector<std::string> &argv) {
+      if (argv.size() < 1) {
+        out.error("Exepcted a path to a file.");
+        return -1;
+      }
+
+      std::string path = argv[0];
+      if (!VMHandle::is_vm(path)) {
+        out.error("Invalid VM file: ", path);
+        return -1;
+      }
+
+      VMHandle handle(path);
+      
+      handle.load();
+      handle.invoke();
+
+      return 0;
+    }
+
+    int create_vm(const std::vector<std::string> &argv) {
+      if (argv.size() < 1) {
+        out.error("Expected a name for the virtual machine.");
+        return -1;
+      }
+
+      std::string name = argv[0];
+      stdfs::path path = ".wyland/vm/" + name + ".vm";
+      stdfs::path logpath = ".wyland/logs/" + name + ".log";
+      VMHandle handle(name, path, log_level::err, logpath);
+
+      handles[handle.get_id()] = handle;
+      return 0;
+    }
+
+    int edit_properties(const std::vector<std::string> &argv) {
+      // --edit <file>, [propertie, value, propertie, value, ...]
+      if (argv.size() < 3) {
+        out.error("Expected a file and propertie-value pairs.");
+        return -1;
+      }
+
+      std::string path = argv[0];
+      if (objects.find(path) == objects.end()) {
+        out.error("Invalid file: ", path);
+        return -1;
+      }
+
+      wobject &obj = objects[path];
+      for (size_t i = 1; i < argv.size(); i += 2) {
+        if (i + 1 >= argv.size()) {
+          out.error("Expected a value for propertie: ", argv[i]);
+          return -1;
+        }
+
+        obj.properties[argv[i]] = argv[i + 1];
+      }
+      return 0;
+    }
+
+    void loadtable() {
+      ftable["--add"] = [this](std::vector<std::string> argv) { return add(argv); };
+      ftable["--loadvm"] = [this](std::vector<std::string> argv) { return loadvm(argv); };
+      ftable["--unloadvm"] = [this](std::vector<std::string> argv) { return unloadvm(argv); }; 
+      ftable["--invoke"] = [this](std::vector<std::string> argv) { return invoke(argv); };
+      ftable["--kill"] = [this](std::vector<std::string> argv) { return kill(argv); };
+      ftable["--listvm"] = [this](std::vector<std::string> argv) { return listvm(argv); };
+      ftable["--list"] = [this](std::vector<std::string> argv) { return list(argv); };
+      ftable["--shell"] = [this](std::vector<std::string> argv) { return shell(argv); };
+      ftable["--init"] = [this](std::vector<std::string> argv) { init(); return 0; };
+      ftable["--exec"] = [this](std::vector<std::string> argv) { return execute(to_string(argv)); };
+      ftable["--run"] = [this](std::vector<std::string> argv) { return run(argv); };
+      ftable["--exit"] = [this](std::vector<std::string> argv) { exit(0); return 0; };
+      ftable["exit"] = [this](std::vector<std::string> argv) { exit(0); return 0; };
+      ftable["--e"] = [this](std::vector<std::string> argv) { return std::system(to_string(argv).c_str()); };
+      ftable["--createvm"] = [this](std::vector<std::string> argv) { return create_vm(argv); };
+      ftable["--edit"] = [this](std::vector<std::string> argv) { return edit_properties(argv); };
+      ftable["--help"] = [this](std::vector<std::string> argv) {
+        out.info("Wyland —— 1.1");
+        out.info("Commands:");
+        out.info("  --add <file>...: Add files to the workspace.");
+        out.info("  --loadvm <file>...: Load virtual machines.");
+        out.info("  --unloadvm <id>...: Unload virtual machines.");
+        out.info("  --invoke <id>...: Invoke virtual machines.");
+        out.info("  --kill <id>...: Kill virtual machines.");
+        out.info("  --listvm: List all loaded virtual machines.");
+        out.info("  --list: List all objects in the workspace.");
+        out.info("  --shell: Launch the Wyland shell.");
+        out.info("  --init: Initialize Wyland in the current directory.");
+        out.info("  --exec <command>...: Execute a command.");
+        out.info("  --run <file>: Run a virtual machine.");
+        out.info("  --exit: Exit Wyland.");
+        out.info("  exit: Exit Wyland.");
+        out.info("  --e <command>...: Execute a system command.");
+        out.info("  --createvm <name>: Create a virtual machine.");
+        out.info("  --edit <file> <propertie> <value>...: Edit properties of a file.");
+        return 0;
+      };
+    }
+
   public:
 
-    Wyland(int argc, char *const argv[]) {
+    Wyland() {
+      loadtable();
       workspace = "./.wyland/";
 
       std::ofstream wyland_log;
@@ -454,8 +581,7 @@ namespace wyland {
       if (!stdfs::exists(workspace)) {
         out.error("Wyland is not initalized in this directory.");
         out.error(workspace, ": No such directory.");
-        out.log("Aborting.");
-        WylandExit += -1;
+        out.info("Use wyland --init to initialize Wyland in this directory.");
         return;
       }
 
@@ -463,13 +589,37 @@ namespace wyland {
       load();
     }
 
+    int execute(const std::string &cmd) {
+      std::string cmdcpy = cmd;
+      trim(cmdcpy);
+
+      if (!cmdcpy.empty()) {
+        auto argv = extract_args(cmd);
+        std::string name = extract_first(argv);
+
+        int ext = call(name, argv);
+        if (ext != 0) {
+          out.error("Failed to execute command: ", cmd, " with exit code: ", ext, ".");
+          return ext;
+        }
+      } 
+
+      return 0;
+    }
+
     int WylandExit = 0;
   };
+
 } // wyland
 
 int main(int argc, char *const argv[]) {
   std::cout << "Wyland —— 1.1" << std::endl;
-  wyland::Wyland land(argc, argv);
+  wyland::Wyland land;
+
+  for (int i = 1; i < argc; i++) {
+    land.WylandExit += land.execute(argv[i]);
+  }
 
   return land.WylandExit;
 }
+

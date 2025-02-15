@@ -45,7 +45,7 @@ namespace wyland {
     void log(Args&&... args) {
       for (auto& [name, out] : outputs) {
         (*out) << calls++ << ": ";
-        ((*out) << ... << args) << RESET << std::endl;
+        ((*out) << ... << args) << std::endl;
       }
     }
 

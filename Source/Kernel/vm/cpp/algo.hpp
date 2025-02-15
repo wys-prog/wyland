@@ -43,4 +43,35 @@ namespace wyland {
 
     return buff;
   }
+
+  template <typename T> 
+  std::string to_string(const std::vector<T> &vecT) {
+    std::string buff = "[";
+    for (const auto &elem : vecT) {
+      buff += std::to_string(elem) + ", ";
+    }
+    buff.pop_back();
+    buff.pop_back();
+    buff += "]";
+    return buff;
+  }
+
+  std::string to_string(const std::vector<std::string> &vecT) {
+    std::string buff = "[";
+    for (const auto &elem : vecT) {
+      buff += elem + ", ";
+    }
+    buff.pop_back();
+    buff.pop_back();
+    buff += "]";
+    return buff;
+  }
+
+  template <typename T> 
+  T extract_first(std::vector<T> &vecT) {
+    if (vecT.empty()) { return T(); }
+    T buff = vecT[0];
+    vecT.erase(vecT.begin());
+    return buff;
+  }
 } // namespace wyland

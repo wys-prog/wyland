@@ -80,6 +80,7 @@
     "iomanip": "cpp",
     "__availability": "cpp",
     "__config": "cpp",
-    "complex": "cpp"
+    "complex": "cpp",
+    "filesystem": "cpp"
   }
 }
