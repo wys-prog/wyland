@@ -57,13 +57,10 @@ namespace wyland {
   }
 
   std::string to_string(const std::vector<std::string> &vecT) {
-    std::string buff = "[";
+    std::string buff = "";
     for (const auto &elem : vecT) {
-      buff += elem + ", ";
+      buff += elem;
     }
-    buff.pop_back();
-    buff.pop_back();
-    buff += "]";
     return buff;
   }
 

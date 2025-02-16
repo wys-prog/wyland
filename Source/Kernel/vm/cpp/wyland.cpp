@@ -276,9 +276,11 @@ namespace wyland {
   private:
     stdfs::path workspace;
     stdfs::path cdir; // Current Directory
+    std::ofstream wyland_log;
     std::unordered_map<std::string, wobject> objects;
     std::unordered_map<std::string, VMHandle> handles;
     std::unordered_map<std::string, std::function<int(std::vector<std::string>)>> ftable;
+    std::unordered_map<std::string, std::function<void()>> exCallables; // Call them when the program exits.
   
     int call(const std::string &name, const std::vector<std::string> &argv) {
       if (ftable.find(name) == ftable.end()) {
@@ -497,6 +499,8 @@ namespace wyland {
       VMHandle handle(name, path, log_level::err, logpath);
 
       handles[handle.get_id()] = handle;
+      out.info("Created virtual machine: ", name, " with ID: ", handle.get_id(), ".");
+      exCallables[handle.get_id()] = [&]() { handle.close(); };
       return 0;
     }
 
@@ -522,6 +526,8 @@ namespace wyland {
 
         obj.properties[argv[i]] = argv[i + 1];
       }
+
+      exCallables[path] = [&]() { obj.writeself(); };
       return 0;
     }
 
@@ -571,7 +577,6 @@ namespace wyland {
       loadtable();
       workspace = "./.wyland/";
 
-      std::ofstream wyland_log;
       wyland_log.open(".wyland/logs/wyland.log");
 
       if (wyland_log.is_open()) {
@@ -614,12 +619,21 @@ namespace wyland {
 
 int main(int argc, char *const argv[]) {
   std::cout << "Wyland —— 1.1" << std::endl;
-  wyland::Wyland land;
+  
+  try {
+    wyland::Wyland land;
 
-  for (int i = 1; i < argc; i++) {
-    land.WylandExit += land.execute(argv[i]);
+    for (int i = 1; i < argc; i++) {
+      land.WylandExit += land.execute(argv[i]);
+    }
+
+    return land.WylandExit;
+  } catch(const std::exception& e) {
+    wyland::out.error("C++ Exception: ", e.what());
+  } catch(...) {
+    wyland::out.error("C++ Exception: Unknown");
   }
-
-  return land.WylandExit;
+  
+  return -1;
 }
 

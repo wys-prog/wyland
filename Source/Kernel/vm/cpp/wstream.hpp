@@ -43,8 +43,9 @@ namespace wyland {
     // Generic logging function
     template <typename... Args>
     void log(Args&&... args) {
+      calls++;
       for (auto& [name, out] : outputs) {
-        (*out) << calls++ << ": ";
+        (*out) << calls << ": ";
         ((*out) << ... << args) << std::endl;
       }
     }
