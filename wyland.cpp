@@ -84,7 +84,7 @@
   Here's how 8 bytes are organized:
 
  +--------------+-------------+------+---------------+------------+----------+-------+
- | size in byte |      1      |  1   |      1        |      1     |    2     |   2   |
+ | size in byte |      1      |  1   |       1       |      1     |    2     |   2   |
  +--------------+-------------+------+---------------+------------+----------+-------+
  | parameter    | instruction | size | register-type | value-type | register | value |
  +--------------+-------------+------+---------------+------------+----------|-------+
@@ -163,4 +163,13 @@
     return unpacked;
   }
 
-  
+  template <typename T>
+  void load(const uir_t &unpacked) {
+    /* load dst, src
+       dst must be a register, 
+       and src must be direct value. */
+    if (unpacked.rt != 0x00 || unpacked.rv != 0x01) throw std::runtime_error("Invalid operand");
+    if (unpacked.rv * sizeof(T)) throw std::out_of_range("Too large index.");
+    auto buff = read(sizeof(T));
+
+  }
