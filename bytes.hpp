@@ -31,4 +31,11 @@ namespace bytemanip {
     return value;
   }
 
+  template <typename T>
+  void fill(uint8_t *what, const T &with, size_t lenofwhat) {
+    unsigned long min = (sizeof(with) > lenofwhat) ? (lenofwhat : sizeof(with));
+    auto array = to_bin(with);
+    for (unsigned long i = 0; i < min; i++) 
+      what[i] = array[i];
+  }
 } // namespace bytemanip

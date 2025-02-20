@@ -80,8 +80,10 @@
 
 /* III - Instructions
   In x87 instructions takes 8 bytes.
-  So for instructions, we'll use @uint64_t.
-  Here's how 8 bytes are organized:
+  So for instructions, we can use @uint64_t, but it can 
+  "complicate" processing with reading from a file, casting etc.
+  Because of this, we'll use the type @ir_t. We'll define it later.
+  Here's how the 8 bytes are organized:
 
  +--------------+-------------+------+---------------+------------+----------+-------+
  | size in byte |      1      |  1   |       1       |      1     |    2     |   2   |
@@ -102,8 +104,13 @@
     }
   } ir_t; // Instruction Representation Type.
 
-  /* 2 - Instruction set */
-
+  /* 2 - Instruction set 
+    Instruction set is simply a set, wich contains all 
+    supported instructions. 
+    Notice: instructions are enumerated in a uint8_t 
+    because the instruction is only 1 byte (see the higher example). 
+    If we give an instruction that's not present in this set, 
+    the core will just throw an error. */
   enum instructions : uint8_t {
     i_nop,
     i_load, 
@@ -145,17 +152,17 @@
     uint16_t vv; // Value Value
   } uir_t;
 
-  ir_t fetch() {
-    ir_t ir{0x00};
+  ir_t fetch() {    // fetch() is called to get a ir_t, and inc. the IP.
+    ir_t ir{0x00};  // After fetching, we need to unpack arguments.
     for (char i = 0; i < 8; i++) 
       ir[i] = (uint8_t)read(1, r64[63]++);
     return ir;
   }
 
-  uir_t unpack(const ir_t &ir) {
-    uir_t unpacked{0};
-    unpacked.in = ir.parameters[0];
-    unpacked.is = ir.parameters[1];
+  uir_t unpack(const ir_t &ir) {    // Fetched. Now, unpacking.
+    uir_t unpacked{0};              // Pretty simple, because 
+    unpacked.in = ir.parameters[0]; // We use an array instead 
+    unpacked.is = ir.parameters[1]; // an uint64.
     unpacked.rt = ir.parameters[2];
     unpacked.vt = ir.parameters[3];
     unpacked.rv |= (ir.parameters[4] << 8) | ir.parameters[5];
@@ -163,13 +170,72 @@
     return unpacked;
   }
 
-  template <typename T>
-  void load(const uir_t &unpacked) {
-    /* load dst, src
-       dst must be a register, 
-       and src must be direct value. */
-    if (unpacked.rt != 0x00 || unpacked.rv != 0x01) throw std::runtime_error("Invalid operand");
-    if (unpacked.rv * sizeof(T)) throw std::out_of_range("Too large index.");
-    auto buff = read(sizeof(T));
+  /* To manipulate bytes, we need the bytes.hpp file. */
+  #include "bytes.hpp"
 
+  void load(const uir_t &unpacked) {
+    switch (unpacked.vt) {
+      case 1: // Value is embeeded.
+        switch (unpacked.is) {
+          case 8:  r8[unpacked.rv]  = unpacked.vv; break;
+          case 16: r16[unpacked.rv] = unpacked.vv; break;
+          case 32: r32[unpacked.rv] = unpacked.vv; break;
+          case 64: r64[unpacked.rv] = unpacked.vv; break;
+          default: throw std::runtime_error("Invalid operand size."); break;
+        }
+        break;
+      case 0: // Value isn't embeeded.
+        switch (unpacked.is) {
+          case 8:  r8[unpacked.rv]  = bytemanip::from_bin<uint8_t>(read(1)); break;
+          case 16: r16[unpacked.rv] = bytemanip::from_bin<uint16_t>(read(2)); break;
+          case 32: r32[unpacked.rv] = bytemanip::from_bin<uint32_t>(read(4)); break;
+          case 64: r64[unpacked.rv] = bytemanip::from_bin<uint64_t>(read(8)); break;
+          default: throw std::runtime_error("Invalid operand size."); break;
+        }
+        break;
+      default: throw std::runtime_error("Invalid type."); break;
+    }
+  }
+
+  void store(const uir_t &unpacked) {
+    // unpacked.vt cannot be embeeded, it's addresses.
+    if (unpacked.vt) throw std::runtime_error("Invalid type.");
+
+    switch (unpacked.is) {
+      case 8:  memory[unpacked.vv] = r8[unpacked.rv]; break;
+      case 16: bytemanip::fill(memory, r16[unpacked.rv], 512); break;
+      case 32: bytemanip::fill(memory, r32[unpacked.rv], 512); break;
+      case 64: bytemanip::fill(memory, r64[unpacked.rv], 512); break;
+      default: throw std::runtime_error("Invalid size."); break;
+    }
+  }
+
+  void oprimm(const uir_t &unpacked) {
+    switch (unpacked.is) {
+      case 8:  r8[unpacked.rv]  = unpacked.vv; break;
+      case 16: r16[unpacked.rv] = unpacked.vv; break;
+      case 32: r32[unpacked.rv] = unpacked.vv; break;
+      case 64: r64[unpacked.rv] = unpacked.vv; break;
+      default: throw std::runtime_error("Invalid size."); break;
+    }
+  }
+
+  void mov(const uir_t &unpacked) {
+    switch (unpacked.rt) {
+      case 0: // Destination is a register.
+        switch (unpacked.vt) {
+          case 0: break;
+          case 1: break;
+          default: throw std::invalid_argument("Need an argument between 0 and 1."); break;
+        }
+        break;
+      case 1: // Destination is an address.
+        switch (unpacked.vt) {
+          case 0: break;
+          case 1: break;
+          default: throw std::invalid_argument("Need an argument between 0 and 1."); break;
+        }
+        break;
+      default: throw std::invalid_argument("Need an argument between 0 and 1."); break;
+    }
   }
