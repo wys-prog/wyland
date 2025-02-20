@@ -221,8 +221,8 @@
   
   /* Now, let's create some generic functions. */
 
-  template <typename TyA, typename TyB>
-  void opRIMM(const uir_t &unpacked, std::function<void(TyA&, TyB&)> &fn) {
+  template <typename TyF>
+  void opRIMM(const uir_t &unpacked, std::function<TyF> &fn) {
     switch (unpacked.is) {
       case 8:  fn(r8[unpacked.rv], unpacked.vv); break;
       case 16: fn(r16[unpacked.rv], unpacked.vv); break;
@@ -232,8 +232,8 @@
     }
   }
 
-  template <typename TyA, typename TyB>
-  void opIMMR(const uir_t &unpacked, std::function<void(TyA&, TyB&)> &fn) {
+  template <typename TyF>
+  void opIMMR(const uir_t &unpacked, std::function<TyF> &fn) {
     switch (unpacked.is) {
       case 8:  fn(unpacked.vv, r8[unpacked.rv]); break;
       case 16: fn(unpacked.vv, r16[unpacked.rv]); break;
@@ -243,8 +243,8 @@
     }
   }
 
-  template <typename TyA, typename TyB>
-  void opRR(const uir_t &unpacked, std::function<void(TyA&, TyB&)> &fn) {
+  template <typename TyF>
+  void opRR(const uir_t &unpacked, std::function<TyF> &fn) {
     switch (unpacked.is) {
       case 8:  fn(r8[unpacked.vv], r8[unpacked.rv]); break;
       case 16: fn(r16[unpacked.vv], r16[unpacked.rv]); break;
@@ -254,8 +254,8 @@
     }
   }
 
-  template <typename TyA, typename TyB>
-  void opIMMIMM(const uir_t &unpacked, std::function<void(TyA&, TyB&)> &fn) {
+  template <typename TyF>
+  void opIMMIMM(const uir_t &unpacked, std::function<TyF> &fn) {
     fn(unpacked.vv, unpacked.rv);
   }
 
