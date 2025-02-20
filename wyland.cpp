@@ -39,15 +39,6 @@
   uint8_t* external_hardware_segment = memory + EXTERNAL_HARDWARE_SEGMENT_START;
   uint8_t* system_segment = memory + SYSTEM_SEGMENT_START;
 
-  uint8_t *read(uint64_t count, uint64_t from = r64[63]) {
-    if (from >= MEMORY_SIZE || count >= MEMORY_SIZE) 
-      throw std::out_of_range("Reading out of memory capacity.");
-    uint8_t *buff = new uint8_t[count];
-    for (uint64_t i = 0; i < count; i++) 
-      buff[i] = memory[from+i];
-    return buff;
-  }
-
 /* II - Registers 
   Registers are something like a "global variable".
   They have a specific size, and can be used to calculate 
@@ -78,6 +69,15 @@
   char flags_flow; /* 1: Overflow, -1: Underflow, 0: Nice */
   char flags_eq;   /* 1: NEQ, 0: EQ */
 
+  // Read function that let us to read. (Wow.)
+  uint8_t *read(uint64_t count, uint64_t from = r64[63]) {
+    if (from >= MEMORY_SIZE || count >= MEMORY_SIZE) 
+      throw std::out_of_range("Reading out of memory capacity.");
+    uint8_t *buff = new uint8_t[count];
+    for (uint64_t i = 0; i < count; i++) 
+      buff[i] = memory[from+i];
+    return buff;
+  }
 /* III - Instructions
   In x87 instructions takes 8 bytes.
   So for instructions, we can use @uint64_t, but it can 
@@ -155,7 +155,7 @@
   ir_t fetch() {    // fetch() is called to get a ir_t, and inc. the IP.
     ir_t ir{0x00};  // After fetching, we need to unpack arguments.
     for (char i = 0; i < 8; i++) 
-      ir[i] = (uint8_t)read(1, r64[63]++);
+      ir[i] = read(1, r64[63]++)[0];
     return ir;
   }
 
@@ -210,14 +210,53 @@
     }
   }
 
-  void oprimm(const uir_t &unpacked) {
+  /* Basic instructions like MOV, ADD, etc. can be really
+    LONG to code in a single function. To reduce the line 
+    of code, we'll use two other libraries, 
+    <functionnal> (to get std::function<T(...)>) and 
+    "operatirs.hpp", to get basic functions. */
+  
+    #include <functional>
+    #include "operators.hpp"
+  
+  /* Now, let's create some generic functions. */
+
+  template <typename TyA, typename TyB>
+  void opRIMM(const uir_t &unpacked, std::function<void(TyA&, TyB&)> &fn) {
     switch (unpacked.is) {
-      case 8:  r8[unpacked.rv]  = unpacked.vv; break;
-      case 16: r16[unpacked.rv] = unpacked.vv; break;
-      case 32: r32[unpacked.rv] = unpacked.vv; break;
-      case 64: r64[unpacked.rv] = unpacked.vv; break;
+      case 8:  fn(r8[unpacked.rv], unpacked.vv); break;
+      case 16: fn(r16[unpacked.rv], unpacked.vv); break;
+      case 32: fn(r32[unpacked.rv], unpacked.vv); break;
+      case 64: fn(r64[unpacked.rv], unpacked.vv); break;
       default: throw std::runtime_error("Invalid size."); break;
     }
+  }
+
+  template <typename TyA, typename TyB>
+  void opIMMR(const uir_t &unpacked, std::function<void(TyA&, TyB&)> &fn) {
+    switch (unpacked.is) {
+      case 8:  fn(unpacked.vv, r8[unpacked.rv]); break;
+      case 16: fn(unpacked.vv, r16[unpacked.rv]); break;
+      case 32: fn(unpacked.vv, r32[unpacked.rv]); break;
+      case 64: fn(unpacked.vv, r64[unpacked.rv]); break;
+      default: throw std::runtime_error("Invalid size."); break;
+    }
+  }
+
+  template <typename TyA, typename TyB>
+  void opRR(const uir_t &unpacked, std::function<void(TyA&, TyB&)> &fn) {
+    switch (unpacked.is) {
+      case 8:  fn(r8[unpacked.vv], r8[unpacked.rv]); break;
+      case 16: fn(r16[unpacked.vv], r16[unpacked.rv]); break;
+      case 32: fn(r32[unpacked.vv], r32[unpacked.rv]); break;
+      case 64: fn(r64[unpacked.vv], r64[unpacked.rv]); break;
+      default: throw std::runtime_error("Invalid size."); break;
+    }
+  }
+
+  template <typename TyA, typename TyB>
+  void opIMMIMM(const uir_t &unpacked, std::function<void(TyA&, TyB&)> &fn) {
+    fn(unpacked.vv, unpacked.rv);
   }
 
   void mov(const uir_t &unpacked) {
