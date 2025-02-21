@@ -1,12 +1,19 @@
 [ ] SIMD
 [ ] SIMD's OP
 [ ] SIMD's handlers
-[ ] OPs 
+[x] OPs 
 [ ] BIOS
 [ ] Basic System Hardware
 [ ] x87 main 
 [ ] main.flags() support 
 [ ] "simple" scripting for compiling ?
-[ ] Memory Segmentation 
+[x] Memory Segmentation 
 [ ] Interuptions
-[ ] Flags ? 
+[ ] Flags ?
+[x] Exception Handling
+[x] Memory Allocation
+[x] Register Management
+[x] Instruction Fetching
+[x] Instruction Unpacking
+[x] MOV Operation
+[x] Arithmetic Operations (ADD, SUB, MUL, DIV, MOD)
