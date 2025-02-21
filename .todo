@@ -1,3 +1,12 @@
 [ ] SIMD
 [ ] SIMD's OP
 [ ] SIMD's handlers
+[ ] OPs 
+[ ] BIOS
+[ ] Basic System Hardware
+[ ] x87 main 
+[ ] main.flags() support 
+[ ] "simple" scripting for compiling ?
+[ ] Memory Segmentation 
+[ ] Interuptions
+[ ] Flags ? 
