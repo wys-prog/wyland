@@ -221,60 +221,158 @@
   
   /* Now, let's create some generic functions. */
 
-  template <typename TyF>
-  void opRIMM(const uir_t &unpacked, std::function<TyF> &fn) {
+  void opRIMM(const uir_t &unpacked, _fnOP &fn) {
     switch (unpacked.is) {
-      case 8:  fn(r8[unpacked.rv], unpacked.vv); break;
-      case 16: fn(r16[unpacked.rv], unpacked.vv); break;
-      case 32: fn(r32[unpacked.rv], unpacked.vv); break;
-      case 64: fn(r64[unpacked.rv], unpacked.vv); break;
+      case 8:  op::anyme(r8[unpacked.rv], unpacked.vv, fn); break;
+      case 16: op::anyme(r16[unpacked.rv], unpacked.vv, fn); break;
+      case 32: op::anyme(r32[unpacked.rv], unpacked.vv, fn); break;
+      case 64: op::anyme(r64[unpacked.rv], unpacked.vv, fn); break;
       default: throw std::runtime_error("Invalid size."); break;
     }
   }
 
-  template <typename TyF>
-  void opIMMR(const uir_t &unpacked, std::function<TyF> &fn) {
+  void opIMMR(const uir_t &unpacked, _fnOP &fn) {
     switch (unpacked.is) {
-      case 8:  fn(unpacked.vv, r8[unpacked.rv]); break;
-      case 16: fn(unpacked.vv, r16[unpacked.rv]); break;
-      case 32: fn(unpacked.vv, r32[unpacked.rv]); break;
-      case 64: fn(unpacked.vv, r64[unpacked.rv]); break;
+      case 8:  op::anyme(memory[unpacked.rv], r8[unpacked.vv], fn); break;
+      case 16: op::anyme(memory[unpacked.rv], r16[unpacked.vv], fn); break;
+      case 32: op::anyme(memory[unpacked.rv], r32[unpacked.vv], fn); break;
+      case 64: op::anyme(memory[unpacked.rv], r64[unpacked.vv], fn); break;
       default: throw std::runtime_error("Invalid size."); break;
     }
   }
 
-  template <typename TyF>
-  void opRR(const uir_t &unpacked, std::function<TyF> &fn) {
+  void opRR(const uir_t &unpacked, _fnOP &fn) {
     switch (unpacked.is) {
-      case 8:  fn(r8[unpacked.vv], r8[unpacked.rv]); break;
-      case 16: fn(r16[unpacked.vv], r16[unpacked.rv]); break;
-      case 32: fn(r32[unpacked.vv], r32[unpacked.rv]); break;
-      case 64: fn(r64[unpacked.vv], r64[unpacked.rv]); break;
+      case 8:  op::anyme(r8[unpacked.rv], r8[unpacked.vv], fn); break;
+      case 16: op::anyme(r16[unpacked.rv], r16[unpacked.vv], fn); break;
+      case 32: op::anyme(r32[unpacked.rv], r32[unpacked.vv], fn); break;
+      case 64: op::anyme(r64[unpacked.rv], r64[unpacked.vv], fn); break;
       default: throw std::runtime_error("Invalid size."); break;
     }
   }
 
-  template <typename TyF>
-  void opIMMIMM(const uir_t &unpacked, std::function<TyF> &fn) {
-    fn(unpacked.vv, unpacked.rv);
+  void opIMMIMM(const uir_t &unpacked, _fnOP &fn) {
+    op::anyme(unpacked.vv, unpacked.rv, fn);
   }
 
   void mov(const uir_t &unpacked) {
     switch (unpacked.rt) {
       case 0: // Destination is a register.
         switch (unpacked.vt) {
-          case 0: break;
-          case 1: break;
+          case 0: opRR(unpacked, op::mov); break;
+          case 1: opRIMM(unpacked, op::mov); break;
           default: throw std::invalid_argument("Need an argument between 0 and 1."); break;
         }
         break;
       case 1: // Destination is an address.
         switch (unpacked.vt) {
-          case 0: break;
-          case 1: break;
+          case 0: opIMMR(unpacked, op::mov); break;
+          case 1: opIMMIMM(unpacked, op::mov); break;
           default: throw std::invalid_argument("Need an argument between 0 and 1."); break;
         }
         break;
       default: throw std::invalid_argument("Need an argument between 0 and 1."); break;
     }
   }
+
+  void add(const uir_t &unpacked) {
+    switch (unpacked.rt) {
+      case 0: // Destination is a register.
+        switch (unpacked.vt) {
+          case 0: opRR(unpacked, op::add); break;
+          case 1: opRIMM(unpacked, op::add); break;
+          default: throw std::invalid_argument("Need an argument between 0 and 1."); break;
+        }
+        break;
+      case 1: // Destination is an address.
+        switch (unpacked.vt) {
+          case 0: opIMMR(unpacked, op::add); break;
+          case 1: opIMMIMM(unpacked, op::add); break;
+          default: throw std::invalid_argument("Need an argument between 0 and 1."); break;
+        }
+        break;
+      default: throw std::invalid_argument("Need an argument between 0 and 1."); break;
+    }
+  }
+
+  void sub(const uir_t &unpacked) {
+    switch (unpacked.rt) {
+      case 0: // Destination is a register.
+        switch (unpacked.vt) {
+          case 0: opRR(unpacked, op::sub); break;
+          case 1: opRIMM(unpacked, op::sub); break;
+          default: throw std::invalid_argument("Need an argument between 0 and 1."); break;
+        }
+        break;
+      case 1: // Destination is an address.
+        switch (unpacked.vt) {
+          case 0: opIMMR(unpacked, op::sub); break;
+          case 1: opIMMIMM(unpacked, op::sub); break;
+          default: throw std::invalid_argument("Need an argument between 0 and 1."); break;
+        }
+        break;
+      default: throw std::invalid_argument("Need an argument between 0 and 1."); break;
+    }
+  }
+
+  void mul(const uir_t &unpacked) {
+    switch (unpacked.rt) {
+      case 0: // Destination is a register.
+        switch (unpacked.vt) {
+          case 0: opRR(unpacked, op::mul); break;
+          case 1: opRIMM(unpacked, op::mul); break;
+          default: throw std::invalid_argument("Need an argument between 0 and 1."); break;
+        }
+        break;
+      case 1: // Destination is an address.
+        switch (unpacked.vt) {
+          case 0: opIMMR(unpacked, op::mul); break;
+          case 1: opIMMIMM(unpacked, op::mul); break;
+          default: throw std::invalid_argument("Need an argument between 0 and 1."); break;
+        }
+        break;
+      default: throw std::invalid_argument("Need an argument between 0 and 1."); break;
+    }
+  }
+
+  void div(const uir_t &unpacked) {
+    switch (unpacked.rt) {
+      case 0: // Destination is a register.
+        switch (unpacked.vt) {
+          case 0: opRR(unpacked, op::div); break;
+          case 1: opRIMM(unpacked, op::div); break;
+          default: throw std::invalid_argument("Need an argument between 0 and 1."); break;
+        }
+        break;
+      case 1: // Destination is an address.
+        switch (unpacked.vt) {
+          case 0: opIMMR(unpacked, op::div); break;
+          case 1: opIMMIMM(unpacked, op::div); break;
+          default: throw std::invalid_argument("Need an argument between 0 and 1."); break;
+        }
+        break;
+      default: throw std::invalid_argument("Need an argument between 0 and 1."); break;
+    }
+  }
+
+  void mod(const uir_t &unpacked) {
+    switch (unpacked.rt) {
+      case 0: // Destination is a register.
+        switch (unpacked.vt) {
+          case 0: opRR(unpacked, op::mod); break;
+          case 1: opRIMM(unpacked, op::mod); break;
+          default: throw std::invalid_argument("Need an argument between 0 and 1."); break;
+        }
+        break;
+      case 1: // Destination is an address.
+        switch (unpacked.vt) {
+          case 0: opIMMR(unpacked, op::mod); break;
+          case 1: opIMMIMM(unpacked, op::mod); break;
+          default: throw std::invalid_argument("Need an argument between 0 and 1."); break;
+        }
+        break;
+      default: throw std::invalid_argument("Need an argument between 0 and 1."); break;
+    }
+  }
+
+  
