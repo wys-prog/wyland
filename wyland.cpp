@@ -123,18 +123,18 @@
     i_div,   // OK
     i_cmp,   // OK
     i_jmp,   // OK
-    i_je,   
-    i_jne, 
-    i_jg, 
-    i_jl, 
-    i_jge, 
-    i_jle, 
-    i_jz, 
-    i_jnz, 
-    i_xor,
-    i_or,  
-    i_and,
-    i_int, 
+    i_je,    // OK
+    i_jne,   // OK
+    i_jg,    // OK
+    i_jl,    // OK
+    i_jge,   // OK
+    i_jle,   // OK
+    i_jz,    // OK
+    i_jnz,   // OK
+    i_xor,   // OK
+    i_or,    // OK
+    i_and,   // OK
+    i_int,  
     i_call, 
     i_ret,
   };
@@ -401,5 +401,100 @@
 
   void je(const uir_t&) {
     auto next = bytemanip::from_bin<uint64_t>(read(8));
-    
+    if (flags_zero == 0) r64[63] = next;
+  }
+
+  void jne(const uir_t&) {
+    auto next = bytemanip::from_bin<uint64_t>(read(8));
+    if (flags_eq != 0) r64[63] = next;
+  }
+
+  void jz(const uir_t&) {
+    auto next = bytemanip::from_bin<uint64_t>(read(8));
+    if (flags_zero) r64[63] = next;
+  }
+
+  void jnz(const uir_t&) {
+    auto next = bytemanip::from_bin<uint64_t>(read(8));
+    if (!flags_zero) r64[63] = next;
+  }
+
+  void jg(const uir_t&) {
+    auto next = bytemanip::from_bin<uint64_t>(read(8));
+    if (flags_eq == 1) r64[63] = next;
+  }
+
+  void jl(const uir_t&) {
+    auto next = bytemanip::from_bin<uint64_t>(read(8));
+    if (flags_eq == -1) r64[63] = next;
+  }
+  
+  void jge(const uir_t&) {
+    auto next = bytemanip::from_bin<uint64_t>(read(8));
+    if (flags_eq == 0 || flags_eq == 1) r64[63] = next;
+  }
+  
+  void jle(const uir_t&) {
+    auto next = bytemanip::from_bin<uint64_t>(read(8));
+    if (flags_eq == 0 || flags_eq == -1) r64[63] = next;
+  }
+
+  void xor_op(const uir_t &unpacked) {
+    switch (unpacked.rt) {
+      case 0: // Destination is a register.
+        switch (unpacked.vt) {
+          case 0: opRR(unpacked, op::xor_op); break;
+          case 1: opRIMM(unpacked, op::xor_op); break;
+          default: throw std::invalid_argument("Need an argument between 0 and 1."); break;
+        }
+        break;
+      case 1: // Destination is an address.
+        switch (unpacked.vt) {
+          case 0: opIMMR(unpacked, op::xor_op); break;
+          case 1: opIMMIMM(unpacked, op::xor_op); break;
+          default: throw std::invalid_argument("Need an argument between 0 and 1."); break;
+        }
+        break;
+      default: throw std::invalid_argument("Need an argument between 0 and 1."); break;
+    }
+  }
+
+  void and_op(const uir_t &unpacked) {
+    switch (unpacked.rt) {
+      case 0: // Destination is a register.
+        switch (unpacked.vt) {
+          case 0: opRR(unpacked, op::and_op); break;
+          case 1: opRIMM(unpacked, op::and_op); break;
+          default: throw std::invalid_argument("Need an argument between 0 and 1."); break;
+        }
+        break;
+      case 1: // Destination is an address.
+        switch (unpacked.vt) {
+          case 0: opIMMR(unpacked, op::and_op); break;
+          case 1: opIMMIMM(unpacked, op::and_op); break;
+          default: throw std::invalid_argument("Need an argument between 0 and 1."); break;
+        }
+        break;
+      default: throw std::invalid_argument("Need an argument between 0 and 1."); break;
+    }
+  }
+
+  void or_op(const uir_t &unpacked) {
+    switch (unpacked.rt) {
+      case 0: // Destination is a register.
+        switch (unpacked.vt) {
+          case 0: opRR(unpacked, op::or_op); break;
+          case 1: opRIMM(unpacked, op::or_op); break;
+          default: throw std::invalid_argument("Need an argument between 0 and 1."); break;
+        }
+        break;
+      case 1: // Destination is an address.
+        switch (unpacked.vt) {
+          case 0: opIMMR(unpacked, op::or_op); break;
+          case 1: opIMMIMM(unpacked, op::or_op); break;
+          default: throw std::invalid_argument("Need an argument between 0 and 1."); break;
+        }
+        break;
+      default: throw std::invalid_argument("Need an argument between 0 and 1."); break;
+    }
   }

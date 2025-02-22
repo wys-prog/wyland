@@ -72,6 +72,9 @@ namespace op {
   std::function<void(anyone &a, anyone &b)> mul = [](anyone &a, anyone &b) { a *= b.get(); };
   std::function<void(anyone &a, anyone &b)> div = [](anyone &a, anyone &b) { a /= b.get(); };
   std::function<void(anyone &a, anyone &b)> mod = [](anyone &a, anyone &b) { a = a.get() % b.get(); };
+  std::function<void(anyone &a, anyone &b)> xor_op = [](anyone &a, anyone &b) { a = a.get() ^ b.get(); };
+  std::function<void(anyone &a, anyone &b)> and_op = [](anyone &a, anyone &b) { a = a.get() & b.get(); };
+  std::function<void(anyone &a, anyone &b)> or_op = [](anyone &a, anyone &b) { a = a.get() | b.get(); };
 
   template <typename T>
   T compare(const T &a, const T &b) {
