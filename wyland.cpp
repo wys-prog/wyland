@@ -134,9 +134,9 @@
     i_xor,   // OK
     i_or,    // OK
     i_and,   // OK
-    i_int,  
-    i_call, 
-    i_ret,
+    i_int,   // OK?
+    i_call,  // OK
+    i_ret,   // OK
   };
 
   /* 3 - Unpacking arguments
@@ -343,7 +343,7 @@
     }
   }
 
-  void div(const uir_t &unpacked) {
+  void _div(const uir_t &unpacked) {
     switch (unpacked.rt) {
       case 0: // Destination is a register.
         switch (unpacked.vt) {
@@ -498,3 +498,61 @@
       default: throw std::invalid_argument("Need an argument between 0 and 1."); break;
     }
   }
+
+  void _int(const uir_t &unpacked) {
+    // TODO
+  }
+
+  void call(const uir_t &unpacked) {
+    // This call function will only call 
+    // addresses that stored in r64 registers.
+    // And to come back at the current address after,
+    // Current pointer will be stored in r64.62 register.
+    r64[62] = r64[63];
+    r64[63] = r64[unpacked.rv];
+  }
+
+  void ret(const uir_t &unpacked) {
+    r64[63] = r64[62];
+  }
+
+  /* 4 - Mapping functions
+    So now, we have ALL THE FUNCTIONS that let us to execute
+    a binary program. However.. We didn't code any map.
+    Why does we need to "code a map" ? 
+    We need to code a map that map (logical..) all instructions 
+    with a binary key, to a function. In our case, we'll use 
+    hex. key to represent binary, because BINARY IS TOO LONG. */
+
+  std::unordered_map<uint8_t, std::function<void(const uir_t&)>> instruction_set;
+
+  // Ok. Need to initialize the table now.
+
+  void initialize_instruction_set() {
+    instruction_set[i_nop] = [](const uir_t&) { /* No operation */ };
+    instruction_set[i_load] = load;
+    instruction_set[i_store] = store;
+    instruction_set[i_lea] = lea;
+    instruction_set[i_mov] = mov;
+    instruction_set[i_add] = add;
+    instruction_set[i_sub] = sub;
+    instruction_set[i_mul] = mul;
+    instruction_set[i_div] = _div;
+    instruction_set[i_cmp] = cmp;
+    instruction_set[i_jmp] = jmp;
+    instruction_set[i_je] = je;
+    instruction_set[i_jne] = jne;
+    instruction_set[i_jg] = jg;
+    instruction_set[i_jl] = jl;
+    instruction_set[i_jge] = jge;
+    instruction_set[i_jle] = jle;
+    instruction_set[i_jz] = jz;
+    instruction_set[i_jnz] = jnz;
+    instruction_set[i_xor] = xor_op;
+    instruction_set[i_or] = or_op;
+    instruction_set[i_and] = and_op;
+    instruction_set[i_int] = _int;
+    instruction_set[i_call] = call;
+    instruction_set[i_ret] = ret;
+  }
+
