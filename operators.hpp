@@ -72,6 +72,14 @@ namespace op {
   std::function<void(anyone &a, anyone &b)> mul = [](anyone &a, anyone &b) { a *= b.get(); };
   std::function<void(anyone &a, anyone &b)> div = [](anyone &a, anyone &b) { a /= b.get(); };
   std::function<void(anyone &a, anyone &b)> mod = [](anyone &a, anyone &b) { a = a.get() % b.get(); };
+
+  template <typename T>
+  T compare(const T &a, const T &b) {
+    if (a > b) return T(1);
+    else if (b > a) return T(-1);
+    else if (a == b) return T(0);
+    return T(2);
+  }
 } // namespace op
 
   typedef std::function<void(op::anyone&, op::anyone&)> _fnOP;

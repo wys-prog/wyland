@@ -112,18 +112,18 @@
     If we give an instruction that's not present in this set, 
     the core will just throw an error. */
   enum instructions : uint8_t {
-    i_nop,
-    i_load, 
-    i_store,
-    i_lea,
-    i_mov, 
-    i_add, 
-    i_sub, 
-    i_mul, 
-    i_div, 
-    i_cmp, 
-    i_jmp, 
-    i_je, 
+    i_nop,   // OK
+    i_load,  // OK
+    i_store, // OK
+    i_lea,   // OK
+    i_mov,   // OK 
+    i_add,   // OK
+    i_sub,   // OK
+    i_mul,   // OK
+    i_div,   // OK
+    i_cmp,   // OK
+    i_jmp,   // OK
+    i_je,   
     i_jne, 
     i_jg, 
     i_jl, 
@@ -207,6 +207,14 @@
       case 32: bytemanip::fill(memory, r32[unpacked.rv], 512); break;
       case 64: bytemanip::fill(memory, r64[unpacked.rv], 512); break;
       default: throw std::runtime_error("Invalid size."); break;
+    }
+  }
+
+  void lea(const uir_t &unpacked) {
+    switch (unpacked.rt) {
+      case 0: r64[unpacked.rv] = memory[unpacked.vv]; break;
+      case 1: r64[unpacked.rv] = r64[unpacked.vv]; break;
+      default: throw std::runtime_error("Need an argument between 1 and 0"); break;
     }
   }
 
@@ -375,4 +383,23 @@
     }
   }
 
-  
+  // We can continue with the other instructions, but I think you've understood the principle.
+
+  void cmp(const uir_t &unpacked) {
+    switch (unpacked.is) {
+      case 8:  flags_eq = op::compare(r8[unpacked.rv], r8[unpacked.vv]); break;
+      case 16: flags_eq = op::compare(r16[unpacked.rv], r16[unpacked.vv]); break;
+      case 32: flags_eq = op::compare(r32[unpacked.rv], r32[unpacked.vv]); break;
+      case 64: flags_eq = op::compare(r64[unpacked.rv], r64[unpacked.vv]); break;
+      default: throw std::runtime_error("Invalid size."); break;
+    }
+  }
+
+  void jmp(const uir_t&) {
+    r64[63] = bytemanip::from_bin<uint64_t>(read(8));
+  }
+
+  void je(const uir_t&) {
+    auto next = bytemanip::from_bin<uint64_t>(read(8));
+    
+  }
