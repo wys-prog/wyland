@@ -8,10 +8,13 @@
         "-fdiagnostics-color=always",
         "${file}",
         "-o",
-        "${fileDirname}/${fileBasenameNoExtension}", 
-        "-std=c++23", 
-        "-Wall", 
+        "${fileDirname}/${fileBasenameNoExtension}",
+        "-std=c++23",
+        "-Wall",
         "-Wextra",
+        "-march=native", // Optimize for the host machine's CPU
+        "-funroll-loops", // Unroll loops for better performance
+        "-DNDEBUG" // Disable debugging macros
       ],
       "options": {
         "cwd": "${fileDirname}"

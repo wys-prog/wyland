@@ -575,12 +575,12 @@
           << "Pack:\t" << std::uppercase << std::hex 
           << (bytemanip::from_bin<uint64_t>(fetched.parameters)) << "\n"
           << "Unpacked:\n"
-          << "\tInstruction: " << static_cast<int>(unpacked.in) << "\n"
-          << "\tSize: " << static_cast<int>(unpacked.is) << "\n"
-          << "\tRegister Type: " << static_cast<int>(unpacked.rt) << "\n"
-          << "\tValue Type: " << static_cast<int>(unpacked.vt) << "\n"
-          << "\tRegister Value: " << unpacked.rv << "\n"
-          << "\tValue Value: " << unpacked.vv << "\n";
+          << "\tInstruction:\t" << static_cast<int>(unpacked.in) << "\n"
+          << "\tOperation Size:\t" << static_cast<int>(unpacked.is) << "\n"
+          << "\tRegister Type:\t" << static_cast<int>(unpacked.rt) << "\n"
+          << "\tValue Type:\t" << static_cast<int>(unpacked.vt) << "\n"
+          << "\tRegister Value:\t" << unpacked.rv << "\n"
+          << "\tValue Value:\t" << unpacked.vv << "\n";
           throw std::runtime_error(oss.str());
         }
         
@@ -598,29 +598,41 @@
 
   #include <fstream>
   #include <iostream>
+  #include <iomanip> // Pour std::fixed et std::setprecision
 
   void parse_arguments(int argc, char *const argv[]) {
-    std::streampos pos = std::istream::beg;
+    uint64_t pos = 0;
     for (int i = 1; i < argc; i++) {
-      std::ifstream file(argv[i]);
+      std::ifstream file(argv[i], std::ios::binary);
       if (!file) {
         std::cerr << argv[i] << ": Unable to open file." << std::endl;
         exit(-1);
       }
 
-      while (!file.eof() && pos < sizeof(memory)) {
+      while (!file.eof() && pos < (uint64_t)(sizeof(memory))) {
         char buff[1] = {0};
         file.read(buff, 1);
-        memory[pos] = (uint8_t)buff[0];
-        pos += 1;
+        if (file.gcount() > 0) {
+          memory[pos] = (uint8_t)(buff[0]);
+          pos += 1;
+        }
       }
 
       file.close();
     }
+
+    if (pos == 0) { exit(0); } // TODO (Loading __default_disk)
+
+    std::cout << pos << " bytes used" << std::endl;
   }
 
   // 6 - main() function
   int main(int argc, char *const argv[]) {
+    std::cout << "Wylma - Wys's Wylma Virtual Machine 1.0\n" 
+                 "Core:\t" << sizeof(core) << " bytes\n"
+                 "Memory:\t" << sizeof(memory) << " bytes"
+    << std::endl;
+
     parse_arguments(argc, argv);
     core c;
 
