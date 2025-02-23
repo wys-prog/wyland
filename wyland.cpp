@@ -5,9 +5,10 @@
 #include <unordered_map>
 #include <stdfloat>
 #include <sstream>
-  #include <iostream>
+#include <iostream>
 
 #include "operators.hpp"
+#include "bytes.hpp"
 
 /* Defining some constants */
 #define MEMORY_SIZE 1024 * 1024 * 512

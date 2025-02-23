@@ -20,7 +20,7 @@ namespace bytemanip {
   }
 
   template <typename T>
-  T from_bin(const uint8_t *buff) {
+  inline T from_bin(const uint8_t *buff) {
     static_assert(std::is_integral_v<T>, "T must be an integral type");
 
     T value = 0;
