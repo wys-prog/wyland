@@ -6,11 +6,12 @@
       "command": "g++-14",
       "args": [
         "-fdiagnostics-color=always",
-        "-g",
         "${file}",
         "-o",
         "${fileDirname}/${fileBasenameNoExtension}", 
-        "-std=c++23"
+        "-std=c++23", 
+        "-Wall", 
+        "-Wextra",
       ],
       "options": {
         "cwd": "${fileDirname}"

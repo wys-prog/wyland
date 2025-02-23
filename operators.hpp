@@ -16,7 +16,7 @@ namespace op {
     anyone() : buff(0) {}
 
     template <typename T>
-    anyone(const T &__t) : buff(static_cast<uint64_t>(__t)) {}
+    anyone(const T &__t) : buff((uint64_t)__t) {}
 
     template <typename T>
     anyone &operator=(const T &__t) {
@@ -62,8 +62,8 @@ namespace op {
   void anyme(TA &__tA, TB &__tB, const std::function<void(anyone&, anyone&)> &fn) {
     anyone me(__tA), another(__tB);
     fn(me, another);
-    __tA = static_cast<TA>(me.get());
-    __tB = static_cast<TB>(another.get());
+    __tA = (TA)me.get();
+    __tB = (TB)another.get();
   }
 
   std::function<void(anyone &a, anyone &b)> mov = [](anyone &a, anyone &b) { a = b.get(); };
