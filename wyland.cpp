@@ -84,7 +84,7 @@
         std::ostringstream oss;
         oss << "Reading out of memory capacity.\n@count:\t" << count << "\n@from:\t" << from 
             << "\nmax:\t" << MEMORY_SIZE;
-        throw std::runtime_error(oss.str());
+        throw std::out_of_range(oss.str());
       }
 
       uint8_t *buff = new uint8_t[count];
@@ -172,7 +172,6 @@
       for (char i = 0; i < 8; i++) 
         ir[i] = read(1, r64[63]++)[0];
       
-      std::cout << "Fetched: [" << bytemanip::from_bin<uint64_t>(ir.parameters) << "]\n";
       return ir;
     }
   
@@ -594,7 +593,6 @@
           throw std::runtime_error(oss.str());
         }
         instruction_set[unpacked.in](unpacked);
-        std::cout << "IP: " << r64[63] << '\n' << std::flush;
       }
     }
 
