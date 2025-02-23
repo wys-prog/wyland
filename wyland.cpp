@@ -626,9 +626,13 @@
     std::cout << pos << " bytes used" << std::endl;
   }
 
+  // A cool file: Give a specific name to the arch., and os.
+  #include "os.h"
+
   // 6 - main() function
   int main(int argc, char *const argv[]) {
     std::cout << "Wylma - Wys's Wylma Virtual Machine 1.0\n" 
+                 "Wylma " PLATFORM_NAME "\n"
                  "Core:\t" << sizeof(core) << " bytes\n"
                  "Memory:\t" << sizeof(memory) << " bytes"
     << std::endl;
