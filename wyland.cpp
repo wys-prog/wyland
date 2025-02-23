@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <stdfloat>
 #include <sstream>
+  #include <iostream>
 
 #include "operators.hpp"
 
@@ -405,6 +406,7 @@
         case 64: flags_eq = op::compare(r64[unpacked.rv], r64[unpacked.vv]); break;
         default: throw std::runtime_error("Invalid size."); break;
       }
+      std::cout << "IP: " << r64[63] << std::endl; 
     }
   
     void jmp(const uir_t&) {
@@ -590,6 +592,7 @@
           << "IP:\t" << r64[63] << '\n';
           throw std::runtime_error(oss.str());
         }
+        std::cout << "Running: " << std::hex << std::uppercase << bytemanip::from_bin<uint64_t>(fetched.parameters) << std::endl;
         instruction_set[unpacked.in](unpacked);
       }
     }
@@ -607,7 +610,6 @@
     Let's include <fstream> and <iostream> header files. */
 
   #include <fstream>
-  #include <iostream>
   #include <iomanip> // Pour std::fixed et std::setprecision
 
   void parse_arguments(int argc, char *const argv[]) {
