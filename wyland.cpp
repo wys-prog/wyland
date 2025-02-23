@@ -79,8 +79,13 @@
   
     // Read function that let us to read. (Wow.)
     uint8_t *read(uint64_t count, uint64_t from) {
-      if (from >= MEMORY_SIZE || count >= MEMORY_SIZE) 
-        throw std::out_of_range("Reading out of memory capacity.");
+      if (from > MEMORY_SIZE || count >= MEMORY_SIZE) {
+        std::ostringstream oss;
+        oss << "Reading out of memory capacity.\n@count:\t" << count << "\n@from:\t" << from 
+            << "\nmax:\t" << MEMORY_SIZE;
+        throw std::out_of_range(oss.str());
+      }
+
       uint8_t *buff = new uint8_t[count];
       for (uint64_t i = 0; i < count; i++) 
         buff[i] = memory[from+i];
@@ -169,7 +174,7 @@
     }
   
     uir_t unpack(const ir_t &ir) {    // Fetched. Now, unpacking.
-      uir_t unpacked{0};              // Pretty simple, because 
+      uir_t unpacked{};               // Pretty simple, because 
       unpacked.in = ir.parameters[0]; // We use an array instead 
       unpacked.is = ir.parameters[1]; // an uint64.
       unpacked.rt = ir.parameters[2];
@@ -569,9 +574,10 @@
       while (!flags_halt) {
         ir_t fetched = fetch();
         uir_t unpacked = unpack(fetched);
+        if (unpacked.in == 0xFF) break;
         if (instruction_set.find(unpacked.in) == instruction_set.end()) {
           std::ostringstream oss;
-          oss << "Wyland:\tInvalid Instruction Error (IIE)\n"
+          oss << "Invalid Instruction Error (IIE)\n"
           << "Pack:\t" << std::uppercase << std::hex 
           << (bytemanip::from_bin<uint64_t>(fetched.parameters)) << "\n"
           << "Unpacked:\n"
@@ -580,12 +586,16 @@
           << "\tRegister Type:\t" << static_cast<int>(unpacked.rt) << "\n"
           << "\tValue Type:\t" << static_cast<int>(unpacked.vt) << "\n"
           << "\tRegister Value:\t" << unpacked.rv << "\n"
-          << "\tValue Value:\t" << unpacked.vv << "\n";
+          << "\tValue Value:\t" << unpacked.vv << "\n"
+          << "IP:\t" << r64[63] << '\n';
           throw std::runtime_error(oss.str());
         }
-        
         instruction_set[unpacked.in](unpacked);
       }
+    }
+
+    auto getIP() const {
+      return r64[63];
     }
   };
 
@@ -631,8 +641,8 @@
 
   // 6 - main() function
   int main(int argc, char *const argv[]) {
-    std::cout << "Wylma - Wys's Wylma Virtual Machine 1.0\n" 
-                 "Wylma " PLATFORM_NAME "\n"
+    std::cout << "Wyland - Wys’s  Wylma Virtual Machine 1.0\n" 
+                 "Wyland " PLATFORM_NAME "\n"
                  "Core:\t" << sizeof(core) << " bytes\n"
                  "Memory:\t" << sizeof(memory) << " bytes"
     << std::endl;
@@ -646,17 +656,21 @@
       std::cout << "Invoking..." << std::endl;
       c.run();
     } catch (const std::invalid_argument &e) {
-      std::cerr << e.what() << '\n';
+      std::cerr << "C++ Exception: std::invalid_argument\nWyland:\t" << e.what() << '\n';
+      std::cerr << "Wyland " PLATFORM_NAME " stoped execution at " << c.getIP() << std::endl;
       return -1;
     } catch (const std::runtime_error &e) {
-      std::cerr << e.what() << '\n';
+      std::cerr << "C++ Exception: std::runtime_error\nWyland:\t" << e.what() << '\n';
+      std::cerr << "Wyland " PLATFORM_NAME " stoped execution at " << c.getIP() << std::endl;
       return (-2);
     } catch(const std::exception& e) {
-      std::cerr << e.what() << '\n';
+      std::cerr << "C++ Exception: std::exception\nWyland:\t" << e.what() << '\n';
+      std::cerr << "Wyland " PLATFORM_NAME " stoped execution at " << c.getIP() << std::endl;
       return -3;
     } catch (...) {
+      std::cerr << "Wyland " PLATFORM_NAME " stoped execution at " << c.getIP() << std::endl;
       return -4;
-    }
+    } 
     
     return 0;
   }
