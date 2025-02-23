@@ -84,7 +84,7 @@
         std::ostringstream oss;
         oss << "Reading out of memory capacity.\n@count:\t" << count << "\n@from:\t" << from 
             << "\nmax:\t" << MEMORY_SIZE;
-        throw std::out_of_range(oss.str());
+        throw std::runtime_error(oss.str());
       }
 
       uint8_t *buff = new uint8_t[count];
@@ -171,6 +171,8 @@
       ir_t ir{0x00};  // After fetching, we need to unpack arguments.
       for (char i = 0; i < 8; i++) 
         ir[i] = read(1, r64[63]++)[0];
+      
+      std::cout << "Fetched: [" << bytemanip::from_bin<uint64_t>(ir.parameters) << "]\n";
       return ir;
     }
   
@@ -406,7 +408,6 @@
         case 64: flags_eq = op::compare(r64[unpacked.rv], r64[unpacked.vv]); break;
         default: throw std::runtime_error("Invalid size."); break;
       }
-      std::cout << "IP: " << r64[63] << std::endl; 
     }
   
     void jmp(const uir_t&) {
@@ -592,8 +593,8 @@
           << "IP:\t" << r64[63] << '\n';
           throw std::runtime_error(oss.str());
         }
-        std::cout << "Running: " << std::hex << std::uppercase << bytemanip::from_bin<uint64_t>(fetched.parameters) << std::endl;
         instruction_set[unpacked.in](unpacked);
+        std::cout << "IP: " << r64[63] << '\n' << std::flush;
       }
     }
 

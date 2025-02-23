@@ -39,6 +39,7 @@ private:
   };
 
   std::string filename;
+public:
   std::vector<Instruction> instructions;
 };
 
