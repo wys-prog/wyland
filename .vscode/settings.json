@@ -70,6 +70,7 @@
     "memory_resource": "cpp",
     "random": "cpp",
     "type_traits": "cpp",
-    "utility": "cpp"
+    "utility": "cpp",
+    "format": "cpp"
   }
 }
