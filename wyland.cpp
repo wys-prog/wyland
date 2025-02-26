@@ -2,6 +2,7 @@
 #include <functional>
 #include <iostream>
 #include <sstream>
+#include <fstream>
 #include <cstdint>
 #include <string>
 
@@ -25,6 +26,14 @@ inline uint8_t* to_bin(const T &__T) {
 
   return buff;
 }
+
+#define CODE_SEGMENT_SIZE 400_MB
+#define HARDWARE_SEGMENT_SIZE 100_MB
+#define SYSTEM_SEGMENT_SIZE 12_MB
+
+#define CODE_SEGMENT_START 0
+#define HARDWARE_SEGMENT_START (CODE_SEGMENT_START + CODE_SEGMENT_SIZE)
+#define SYSTEM_SEGMENT_START (HARDWARE_SEGMENT_START + HARDWARE_SEGMENT_SIZE)
 
 uint8_t memory[512_MB]{0};
 
@@ -67,6 +76,27 @@ public:
     else throw std::runtime_error("Unexpected register: " + std::to_string(who));
     return -1;
   }
+};
+
+enum eins {
+  lea,
+  load, 
+  store, 
+  mov, 
+  add, 
+  sub, 
+  mul, 
+  div, 
+  mod, 
+  jmp, 
+  je, 
+  jne, 
+  jl, 
+  jg, 
+  jle, 
+  jge,
+  cmp,
+  xint, 
 };
 
 class core {
@@ -185,9 +215,71 @@ private:
     }
   };
 
-  
+  std::function<void(const uir_t&)> ixint = [this](const uir_t &unpacked) {};
+
+  std::unordered_map<uint8_t, std::function<void(const uir_t&)>> set;
+
+public:
+  void init(uint64_t _memory_segment_begin, uint64_t _memory_segment_end) {
+    beg = _memory_segment_begin;
+    end = _memory_segment_end;
+    ip  = beg;
+    set[eins::mov] = imov;
+    set[eins::add] = iadd;
+    set[eins::sub] = isub;
+    set[eins::mul] = imul;
+    set[eins::div] = idiv;
+    set[eins::mod] = imod;
+    set[eins::jmp] = ijmp;
+    set[eins::je] = ije;
+    set[eins::jne] = ijne;
+    set[eins::jg] = ijg;
+    set[eins::jl] = ijl;
+    set[eins::jge] = ijge;
+    set[eins::jle] = ijle;
+    set[eins::cmp] = icmp;
+    set[eins::load] = iload;
+    set[eins::store] = istore;
+    set[eins::xint] = ixint;
+  }
 };
 
-int main() {
+std::string version() {
+  return "Wyland 1.0";
+}
+
+std::string name() {
+  return "Orkhon Töresi";
+}
+
+void run(std::istream &file) {
+  char buffer[512]{0};
+  file.read(buffer, sizeof(buffer));
+
+  for (int i = 0; i < sizeof(buffer); i++) 
+    memory[SYSTEM_SEGMENT_START+i] = buffer[i];
+  
+  core c;
+  c.init(SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START + sizeof(buffer));
+}
+
+int main(int argc, char *const argv[]) {
+  std::ifstream file;
+
+  for (int i = 0; i < argc; i++) {
+    if (std::string(argv[i]) == "--v") version();
+    else if (std::string(argv[i]) == "--n") name();
+    else if (std::string(argv[i]) == "-run") run(file);
+    else {
+      if (file.is_open()) std::cerr << "[w]: Redefining input file.";
+      file.open(argv[i]);
+
+      if (!file.is_open()) 
+        std::cerr << "[e]: Unable to open file: " << argv[i] << std::endl;
+    }
+  }
+
+  std::cout << version() << " —— " << name() << std::endl;
+
   return 0;
 }
