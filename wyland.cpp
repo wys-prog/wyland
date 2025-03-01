@@ -63,18 +63,18 @@ private:
 
 public:
   void set(uint16_t to, uint64_t u) {
-    if (to < 16) r8[to] = u;
-    else if (to < 32) r16[to] = u;
-    else if (to < 48) r32[to] = u;
-    else if (to < 64) r64[to] = u;
+    if (to < 16) r8[to] = (uint8_t)u;
+    else if (to < 32) r16[to - 16] = (uint16_t)u;
+    else if (to < 48) r32[to - 32] = (uint32_t)u;
+    else if (to < 64) r64[to - 63] = (uint64_t)u;
     else throw std::runtime_error("Unexpected register: " + std::to_string(to));
   }
 
   uint64_t get(uint16_t who) {
     if (who < 16) return r8[who];
-    else if (who < 32) return r16[who];
-    else if (who < 48) return r32[who];
-    else if (who < 64) return r64[who];
+    else if (who < 32) return r16[who - 16];
+    else if (who < 48) return r32[who - 32];
+    else if (who < 64) return r64[who - 61];
     else throw std::runtime_error("Unexpected register: " + std::to_string(who));
     return -1;
   }
@@ -136,7 +136,11 @@ private:
 
   std::function<void()> iadd = [this]() {
     auto r1 = read(), r2 = read();
+    std::cout << "ADD R" << (int)r1 << ", R" << (int)r2 << std::endl;
+    std::cout << "R" << (int)r1 << ": " << regs.get(r1) << std::endl;
+    std::cout << "R" << (int)r2 << ": " << regs.get(r2) << std::endl;
     regs.set(regs.get(r1), regs.get(r1) + regs.get(r2));
+    std::cout << "R" << (int)r1 << ": " << regs.get(1) << std::endl;
   };
 
   std::function<void()> isub = [this]() {
@@ -195,14 +199,17 @@ private:
   };
 
   std::function<void()> icmp = [this]() {
-    auto r1 = regs.get(read()), r2 = regs.get(read());
-    if (r1 > r2) flags = eflags::greater;
-    else if (r1 == r2) flags = eflags::equal;
-    else flags = eflags::lesser;
-    std::cout << "Comparing: " << regs.get(r1) << ", " << regs.get(r2) << "\n"
-    "Flags:\t" << (int)flags << '\n'<< std::flush;
+    auto r1 = regs.get(read());
+    auto r2 = regs.get(read());
+  
+    if (r1 > r2) {
+      flags = eflags::greater;
+    } else if (r1 == r2) {
+      flags = eflags::equal;
+    } else {
+      flags = eflags::lesser;
+    }
   };
-
   std::function<void()> iload = [this]() {
     auto size = read();
     auto r1 = read();
@@ -226,6 +233,7 @@ private:
     for (uint8_t i = 0; i < size; i++) {
       memory[org+i] = array[i];
     }
+    delete[] array;
   };
 
   std::function<void()> ixint = [this]() {};
@@ -272,6 +280,7 @@ public:
         "\tLocal IP:\t" << local_ip;
         throw std::runtime_error(oss.str());
       }
+      std::cout << local_ip << std::endl;
 
       set[fetched]();
 
@@ -293,7 +302,7 @@ void run(std::istream &file) {
   char buffer[512]{0};
   file.read(buffer, sizeof(buffer));
 
-  for (int i = 0; i < sizeof(buffer); i++) 
+  for (unsigned int i = 0; i < sizeof(buffer); i++) 
     memory[SYSTEM_SEGMENT_START+i] = buffer[i];
   
   core c;
