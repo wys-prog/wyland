@@ -39,21 +39,6 @@ inline uint8_t* to_bin(const T &__T) {
 
 uint8_t memory[512_MB]{0};
 
-typedef struct {
-  uint8_t in; // Instruction
-  uint8_t os; // Operation Size
-} uir_t;
-
-enum eflags : char {
-  equal, 
-  greater,
-  lesser,
-  // TODO
-  /* overflow, 
-  underflow,
-  interupted,*/
-};
-
 class reg_t {
 private:
   uint8_t  r8 [16]{0};
@@ -62,21 +47,20 @@ private:
   uint64_t r64[16]{0};
 
 public:
-  void set(uint16_t to, uint64_t u) {
-    if (to < 16) r8[to] = (uint8_t)u;
-    else if (to < 32) r16[to - 16] = (uint16_t)u;
-    else if (to < 48) r32[to - 32] = (uint32_t)u;
-    else if (to < 64) r64[to - 63] = (uint64_t)u;
+  void set(uint8_t to, uint64_t u) {
+    if (to < 16) r8[to] = u;
+    else if (to < 32) r16[to - 16] = u;
+    else if (to < 48) r32[to - 32] = u;
+    else if (to < 64) r64[to - 48] = u;
     else throw std::runtime_error("Unexpected register: " + std::to_string(to));
   }
 
-  uint64_t get(uint16_t who) {
+  uint64_t get(uint8_t who) {
     if (who < 16) return r8[who];
     else if (who < 32) return r16[who - 16];
     else if (who < 48) return r32[who - 32];
-    else if (who < 64) return r64[who - 61];
+    else if (who < 64) return r64[who - 48];
     else throw std::runtime_error("Unexpected register: " + std::to_string(who));
-    return -1;
   }
 };
 
@@ -110,7 +94,7 @@ private:
   uint64_t local_ip = 0x0000000000000000;
   reg_t    regs;
   bool     halted = false;
-  char     flags  = 0;
+  int      flags  = 0;
 
   uint8_t read() {
     if (ip + 1 >= end) throw std::out_of_range("The 'end' flag is reached.");
@@ -135,32 +119,31 @@ private:
   };
 
   std::function<void()> iadd = [this]() {
-    auto r1 = read(), r2 = read();
-    std::cout << "ADD R" << (int)r1 << ", R" << (int)r2 << std::endl;
-    std::cout << "R" << (int)r1 << ": " << regs.get(r1) << std::endl;
-    std::cout << "R" << (int)r2 << ": " << regs.get(r2) << std::endl;
-    regs.set(regs.get(r1), regs.get(r1) + regs.get(r2));
-    std::cout << "R" << (int)r1 << ": " << regs.get(1) << std::endl;
+    auto r1 = read(), r2 = read(); 
+    auto v1 = regs.get(r1) + regs.get(r2);
+    std::cout << v1 << std::endl;
+    std::cout << regs.get(r1) << " + " << regs.get(r2) << std::endl;
+    regs.set(r1, v1);
   };
 
   std::function<void()> isub = [this]() {
     auto r1 = read(), r2 = read();
-    regs.set(regs.get(r1), regs.get(r1) - regs.get(r2));
+    regs.set(r1, regs.get(r1) - regs.get(r2));
   };
 
   std::function<void()> imul = [this]() {
     auto r1 = read(), r2 = read();
-    regs.set(regs.get(r1), regs.get(r1) * regs.get(r2));
+    regs.set(r1, regs.get(r1) * regs.get(r2));
   };
 
   std::function<void()> idiv = [this]() {
     auto r1 = read(), r2 = read();
-    regs.set(regs.get(r1), regs.get(r1) / regs.get(r2));
+    regs.set(r1, regs.get(r1) / regs.get(r2));
   };
 
   std::function<void()> imod = [this]() {
     auto r1 = read(), r2 = read();
-    regs.set(regs.get(r1), regs.get(r1) % regs.get(r2));
+    regs.set(r1, regs.get(r1) % regs.get(r2));
   };
 
   std::function<void()> ijmp = [this]() {
@@ -169,33 +152,33 @@ private:
 
   std::function<void()> ije = [this]() {
     auto tmp = read<uint64_t>();
-    if (flags == eflags::equal) ip = tmp;
+    if (flags == 0) ip = tmp;
   };
 
   std::function<void()> ijne = [this]() {
     auto tmp = read<uint64_t>();
-    if (flags != eflags::equal) ip = tmp;
-    std::cout << (int)flags << std::endl;
+    if (flags == 0) return;
+    ip = tmp;
   };
 
   std::function<void()> ijg = [this]() {
     auto tmp = read<uint64_t>();
-    if (flags == eflags::greater) ip = tmp;
+    if (flags == 1) ip = tmp;
   };
 
   std::function<void()> ijl = [this]() {
     auto tmp = read<uint64_t>();
-    if (flags == eflags::lesser) ip = tmp;
+    if (flags == -1) ip = tmp;
   };
 
   std::function<void()> ijge = [this]() {
     auto tmp = read<uint64_t>();
-    if (flags == eflags::greater || flags == eflags::equal) ip = tmp;
+    if (flags == 1 || flags == 0) ip = tmp;
   };
 
   std::function<void()> ijle = [this]() {
     auto tmp = read<uint64_t>();
-    if (flags == eflags::lesser || flags == eflags::equal) ip = tmp;
+    if (flags == -1 || flags == 0) ip = tmp;
   };
 
   std::function<void()> icmp = [this]() {
@@ -203,13 +186,14 @@ private:
     auto r2 = regs.get(read());
   
     if (r1 > r2) {
-      flags = eflags::greater;
+      flags = 1;
     } else if (r1 == r2) {
-      flags = eflags::equal;
+      flags = 0;
     } else {
-      flags = eflags::lesser;
+      flags = -1;
     }
   };
+
   std::function<void()> iload = [this]() {
     auto size = read();
     auto r1 = read();
@@ -280,7 +264,7 @@ public:
         "\tLocal IP:\t" << local_ip;
         throw std::runtime_error(oss.str());
       }
-      std::cout << local_ip << std::endl;
+      std::cout << local_ip << ", R6: " << regs.get(6) << std::endl;
 
       set[fetched]();
 

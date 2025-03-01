@@ -12,9 +12,8 @@
         "-std=c++23",
         "-Wall",
         "-Wextra",
-        "-march=native", // Optimize for the host machine's CPU
-        "-funroll-loops", // Unroll loops for better performance
-        "-DNDEBUG", // Disable debugging macros, 
+        //"-march=native", // Optimize for the host machine's CPU
+        //"-funroll-loops", // Unroll loops for better performance
         //"-O3",
         
       ],

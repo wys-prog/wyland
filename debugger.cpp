@@ -1,6 +1,6 @@
 #include <bits/stdc++.h>
 
-enum eins {
+enum eins : uint8_t {
   nop, 
   lea,
   load, 
@@ -22,16 +22,27 @@ enum eins {
   xint, 
 };
 
-int main(int argc, char const *argv[]) {
+int main() {
   std::ofstream file("out.bin");
   
   uint8_t buffer[512] = {
+    /*load, 8, 6, 0xFE, 
+    load, 8, 1, 0x01, 
+    add, 06, 01, 
+    0x00, 
+    0x00, 
+    load, 8, 2, 0xFF, 
+    jne, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+    0xFF*/
+    
+    load, 8, 06, 0x02, 
     load, 8, 01, 0xFF, // (0xFF = 255)
-    load, 8, 02, 0x01, 
-    add, 03, 02, 
-    cmp, 03, 01, 
-    jne, 0,0,0,0,0,0,0,0,0,
-    0xFF, 
+    load, 8, 02, 0x05, 
+    add, 06, 02, 
+    cmp, 06, 01,
+    je, 0,0,0,0,0,0,0xFF,0xFA,
+    jmp, 0,0,0,0,0,0,0,0,0,
+    0xFF,
   };
 
   buffer[510] = 0xFF;
