@@ -71,6 +71,8 @@
     "random": "cpp",
     "type_traits": "cpp",
     "utility": "cpp",
-    "format": "cpp"
+    "format": "cpp",
+    "set": "cpp",
+    "future": "cpp"
   }
 }

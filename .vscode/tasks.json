@@ -14,7 +14,8 @@
         "-Wextra",
         "-march=native", // Optimize for the host machine's CPU
         "-funroll-loops", // Unroll loops for better performance
-        "-DNDEBUG" // Disable debugging macros
+        "-DNDEBUG", // Disable debugging macros, 
+        "-O3",
       ],
       "options": {
         "cwd": "${fileDirname}"

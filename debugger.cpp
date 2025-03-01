@@ -1,0 +1,88 @@
+#include <bits/stdc++.h>
+
+enum eins {
+  nop, 
+  lea,
+  load, 
+  store, 
+  mov, 
+  add, 
+  sub, 
+  mul, 
+  odiv, 
+  mod, 
+  jmp, 
+  je, 
+  jne, 
+  jl, 
+  jg, 
+  jle, 
+  jge,
+  cmp,
+  xint, 
+};
+
+int main(int argc, char const *argv[]) {
+  std::ofstream file("out.bin");
+  
+  uint8_t buffer[512] = {
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+    add, 32, 01, 02, 
+  };
+
+  buffer[510] = 0xFF;
+  file.write((char*)buffer, sizeof(buffer));
+  file.close();
+  return 0;
+}
