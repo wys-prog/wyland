@@ -83,7 +83,7 @@ enum eins : uint8_t {
   jle, 
   jge,
   cmp,
-  xint, 
+  xint,
 };
 
 class core {
@@ -121,8 +121,6 @@ private:
   std::function<void()> iadd = [this]() {
     auto r1 = read(), r2 = read(); 
     auto v1 = regs.get(r1) + regs.get(r2);
-    std::cout << v1 << std::endl;
-    std::cout << regs.get(r1) << " + " << regs.get(r2) << std::endl;
     regs.set(r1, v1);
   };
 
@@ -251,6 +249,13 @@ public:
 
   void run() {
     while (!halted) {
+      if (ip < beg || ip > end) 
+        throw std::out_of_range(
+          "Reading out of the local segment.\n"
+          "\tflag 'beg':\t" + std::to_string(beg) + "\n"
+          "\tflag 'end':\t" + std::to_string(end) + "\n"
+          "\tIP (global):\t" + std::to_string(ip)
+        );
       auto fetched =  read();
       local_ip++;
 
@@ -264,7 +269,6 @@ public:
         "\tLocal IP:\t" << local_ip;
         throw std::runtime_error(oss.str());
       }
-      std::cout << local_ip << ", R6: " << regs.get(6) << std::endl;
 
       set[fetched]();
 
@@ -329,8 +333,6 @@ int main(int argc, char *const argv[]) {
       std::cerr << "[e]:\texception\n\twhat():\t" << e.what() << std::endl;
     }
   }
-
-
 
   return 0;
 }

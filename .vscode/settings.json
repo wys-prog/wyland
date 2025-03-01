@@ -73,6 +73,16 @@
     "utility": "cpp",
     "format": "cpp",
     "set": "cpp",
-    "future": "cpp"
+    "future": "cpp",
+    "regex": "cpp",
+    "system_error": "cpp",
+    "unordered_set": "cpp",
+    "chrono": "cpp",
+    "__tree": "cpp",
+    "any": "cpp",
+    "forward_list": "cpp",
+    "list": "cpp",
+    "ranges": "cpp",
+    "scoped_allocator": "cpp"
   }
 }

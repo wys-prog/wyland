@@ -1,5 +1,21 @@
 #include <bits/stdc++.h>
 
+constexpr std::size_t operator""_MB(unsigned long long size) {
+  return size * 1024 * 1024;
+}
+
+constexpr std::size_t operator""_GB(unsigned long long size) {
+  return size * 1024 * 1024 * 1024;
+}
+
+#define CODE_SEGMENT_SIZE 400_MB
+#define HARDWARE_SEGMENT_SIZE 100_MB
+#define SYSTEM_SEGMENT_SIZE 12_MB
+
+#define CODE_SEGMENT_START 0
+#define HARDWARE_SEGMENT_START (CODE_SEGMENT_START + CODE_SEGMENT_SIZE)
+#define SYSTEM_SEGMENT_START (HARDWARE_SEGMENT_START + HARDWARE_SEGMENT_SIZE)
+
 enum eins : uint8_t {
   nop, 
   lea,
@@ -22,31 +38,33 @@ enum eins : uint8_t {
   xint, 
 };
 
-int main() {
-  std::ofstream file("out.bin");
-  
-  uint8_t buffer[512] = {
-    /*load, 8, 6, 0xFE, 
-    load, 8, 1, 0x01, 
-    add, 06, 01, 
-    0x00, 
-    0x00, 
-    load, 8, 2, 0xFF, 
-    jne, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-    0xFF*/
-    
-    load, 8, 06, 0x02, 
-    load, 8, 01, 0xFF, // (0xFF = 255)
-    load, 8, 02, 0x05, 
-    add, 06, 02, 
-    cmp, 06, 01,
-    je, 0,0,0,0,0,0,0xFF,0xFA,
-    jmp, 0,0,0,0,0,0,0,0,0,
-    0xFF,
-  };
+template <typename T>
+inline uint8_t* to_bin(const T &__T) {
+  static_assert(std::is_integral_v<T>, "T must be an integral type");
 
-  buffer[510] = 0xFF;
-  file.write((char*)buffer, sizeof(buffer));
-  file.close();
+  uint8_t *buff = new uint8_t[sizeof(T)];
+
+  for (size_t i = 0; i < sizeof(T); i++) {
+    buff[i] = (__T >> ((sizeof(T) - 1 - i) * 8)) & 0xFF;
+  }
+
+  return buff;
+}
+
+int main() {
+  uint8_t buff[] = {
+    load, 8, 00, 0xFF, 
+    load, 8, 01, 0x01, 
+    add, 03, 01, 
+    cmp, 03, 00, 
+    jne, 0x00, 0x00, 0x00, 0x00, 0x1F, 0x40, 0x00, 0x00, 
+    0xFF
+  }; 
+ 
+
+  std::ofstream out("out.bin");
+  out.write((const char*)buff, sizeof(buff));
+  
+  out.close();
   return 0;
 }
