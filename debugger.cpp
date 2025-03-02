@@ -35,7 +35,7 @@ enum eins : uint8_t {
   jle, 
   jge,
   cmp,
-  xint, 
+  xint,
 };
 
 enum syscall : uint8_t {
@@ -65,17 +65,40 @@ inline uint8_t* to_bin(const T &__T) {
 
 int main() {
   uint8_t buff[] = {
-    load, 8, 00, 0xFF, 
-    load, 8, 01, 0x01, 
-    add, 03, 01, 
-    cmp, 03, 00, 
-    jne, 0x00, 0x00, 0x00, 0x00, 0x1F, 0x40, 0x00, 0x00, 
+    load, 8, 00, 'H',
+    xint, 0,
+    load, 8, 00, 'e',
+    xint, 0,
+    load, 8, 00, 'l',
+    xint, 0,
+    load, 8, 00, 'l',
+    xint, 0,
+    load, 8, 00, 'o',
+    xint, 0,
+    load, 8, 00, ',',
+    xint, 0,
+    load, 8, 00, ' ',
+    xint, 0,
+    load, 8, 00, 'W',
+    xint, 0,
+    load, 8, 00, 'o',
+    xint, 0,
+    load, 8, 00, 'r',
+    xint, 0,
+    load, 8, 00, 'l',
+    xint, 0,
+    load, 8, 00, 'd',
+    xint, 0,
+    load, 8, 00, '\n',
+    xint, 0,
+
     0xFF
-  }; 
+  };
  
 
   std::ofstream out("out.bin");
   out.write((const char*)buff, sizeof(buff));
+
   
   out.close();
   return 0;

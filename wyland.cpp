@@ -210,9 +210,9 @@ private:
   void iload() {
     auto size = read();
     auto r1 = read();
-    
+
     switch (size) {
-      case 8:  regs.set(r1, read()); break;
+      case 8:  regs.set(r1, read<uint8_t>()); break;
       case 16: regs.set(r1, read<uint16_t>()); break;
       case 32: regs.set(r1, read<uint32_t>()); break;
       case 64: regs.set(r1, read<uint64_t>()); break;
@@ -220,6 +220,7 @@ private:
         + "\n\tfetched: [" + std::to_string((int)size) + "]"); 
       break;
     }
+    
   };
 
   void istore() {
@@ -243,26 +244,7 @@ private:
 
   void nop() {};
 
-  setfunc_t set[20] = {
-    &core::nop, 
-    &core::imov,
-    &core::iadd,
-    &core::isub,
-    &core::imul,
-    &core::idiv,
-    &core::imod,
-    &core::ijmp,
-    &core::ije,
-    &core::ijne,
-    &core::ijg,
-    &core::ijl,
-    &core::ijge,
-    &core::ijle,
-    &core::icmp,
-    &core::iload,
-    &core::istore,
-    &core::ixint,
-  };
+  setfunc_t set[20];
 
   void swritec() {
     std::putchar((char)regs.get(0));
@@ -300,6 +282,25 @@ public:
     beg = _memory_segment_begin;
     end = _memory_segment_end;
     ip  = beg;
+    set[eins::nop] = &core::nop;
+    //set[eins::lea] = &core::ilea;
+    set[eins::load] = &core::iload;
+    set[eins::store] = &core::istore;
+    set[eins::mov] = &core::imov;
+    set[eins::add] = &core::iadd;
+    set[eins::sub] = &core::isub;
+    set[eins::mul] = &core::imul;
+    set[eins::odiv] = &core::idiv;
+    set[eins::mod] = &core::imov;
+    set[eins::jmp] = &core::ijmp;
+    set[eins::je] = &core::ije;
+    set[eins::jne] = &core::ijne;
+    set[eins::jl] = &core::ijl;
+    set[eins::jg] = &core::ijg;
+    set[eins::jle] = &core::ijle;
+    set[eins::jge] = &core::ijge;
+    set[eins::cmp] = &core::icmp;
+    set[eins::xint] = &core::ixint;
   }
 
   void run() {
@@ -316,7 +317,7 @@ public:
 
       if (fetched == 0xFF) { halted = true; continue; }
 
-      if (fetched >= 20) {
+      if (fetched >= sizeof(set) / sizeof(set[0])) {
         std::ostringstream oss;
         oss << "Invalid instruction: " << std::hex << std::uppercase << (int)fetched << "\n"
         "\tfetched:\t[" << (int)fetched<< "]\n"
