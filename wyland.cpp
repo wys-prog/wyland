@@ -86,7 +86,22 @@ enum eins : uint8_t {
   xint,
 };
 
+enum syscall : uint8_t {
+  writec, // OK
+  readc,  // OK
+  writerc, // OK
+  startt,  // OK
+  csystem, // OK
+  // writedisk, not in the standard 25 of KokuyoVM... 
+  // readdisk,  not in the standard 25 of KokuyoVM... 
+  // getdiskif, not in the standard 25 of KokuyoVM... 
+  callec, // OK
+};
+
 class core {
+  using syscall_t = void(core::*)();
+  using setfunc_t = void(core::*)();
+
 private:
   uint64_t beg = 0x0000000000000000;
   uint64_t end = 0xFFFFFFFFFFFFFFFF;
@@ -114,72 +129,72 @@ private:
     return value;
   }
 
-  std::function<void()> imov = [this]() {
+  void imov() {
     regs.set(regs.get(read()), read()); 
   };
 
-  std::function<void()> iadd = [this]() {
+  void iadd() {
     auto r1 = read(), r2 = read(); 
     auto v1 = regs.get(r1) + regs.get(r2);
     regs.set(r1, v1);
   };
 
-  std::function<void()> isub = [this]() {
+  void isub() {
     auto r1 = read(), r2 = read();
     regs.set(r1, regs.get(r1) - regs.get(r2));
   };
 
-  std::function<void()> imul = [this]() {
+  void imul() {
     auto r1 = read(), r2 = read();
     regs.set(r1, regs.get(r1) * regs.get(r2));
   };
 
-  std::function<void()> idiv = [this]() {
+  void idiv() {
     auto r1 = read(), r2 = read();
     regs.set(r1, regs.get(r1) / regs.get(r2));
   };
 
-  std::function<void()> imod = [this]() {
+  void imod() {
     auto r1 = read(), r2 = read();
     regs.set(r1, regs.get(r1) % regs.get(r2));
   };
 
-  std::function<void()> ijmp = [this]() {
+  void ijmp() {
     ip = read<uint64_t>();
   };
 
-  std::function<void()> ije = [this]() {
+  void ije() {
     auto tmp = read<uint64_t>();
     if (flags == 0) ip = tmp;
   };
 
-  std::function<void()> ijne = [this]() {
+  void ijne() {
     auto tmp = read<uint64_t>();
     if (flags == 0) return;
     ip = tmp;
   };
 
-  std::function<void()> ijg = [this]() {
+  void ijg() {
     auto tmp = read<uint64_t>();
     if (flags == 1) ip = tmp;
   };
 
-  std::function<void()> ijl = [this]() {
+  void ijl() {
     auto tmp = read<uint64_t>();
     if (flags == -1) ip = tmp;
   };
 
-  std::function<void()> ijge = [this]() {
+  void ijge() {
     auto tmp = read<uint64_t>();
     if (flags == 1 || flags == 0) ip = tmp;
   };
 
-  std::function<void()> ijle = [this]() {
+  void ijle() {
     auto tmp = read<uint64_t>();
     if (flags == -1 || flags == 0) ip = tmp;
   };
 
-  std::function<void()> icmp = [this]() {
+  void icmp() {
     auto r1 = regs.get(read());
     auto r2 = regs.get(read());
   
@@ -192,7 +207,7 @@ private:
     }
   };
 
-  std::function<void()> iload = [this]() {
+  void iload() {
     auto size = read();
     auto r1 = read();
     
@@ -207,7 +222,7 @@ private:
     }
   };
 
-  std::function<void()> istore = [this]() {
+  void istore() {
     auto size = read();
     auto r1 = read();
     auto org = read<uint64_t>();
@@ -218,33 +233,73 @@ private:
     delete[] array;
   };
 
-  std::function<void()> ixint = [this]() {};
+  void ixint() {
+    auto index = read();
+    if (index >= 6) {
+      throw std::out_of_range("Invalid syscall index");
+    }
+    (this->*syscalls[index])();
+  };
 
-  std::function<void()> set[20];
+  void nop() {};
+
+  setfunc_t set[20] = {
+    &core::nop, 
+    &core::imov,
+    &core::iadd,
+    &core::isub,
+    &core::imul,
+    &core::idiv,
+    &core::imod,
+    &core::ijmp,
+    &core::ije,
+    &core::ijne,
+    &core::ijg,
+    &core::ijl,
+    &core::ijge,
+    &core::ijle,
+    &core::icmp,
+    &core::iload,
+    &core::istore,
+    &core::ixint,
+  };
+
+  void swritec() {
+    std::putchar((char)regs.get(0));
+  }
+  
+  void swritec_stderr() {
+    fputc(static_cast<char>(regs.get(0)), stderr);
+    fflush(stderr);
+  }
+
+  void sreadc() {
+    int c = getchar();
+    if (c != EOF) {
+      regs.set(0, static_cast<uint8_t>(c));
+    } else {
+      regs.set(0, 0);
+    }
+  }
+
+  void scsystem() {}
+  void scallec() {}
+  void sstartt() {}
+
+  syscall_t syscalls[6] = {
+    &core::swritec,
+    &core::swritec_stderr,
+    &core::sreadc,
+    &core::scsystem,
+    &core::scallec,
+    &core::sstartt
+  };
 
 public:
   void init(uint64_t _memory_segment_begin, uint64_t _memory_segment_end) {
     beg = _memory_segment_begin;
     end = _memory_segment_end;
     ip  = beg;
-    set[eins::nop] = [this]() { return; };
-    set[eins::mov] = imov;
-    set[eins::add] = iadd;
-    set[eins::sub] = isub;
-    set[eins::mul] = imul;
-    set[eins::odiv] = idiv;
-    set[eins::mod] = imod;
-    set[eins::jmp] = ijmp;
-    set[eins::je] = ije;
-    set[eins::jne] = ijne;
-    set[eins::jg] = ijg;
-    set[eins::jl] = ijl;
-    set[eins::jge] = ijge;
-    set[eins::jle] = ijle;
-    set[eins::cmp] = icmp;
-    set[eins::load] = iload;
-    set[eins::store] = istore;
-    set[eins::xint] = ixint;
   }
 
   void run() {
@@ -270,7 +325,7 @@ public:
         throw std::runtime_error(oss.str());
       }
 
-      set[fetched]();
+      (this->*set[fetched])();
 
       if (beg + 1 >= end) throw std::out_of_range("Reading out of segment.");
     }

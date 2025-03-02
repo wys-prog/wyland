@@ -38,6 +38,18 @@ enum eins : uint8_t {
   xint, 
 };
 
+enum syscall : uint8_t {
+  writec, // OK
+  readc,  // OK
+  writerc, // OK
+  startt,  // OK
+  csystem, // OK
+  // writedisk, not in the standard 25 of KokuyoVM... 
+  // readdisk,  not in the standard 25 of KokuyoVM... 
+  // getdiskif, not in the standard 25 of KokuyoVM... 
+  callec, // OK
+};
+
 template <typename T>
 inline uint8_t* to_bin(const T &__T) {
   static_assert(std::is_integral_v<T>, "T must be an integral type");
