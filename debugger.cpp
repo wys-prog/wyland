@@ -64,34 +64,13 @@ inline uint8_t* to_bin(const T &__T) {
 }
 
 int main() {
+  auto systemHBEG = SYSTEM_SEGMENT_START;
+  // Address of BEG: 0x00, 0x00, 0x00, 0x00, 0x1F ,0x40, 0x00, 0x00
   uint8_t buff[] = {
-    load, 8, 00, 'H',
-    xint, 0,
-    load, 8, 00, 'e',
-    xint, 0,
-    load, 8, 00, 'l',
-    xint, 0,
-    load, 8, 00, 'l',
-    xint, 0,
-    load, 8, 00, 'o',
-    xint, 0,
-    load, 8, 00, ',',
-    xint, 0,
-    load, 8, 00, ' ',
-    xint, 0,
-    load, 8, 00, 'W',
-    xint, 0,
-    load, 8, 00, 'o',
-    xint, 0,
-    load, 8, 00, 'r',
-    xint, 0,
-    load, 8, 00, 'l',
-    xint, 0,
-    load, 8, 00, 'd',
-    xint, 0,
-    load, 8, 00, '\n',
-    xint, 0,
-
+    load, 8, 00, '1', 
+    load, 8, 02, '2', 
+    store, 8, 02, /* ADDRESSE */ 0x00, 0x00, 0x00, 0x00, 0x1F ,0x40, 0x00, 0x00,
+    lea, 
     0xFF
   };
  

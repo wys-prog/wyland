@@ -37,7 +37,14 @@ inline uint8_t* to_bin(const T &__T) {
 #define HARDWARE_SEGMENT_START (CODE_SEGMENT_START + CODE_SEGMENT_SIZE)
 #define SYSTEM_SEGMENT_START (HARDWARE_SEGMENT_START + HARDWARE_SEGMENT_SIZE)
 
+#define KEYBOARD_SEGMENT_START HARDWARE_SEGMENT_START
+#define KEYBOARD_SEGMENT_END   HARDWARE_SEGMENT_START + 2_MB 
+
 uint8_t memory[512_MB]{0};
+
+struct segments {
+  static bool keyboard_reserved;
+};
 
 class reg_t {
 private:
@@ -110,6 +117,7 @@ private:
   reg_t    regs;
   bool     halted = false;
   int      flags  = 0;
+  bool     is_system = false;
 
   uint8_t read() {
     if (ip + 1 >= end) throw std::out_of_range("The 'end' flag is reached.");
@@ -244,6 +252,23 @@ private:
 
   void nop() {};
 
+  void ilea() {
+    auto r1 = read();
+    auto ad = read<uint64_t>();
+
+    if (ad >= SYSTEM_SEGMENT_START && !is_system) 
+      throw std::runtime_error("Permission denied: Accessing system’s segment.");
+    
+    if (ad >= HARDWARE_SEGMENT_START) {
+      while (segments::keyboard_reserved);
+      segments::keyboard_reserved = true;
+    }
+    
+    regs.set(r1, ad);
+
+    if (ad >= HARDWARE_SEGMENT_START) segments::keyboard_reserved = false;
+  }
+
   setfunc_t set[20];
 
   void swritec() {
@@ -264,7 +289,27 @@ private:
     }
   }
 
-  void scsystem() {}
+  void scsystem() {
+    auto beg = regs.get(48);
+    auto len = regs.get(49);
+
+    if (beg + len >= SYSTEM_SEGMENT_START && !is_system) 
+      throw std::runtime_error("Permission denied: Accessing system’s segment."); 
+
+    if (beg + len >= HARDWARE_SEGMENT_START) {
+      // Unlock the segment.
+      while (segments::keyboard_reserved) ;
+      segments::keyboard_reserved = true;
+    } else if (beg + len >= end || beg + len <= beg) 
+      throw std::runtime_error("Permission denied: Reading out of local segment.");
+    
+    std::string buff;
+    for (uint64_t i = beg; i < len; i++) 
+      buff += (char)memory[beg + i];
+    
+    regs.set(50, std::system(buff.c_str()));
+  }
+
   void scallec() {}
   void sstartt() {}
 
@@ -278,10 +323,11 @@ private:
   };
 
 public:
-  void init(uint64_t _memory_segment_begin, uint64_t _memory_segment_end) {
+  void init(uint64_t _memory_segment_begin, uint64_t _memory_segment_end, bool _is_system = false) {
     beg = _memory_segment_begin;
     end = _memory_segment_end;
     ip  = beg;
+    is_system = _is_system;
     set[eins::nop] = &core::nop;
     //set[eins::lea] = &core::ilea;
     set[eins::load] = &core::iload;
@@ -351,7 +397,7 @@ void run(std::istream &file) {
   
   core c;
   std::cout << "Preparing..." << std::endl;
-  c.init(SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START + sizeof(buffer));
+  c.init(SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START + sizeof(buffer), true);
   std::cout << "Invoking..." << std::endl;
   auto start_exec = std::chrono::steady_clock::now();
   c.run();
@@ -363,6 +409,7 @@ void run(std::istream &file) {
 
 int main(int argc, char *const argv[]) {
   if (argc <= 1) throw std::invalid_argument("No one task given.");
+  std::cout << "Wys’s Wyland Virtual Machine" << std::endl;
 
   for (int i = 1; i < argc; i++) {
     try {
