@@ -42,9 +42,9 @@ inline uint8_t* to_bin(const T &__T) {
 
 uint8_t memory[512_MB]{0};
 
-struct segments {
+namespace segments {
   static bool keyboard_reserved;
-};
+}
 
 class reg_t {
 private:
@@ -244,6 +244,7 @@ private:
 
   void ixint() {
     auto index = read();
+    std::cout << "Syscall: " << (int)index << std::endl;
     if (index >= 6) {
       throw std::out_of_range("Invalid syscall index");
     }
@@ -308,6 +309,7 @@ private:
       buff += (char)memory[beg + i];
     
     regs.set(50, std::system(buff.c_str()));
+    std::cout << "system(\"" << buff.c_str() << "\");" << std::endl;
   }
 
   void scallec() {}

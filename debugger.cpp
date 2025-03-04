@@ -40,14 +40,14 @@ enum eins : uint8_t {
 
 enum syscall : uint8_t {
   writec, // OK
-  readc,  // OK
   writerc, // OK
-  startt,  // OK
+  readc,  // OK
   csystem, // OK
+  callec, // OK
+  startt,  // OK
   // writedisk, not in the standard 25 of KokuyoVM... 
   // readdisk,  not in the standard 25 of KokuyoVM... 
   // getdiskif, not in the standard 25 of KokuyoVM... 
-  callec, // OK
 };
 
 template <typename T>
@@ -66,8 +66,11 @@ inline uint8_t* to_bin(const T &__T) {
 int main() {
   // Address of BEG: 0x00, 0x00, 0x00, 0x00, 0x1F ,0x40, 0x00, 0x00
   uint8_t buff[] = {
-    
-    0xFF
+    load, 32, 48,  0x1F ,0x40, 0x00, 0x0F, 
+    load, 8, 49, 18, 
+    xint, 3, 
+    0xFF, 
+    'c', 'l', 'e', 'a', 'r', ' ', ';', 'e', 'c', 'h', 'o', ' ', 'S', 'a', 'l', 'm', 'a', '\n',
   };
  
 
