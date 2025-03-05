@@ -81,11 +81,11 @@ int main() {
     0xFF, 
     // .data
     // .def(codeblock) {
-      load, 8, 49, 6,
+      load, 8, 48, 10,
+      load, 8, 49, 25, 
       xint, csystem, 
       0xFF,
 
-      'e', 'c', 'h', 'o', ' ', 'e', 'n', 'd', 'i', 'n', 'g', ';', 
       'e', 'x', 'i', 't', 
     // }
   };

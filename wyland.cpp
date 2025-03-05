@@ -43,6 +43,16 @@ std::string format(const std::initializer_list<uint8_t> &v, char del = ' ') {
   return my_fmt;
 }
 
+std::string format(const std::string &raw_string) {
+  std::string result;
+  for (char c : raw_string) {
+      if (static_cast<unsigned char>(c) < 128) {
+          result += c;
+      }
+  }
+  return result;
+}
+
 template <typename T>
 inline uint8_t* to_bin(const T &__T) {
   static_assert(std::is_integral_v<T>, "T must be an integral type");
@@ -372,7 +382,8 @@ private:
     for (uint64_t i = 0; i < len; i++) 
       buff += (char)memory[beg + i];
     
-    regs.set(50, std::system(buff.c_str()));
+    regs.set(50, std::system(format(buff).c_str()));
+    std::cout << buff << std::endl;
   }
 
   #warning todo: scalled() function.
