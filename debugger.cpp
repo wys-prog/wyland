@@ -39,15 +39,13 @@ enum eins : uint8_t {
 };
 
 enum syscall : uint8_t {
-  writec, // OK
-  writerc, // OK
-  readc,  // OK
-  csystem, // OK
-  callec, // OK
-  startt,  // OK
-  // writedisk, not in the standard 25 of KokuyoVM... 
-  // readdisk,  not in the standard 25 of KokuyoVM... 
-  // getdiskif, not in the standard 25 of KokuyoVM... 
+  writec, 
+  writerc, 
+  readc, 
+  csystem, 
+  callec, 
+  startt,
+  pseg
 };
 
 template <typename T>
@@ -64,13 +62,32 @@ inline uint8_t* to_bin(const T &__T) {
 }
 
 int main() {
-  // Address of BEG: 0x00, 0x00, 0x00, 0x00, 0x1F ,0x40, 0x00, 0x00
+  // Address of the system segment: 0x00, 0x00, 0x00, 0x00, 0x1F ,0x40, 0x00, 0x00
   uint8_t buff[] = {
-    load, 32, 48,  0x1F ,0x40, 0x00, 0x0F, 
-    load, 8, 49, 18, 
-    xint, 3, 
+    // pseg(BEG, LEN, ORG);
+    load, 32, 48, 0x1F ,0x40, 0x00, (0x00+42), // BEG
+    load, 8, 49, 23, // LEN
+    load, 8, 50, 0x00, // ORG
+    xint, pseg,
+
+    load, 8, 48, 0x00, 
+    load, 16, 49, 0xFF, 0xFF, 
+    load, 8, 01, 01, 
+    xint, startt, 
+    
+
+    jmp, 0x00, 0x00, 0x00, 0x00, 0x1F ,0x40, 0x00, 0x00+uint8_t(32),
+
     0xFF, 
-    'c', 'l', 'e', 'a', 'r', ' ', ';', 'e', 'c', 'h', 'o', ' ', 'S', 'a', 'l', 'm', 'a', '\n',
+    // .data
+    // .def(codeblock) {
+      load, 8, 49, 6,
+      xint, csystem, 
+      0xFF,
+
+      'e', 'c', 'h', 'o', ' ', 'e', 'n', 'd', 'i', 'n', 'g', ';', 
+      'e', 'x', 'i', 't', 
+    // }
   };
  
 
