@@ -383,7 +383,6 @@ private:
       buff += (char)memory[beg + i];
     
     regs.set(50, std::system(format(buff).c_str()));
-    std::cout << buff << std::endl;
   }
 
   #warning todo: scalled() function.
@@ -515,9 +514,6 @@ public:
       std::unique_lock<std::mutex> lock(mtx);
       cv.wait(lock, [this] { return children == 0; });
     }
-
-    std::cout << thread_id << ": Ended. Flags:\n'beg':\t" << beg << "\n'end':\t" << end << std::endl;
-    std::cout << "Local IP:\t" << local_ip << std::endl;
   }
 };
 
