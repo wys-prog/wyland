@@ -19,7 +19,7 @@ constexpr std::size_t operator""_GB(unsigned long long size) {
   return size * 1024 * 1024 * 1024;
 }
 
-#define SYSCALL_COUNT 7
+#define SYSCALL_COUNT 8
 
 template <typename TyVec>
 std::string format(const std::initializer_list<TyVec> &v, char del = ' ') {
@@ -435,6 +435,23 @@ private:
       memory[org+i] = memory[beg+i];
   }
 
+  void sreads() {
+    std::string buff;
+    std::getline(std::cin, buff);
+
+    while (segments::keyboard_reserved); /* Wait ! */
+    segments::keyboard_reserved = true;
+
+    size_t i = 0;
+
+    while (i < buff.size() && KEYBOARD_SEGMENT_START+i < KEYBOARD_SEGMENT_START) {
+      memory[KEYBOARD_SEGMENT_START+i] = buff[i];
+      i++;
+    }
+
+    segments::keyboard_reserved = false;
+  }
+
   syscall_t syscalls[SYSCALL_COUNT] = {
     &core::swritec,
     &core::swritec_stderr,
@@ -443,6 +460,7 @@ private:
     &core::scallec,
     &core::sstartt,
     &core::spseg,
+    &core::sreads, 
   };
 
 public:

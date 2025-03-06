@@ -42,7 +42,8 @@ readc = 2,
 csystem = 3, 
 callec = 4, 
 startt = 5,
-pseg = 6;
+pseg = 6,
+reads = 7;
 
 template <typename T>
 inline uint8_t* to_bin(const T &__T) {
@@ -67,7 +68,6 @@ public:
     (serialize(std::forward<Args>(args)), ...);
   }
 
-  // Sérialisation générique (big-endian)
   template<typename T>
   void serialize(const T& value) {
     T be_value = to_big_endian(value);
@@ -75,7 +75,6 @@ public:
     binaryData.insert(binaryData.end(), ptr, ptr + sizeof(T));
   }
 
-  // Conversion en big-endian
   template<typename T>
   T to_big_endian(T value) {
     T result = T();
@@ -87,19 +86,10 @@ public:
     return result;
   }
 
-  // Spécialisation pour std::string
-  void serialize(const std::string& str) {
-    uint32_t len = str.size();
-    serialize(len);
-    binaryData.insert(binaryData.end(), str.begin(), str.end());
-  }
-
-  // Retourne les données binaires
   const std::vector<uint8_t>& getBinaryData() const {
     return binaryData;
   }
 
-  // Affichage des données en hexadécimal
   void printHex() const {
     for (uint8_t byte : binaryData) {
       printf("%02X ", byte);
