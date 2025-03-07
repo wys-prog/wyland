@@ -47,7 +47,8 @@ namespace ops {
           jge = 16,
           cmp = 17,
           xint = 18,
-          loadat = 19;
+          loadat = 19, 
+          ret    = 20;
 
   uint8_t writec = 0, 
           writerc = 1, 
@@ -159,6 +160,7 @@ std::vector<uint8_t> loadat(uint8_t to, uint64_t at) {
 }
 
 uint8_t nop() { return ops::nop; }
+uint8_t ret() { return ops::ret; }
 std::vector<uint8_t> mov(uint8_t a, uint8_t b) { return {ops::mov, a, b}; }
 std::vector<uint8_t> add(uint8_t a, uint8_t b) { return {ops::mov, a, b}; }
 std::vector<uint8_t> sub(uint8_t a, uint8_t b) { return {ops::mov, a, b}; }
@@ -217,6 +219,9 @@ int main() {
     ldef{"start"}, 
       // Just read an input.
       interrupt(ops::reads),
+
+      ldef{"start:afterprint"}, 
+        
     /* end */
 
     // /!\: the 63 register is always used for return addresses. (in this code)
@@ -226,13 +231,14 @@ int main() {
 
       ldef{"print.write"}, 
         store(8, 51, 0x00), 
+        loadat(0, 0x00), 
         interrupt(ops::writec), 
       
       inc(51),
       cmp(51, rv), 
       ops::jne, lref{"print.write"}, 
 
-      // "return"
+      ret, 
     /* end */
 
     ldef{"end"}, 

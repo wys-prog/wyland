@@ -360,6 +360,8 @@ private:
     if (at >= HARDWARE_SEGMENT_START) segments::keyboard_reserved = false;
   }
 
+  void iret() { ip = regs.get(63); }
+
   setfunc_t set[21];
 
   void swritec() {
@@ -512,6 +514,7 @@ public:
     set[eins::jge] = &core::ijge;
     set[eins::cmp] = &core::icmp;
     set[eins::xint] = &core::ixint;
+    set[20]         = &core::iret;
   }
 
   void run() {
