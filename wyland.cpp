@@ -450,6 +450,7 @@ private:
     }
 
     segments::keyboard_reserved = false;
+    regs.set(50, buff.size());
   }
 
   syscall_t syscalls[SYSCALL_COUNT] = {

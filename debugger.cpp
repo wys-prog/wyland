@@ -75,6 +75,11 @@ public:
     binaryData.insert(binaryData.end(), ptr, ptr + sizeof(T));
   }
 
+  template <typename T>
+  void serialize(const std::vector<T> &vec) {
+    for (const auto &e:vec) serialize(e);
+  }
+
   template<typename T>
   T to_big_endian(T value) {
     T result = T();
@@ -89,37 +94,33 @@ public:
   const std::vector<uint8_t>& getBinaryData() const {
     return binaryData;
   }
-
-  void printHex() const {
-    for (uint8_t byte : binaryData) {
-      printf("%02X ", byte);
-    }
-    std::cout << std::endl;
-  }
 };
+
+typedef std::initializer_list<uint8_t> ui8;
+typedef uint8_t                        u8;
+
+uint8_t  db(uint8_t  what) { return what; }
+uint16_t dw(uint16_t what) { return what; }
+uint32_t dd(uint32_t what) { return what; }
+uint64_t dq(uint64_t what) { return what; }
+
+template <typename T, typename Func>
+std::vector<T> times(std::function<Func()> callable, int _times) {
+  std::vector<T> vec{};
+
+  for (int i = 0; i < _times; i++) vec.push_back(callable());
+  
+  return vec;
+}
+
+std::vector<uint8_t> ins(std::initializer_list<uint8_t> l) {
+  return std::vector<uint8_t>(l);
+}
 
 int main() {
   // Address of the system segment: 0x00, 0x00, 0x00, 0x00, 0x1F ,0x40, 0x00, 0x00
   BinarySerializer buff {
-    // pseg(BEG, LEN, ORG);
-    load, 32, 48, 0x1F, 0x40, 0x00, (0x00+42), // BEG
-    load, 8, 49, 23, // LEN
-    load, 8, 50, 0x00, // ORG
-    xint, pseg,
-
-    load, 8, 48, 0x00, 
-    load, 16, 49, 0xFF, 0xFF, 
-    load, 8, 01, 01, 
-    xint, startt, 
     
-
-    jmp, 0x00, 0x00, 0x00, 0x00, 0x1F ,0x40, 0x00, 0x00+uint8_t(32),
-
-    0xFF, 
-    // .data
-    // .def(codeblock) {
-
-    // }
   };
  
 
