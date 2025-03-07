@@ -83,6 +83,7 @@
     "forward_list": "cpp",
     "list": "cpp",
     "ranges": "cpp",
-    "scoped_allocator": "cpp"
+    "scoped_allocator": "cpp",
+    "text_encoding": "cpp"
   }
 }

@@ -304,7 +304,7 @@ private:
   };
 
   void istore() {
-    auto size = read();
+    auto size = read() / 8;
     auto r1 = read();
     auto org = read<uint64_t>();
     auto array = to_bin(regs.get(r1));
@@ -342,7 +342,25 @@ private:
     if (ad >= HARDWARE_SEGMENT_START) segments::keyboard_reserved = false;
   }
 
-  setfunc_t set[20];
+  void iloadat() {
+    auto dst = read();
+    auto at = read<uint64_t>(); /* This function will at memory[at]. */
+    
+    if (at >= SYSTEM_SEGMENT_START && !is_system) 
+    throw std::runtime_error("Permission denied: Accessing system’s segment.\n"
+    "Thread: " + std::to_string(thread_id));
+  
+    if (at >= HARDWARE_SEGMENT_START) {
+      while (segments::keyboard_reserved);
+      segments::keyboard_reserved = true;
+    }
+    
+    regs.set(dst, memory[at]);
+
+    if (at >= HARDWARE_SEGMENT_START) segments::keyboard_reserved = false;
+  }
+
+  setfunc_t set[21];
 
   void swritec() {
     std::putchar((char)regs.get(0));
@@ -476,7 +494,7 @@ public:
     thread_id = _name;
 
     set[eins::nop] = &core::nop;
-    //set[eins::lea] = &core::ilea;
+    set[eins::lea] = &core::ilea;
     set[eins::load] = &core::iload;
     set[eins::store] = &core::istore;
     set[eins::mov] = &core::imov;
