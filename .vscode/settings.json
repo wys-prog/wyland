@@ -108,6 +108,7 @@
     "stop_token": "cpp",
     "syncstream": "cpp",
     "thread": "cpp",
-    "valarray": "cpp"
+    "valarray": "cpp",
+    "__config": "cpp"
   }
 }
