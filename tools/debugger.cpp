@@ -76,19 +76,18 @@ inline uint8_t* to_bin(const T &__T) {
 class BinarySerializer {
 private:
   std::unordered_map<std::string, uint64_t> labels;
+  std::vector<std::pair<size_t, std::string>> unresolved_labels;
   std::vector<uint8_t> binaryData;
-
-public:
-  template<typename... Args>
-  BinarySerializer(Args&&... args) {
-    (serialize(std::forward<Args>(args)), ...);
-  }
 
   template<typename T>
   void serialize(const T& value) {
-    T be_value = to_big_endian(value);
-    const uint8_t* ptr = reinterpret_cast<const uint8_t*>(&be_value);
-    binaryData.insert(binaryData.end(), ptr, ptr + sizeof(T));
+    if constexpr (std::is_function_v<std::remove_pointer_t<T>>) {
+      serialize(value()); // Appelle la fonction et sérialise son retour
+    } else {
+      T be_value = to_big_endian(value);
+      const uint8_t* ptr = reinterpret_cast<const uint8_t*>(&be_value);
+      binaryData.insert(binaryData.end(), ptr, ptr + sizeof(T));
+    }
   }
 
   template <typename T>
@@ -96,16 +95,20 @@ public:
     for (const auto &e:vec) serialize(e);
   }
 
-  void serialize(const lref &ref) {
-    if (labels.find(ref.name) == labels.end()) throw std::runtime_error("Null label:\t" + ref.name);
-
-    serialize(labels[ref.name]);
-  }
-
   void serialize(const ldef &def) {
     if (labels.find(def.name) != labels.end()) std::cerr << "Redefinition:\t" << def.name << std::endl;
-
+    
     labels[def.name] = binaryData.size();
+  }
+
+  void serialize(const lref &ref) {
+    if (labels.find(ref.name) != labels.end()) {
+      serialize(labels[ref.name]);  // Si déjà défini, on sérialise l'adresse directement.
+    } else {
+      // On stocke la position actuelle et le nom du label à résoudre plus tard.
+      unresolved_labels.push_back({binaryData.size(), ref.name});
+      serialize(uint64_t(0));  // Placeholder temporaire.
+    }
   }
 
   template<typename T>
@@ -119,12 +122,35 @@ public:
     return result;
   }
 
+public:
+  template<typename... Args>
+  BinarySerializer(Args&&... args) {
+    (serialize(std::forward<Args>(args)), ...);
+  }
   const std::vector<uint8_t>& getBinaryData() const {
     return binaryData;
   }
 
   std::vector<uint8_t> copy() {
     return std::vector<uint8_t>(binaryData);
+  }
+
+  void resolveLabels() {
+    for (auto &[pos, name] : unresolved_labels) {
+      if (labels.find(name) == labels.end()) {
+        throw std::runtime_error("Undefined label: " + name);
+      }
+      
+      uint64_t addr = labels[name];
+      
+      uint8_t* addrBytes = to_bin(addr);
+      for (size_t i = 0; i < sizeof(uint64_t); i++) {
+        binaryData[pos + i] = addrBytes[i];
+      }
+
+      delete[] addrBytes;
+    }
+    unresolved_labels.clear();
   }
 };
 
@@ -136,7 +162,7 @@ uint64_t dq(uint64_t what) { return what; }
 template <typename T>
 std::vector<T> times(T value, int _times) {
   std::vector<T> vec{};
-
+  
   for (int i = 0; i < _times; i++) vec.push_back(value);
   
   return vec;
@@ -169,7 +195,7 @@ std::vector<uint8_t> wdiv(uint8_t a, uint8_t b){ return {ops::mov, a, b}; }
 std::vector<uint8_t> mod(uint8_t a, uint8_t b) { return {ops::mov, a, b}; }
 
 std::vector<uint8_t> jmp(uint64_t where) { 
-  return BinarySerializer{ops::jmp, where}.copy();
+  return BinarySerializer{ops::jmp, (uint64_t)where}.copy();
 }
 
 std::vector<uint8_t> je(uint64_t where) { 
@@ -213,38 +239,16 @@ int main() {
   #define rv      uint8_t(50)
 
   BinarySerializer buff {
-    ldef{"%sptr"},
-      db(0x00),
+    interrupt(ops::reads), 
 
-    ldef{"start"}, 
-      // Just read an input.
-      interrupt(ops::reads),
+    loadat(0, KEYBOARD_SEGMENT_START+1), 
+    interrupt(ops::writec), 
 
-      ldef{"start:afterprint"}, 
-        
-    /* end */
-
-    // /!\: the 63 register is always used for return addresses. (in this code)
-    ldef{"print"}, /* print((64)beg&,(64)len&) */
-      // i = r48
-      lea(51, KEYBOARD_SEGMENT_START),
-
-      ldef{"print.write"}, 
-        store(8, 51, 0x00), 
-        loadat(0, 0x00), 
-        interrupt(ops::writec), 
-      
-      inc(51),
-      cmp(51, rv), 
-      ops::jne, lref{"print.write"}, 
-
-      ret, 
-    /* end */
-
-    ldef{"end"}, 
-      db(0xFF), 
+    0xFF, 
   };
  
+  buff.resolveLabels();
+  
 
   std::ofstream out("out.bin");
   out.write((const char*)buff.getBinaryData().data(), buff.getBinaryData().size());

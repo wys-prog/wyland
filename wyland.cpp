@@ -168,6 +168,8 @@ enum eins : uint8_t {
   jge,
   cmp,
   xint,
+  loadat, 
+  ret, 
 };
 
 class core {
@@ -358,6 +360,7 @@ private:
     regs.set(dst, memory[at]);
 
     if (at >= HARDWARE_SEGMENT_START) segments::keyboard_reserved = false;
+    std::cout << "Loaded:\t" << (int)memory[at] << " at: " << (int)dst << std::endl;
   }
 
   void iret() { ip = regs.get(63); }
@@ -365,6 +368,7 @@ private:
   setfunc_t set[21];
 
   void swritec() {
+    std::cout << "PUTCHAR: " << (char)regs.get(0);
     std::putchar((char)regs.get(0));
   }
   
@@ -514,12 +518,14 @@ public:
     set[eins::jge] = &core::ijge;
     set[eins::cmp] = &core::icmp;
     set[eins::xint] = &core::ixint;
-    set[20]         = &core::iret;
+    set[eins::loadat] = &core::iloadat;
+    set[eins::ret]    = &core::iret;
   }
 
   void run() {
-    std::cout << thread_id << " created." << std::endl;
     while (!halted) {
+      std::cout << "IP:\t" << ip << std::endl;
+
       if (ip < beg || ip > end) 
         throw std::out_of_range(
           "Reading out of the local segment.\n"
@@ -529,6 +535,7 @@ public:
         );
       auto fetched =  read();
       local_ip++;
+      std::cout << "Fetched:\t" << (int)fetched << std::endl;
 
       if (fetched == 0xFF) { halted = true; continue; }
 
