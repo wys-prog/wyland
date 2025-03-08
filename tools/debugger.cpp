@@ -48,7 +48,8 @@ namespace ops {
           cmp = 17,
           xint = 18,
           loadat = 19, 
-          ret    = 20;
+          ret    = 20,
+          movad  = 21;
 
   uint8_t writec = 0, 
           writerc = 1, 
@@ -177,8 +178,8 @@ std::vector<uint8_t> store(uint8_t size, uint8_t r1, uint64_t org) {
 }
 
 template <typename T>
-std::vector<uint8_t> load(uint8_t to, T what) {
-  return BinarySerializer{ops::load, uint8_t(sizeof(T)), to, what}.copy();
+std::vector<uint8_t> load(uint8_t to, uint8_t size, T what) {
+  return BinarySerializer{ops::load, size, to, what}.copy();
 }
 
 std::vector<uint8_t> loadat(uint8_t to, uint64_t at) {
@@ -188,11 +189,11 @@ std::vector<uint8_t> loadat(uint8_t to, uint64_t at) {
 uint8_t nop() { return ops::nop; }
 uint8_t ret() { return ops::ret; }
 std::vector<uint8_t> mov(uint8_t a, uint8_t b) { return {ops::mov, a, b}; }
-std::vector<uint8_t> add(uint8_t a, uint8_t b) { return {ops::mov, a, b}; }
-std::vector<uint8_t> sub(uint8_t a, uint8_t b) { return {ops::mov, a, b}; }
-std::vector<uint8_t> mul(uint8_t a, uint8_t b) { return {ops::mov, a, b}; }
-std::vector<uint8_t> wdiv(uint8_t a, uint8_t b){ return {ops::mov, a, b}; }
-std::vector<uint8_t> mod(uint8_t a, uint8_t b) { return {ops::mov, a, b}; }
+std::vector<uint8_t> add(uint8_t a, uint8_t b) { return {ops::add, a, b}; }
+std::vector<uint8_t> sub(uint8_t a, uint8_t b) { return {ops::sub, a, b}; }
+std::vector<uint8_t> mul(uint8_t a, uint8_t b) { return {ops::mul, a, b}; }
+std::vector<uint8_t> wdiv(uint8_t a, uint8_t b){ return {ops::odiv, a, b}; }
+std::vector<uint8_t> mod(uint8_t a, uint8_t b) { return {ops::mod, a, b}; }
 
 std::vector<uint8_t> jmp(uint64_t where) { 
   return BinarySerializer{ops::jmp, (uint64_t)where}.copy();
@@ -230,21 +231,33 @@ std::vector<uint8_t> interrupt(uint8_t _code) {
   return {ops::xint, _code};
 }
 
-std::vector<uint8_t> inc(uint8_t who) {
-  return BinarySerializer{load(62, (uint8_t)1), add(who, 62)}.copy();
+std::vector<uint8_t> movad(uint8_t to, uint8_t from) {
+  return {ops::movad, to, from};
 }
 
 int main() {
   #define counter uint8_t(61)
   #define rv      uint8_t(50)
+  // KEYBOARD Beg in dec:   419430400
+  //              in hex: 0x19000000
 
   BinarySerializer buff {
     interrupt(ops::reads), 
-
-    loadat(0, KEYBOARD_SEGMENT_START+1), 
+    lea(48, KEYBOARD_SEGMENT_START), 
+    load(2, 8, (uint8_t)1), 
+    
+    movad(0, 48), 
     interrupt(ops::writec), 
 
-    0xFF, 
+    add(counter, 2), 
+    cmp(counter, rv),
+    add(48, 2),
+    jne(SYSTEM_SEGMENT_START + 16),
+
+    load(0, 8, '\n'), 
+    interrupt(ops::writec), 
+
+    db(0xFF)
   };
  
   buff.resolveLabels();
@@ -252,7 +265,6 @@ int main() {
 
   std::ofstream out("out.bin");
   out.write((const char*)buff.getBinaryData().data(), buff.getBinaryData().size());
-
   
   out.close();
   return 0;

@@ -170,6 +170,7 @@ enum eins : uint8_t {
   xint,
   loadat, 
   ret, 
+  movad, 
 };
 
 class core {
@@ -299,7 +300,11 @@ private:
       case 32: regs.set(r1, read<uint32_t>()); break;
       case 64: regs.set(r1, read<uint64_t>()); break;
       default: throw std::invalid_argument("in iload(): Invalid size: " + std::to_string(size)
-        + "\n\tfetched: [" + std::to_string((int)size) + "]\n\tThread: " + std::to_string(thread_id)); 
+        + "\n\tfetched: [" + std::to_string((int)size) + "]"
+          "\n\tThread:  " + std::to_string(thread_id) 
+        + "\n\tIP:      " + std::to_string(ip)
+        + "\n\tLIP:     " + std::to_string(local_ip)
+        + "\n\tARGS:    [" + std::to_string((int)size) + ", " + std::to_string((int)r1) +  "]"); 
       break;
     }
     
@@ -360,15 +365,18 @@ private:
     regs.set(dst, memory[at]);
 
     if (at >= HARDWARE_SEGMENT_START) segments::keyboard_reserved = false;
-    std::cout << "Loaded:\t" << (int)memory[at] << " at: " << (int)dst << std::endl;
   }
 
   void iret() { ip = regs.get(63); }
 
-  setfunc_t set[21];
+  void imovad() {
+    auto a = read(), b = read();
+    regs.set(a, memory[regs.get(b)]);
+  }
+
+  setfunc_t set[22];
 
   void swritec() {
-    std::cout << "PUTCHAR: " << (char)regs.get(0);
     std::putchar((char)regs.get(0));
   }
   
@@ -468,7 +476,7 @@ private:
 
     size_t i = 0;
 
-    while (i < buff.size() && KEYBOARD_SEGMENT_START+i < KEYBOARD_SEGMENT_START) {
+    while (i < buff.size() && KEYBOARD_SEGMENT_START+i < KEYBOARD_SEGMENT_END) { 
       memory[KEYBOARD_SEGMENT_START+i] = buff[i];
       i++;
     }
@@ -520,12 +528,12 @@ public:
     set[eins::xint] = &core::ixint;
     set[eins::loadat] = &core::iloadat;
     set[eins::ret]    = &core::iret;
+    set[eins::movad]  = &core::imovad;
   }
 
   void run() {
     while (!halted) {
-      std::cout << "IP:\t" << ip << std::endl;
-
+      
       if (ip < beg || ip > end) 
         throw std::out_of_range(
           "Reading out of the local segment.\n"
@@ -535,8 +543,7 @@ public:
         );
       auto fetched =  read();
       local_ip++;
-      std::cout << "Fetched:\t" << (int)fetched << std::endl;
-
+      
       if (fetched == 0xFF) { halted = true; continue; }
 
       if (fetched >= sizeof(set) / sizeof(set[0])) {
