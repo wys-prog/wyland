@@ -109,6 +109,7 @@
     "syncstream": "cpp",
     "thread": "cpp",
     "valarray": "cpp",
-    "__config": "cpp"
+    "__config": "cpp",
+    "*.ds_store": "c"
   }
 }

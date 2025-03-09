@@ -58,7 +58,9 @@ namespace ops {
           callec = 4, 
           startt = 5,
           pseg = 6,
-          reads = 7;
+          reads = 7, 
+          sldlcfun = 8, 
+          suldlib = 9;
 }
 
 template <typename T>
@@ -242,6 +244,7 @@ int main() {
   //              in hex: 0x19000000
 
   BinarySerializer buff {
+    /* Read from STDIN, and write the line into STDOUT
     interrupt(ops::reads), 
     lea(48, KEYBOARD_SEGMENT_START), 
     load(2, 8, (uint8_t)1), 
@@ -257,7 +260,10 @@ int main() {
     load(0, 8, '\n'), 
     interrupt(ops::writec), 
 
-    db(0xFF)
+    db(0xFF)*/
+
+
+    
   };
  
   buff.resolveLabels();

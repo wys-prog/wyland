@@ -11,6 +11,10 @@
 #include <chrono>
 #include <mutex>
 
+#include "regs.hpp"
+#include "wylrt.h"
+#include "libcallc.hpp"
+
 constexpr std::size_t operator""_MB(unsigned long long size) {
   return size * 1024 * 1024;
 }
@@ -19,7 +23,7 @@ constexpr std::size_t operator""_GB(unsigned long long size) {
   return size * 1024 * 1024 * 1024;
 }
 
-#define SYSCALL_COUNT 8
+#define SYSCALL_COUNT 10
 
 template <typename TyVec>
 std::string format(const std::initializer_list<TyVec> &v, char del = ' ') {
@@ -46,9 +50,9 @@ std::string format(const std::initializer_list<uint8_t> &v, char del = ' ') {
 std::string format(const std::string &raw_string) {
   std::string result;
   for (char c : raw_string) {
-      if (static_cast<unsigned char>(c) < 128) {
-          result += c;
-      }
+    if (static_cast<unsigned char>(c) < 128) {
+      result += c;
+    }
   }
   return result;
 }
@@ -123,31 +127,6 @@ namespace manager {
 
 }
 
-class reg_t {
-private:
-  uint8_t  r8 [16]{0};
-  uint16_t r16[16]{0};
-  uint32_t r32[16]{0};
-  uint64_t r64[16]{0};
-
-public:
-  void set(uint8_t to, uint64_t u) {
-    if (to < 16) r8[to] = u;
-    else if (to < 32) r16[to - 16] = u;
-    else if (to < 48) r32[to - 32] = u;
-    else if (to < 64) r64[to - 48] = u;
-    else throw std::runtime_error("Unexpected register: " + std::to_string(to));
-  }
-
-  uint64_t get(uint8_t who) {
-    if (who < 16) return r8[who];
-    else if (who < 32) return r16[who - 16];
-    else if (who < 48) return r32[who - 32];
-    else if (who < 64) return r64[who - 48];
-    else throw std::runtime_error("Unexpected register: " + std::to_string(who));
-  }
-};
-
 enum eins : uint8_t {
   nop, 
   lea,
@@ -186,11 +165,12 @@ private:
   bool     halted = false;
   int      flags  = 0;
   bool     is_system = false;
-  uint64_t thread_id = 'U' + 'n';
+  uint64_t thread_id = 'U' + 'n' + 'd' + 'e' + 'f' + 'T';
   uint8_t  children = 0;
-  bool     cused = false;
   std::mutex mtx;
   std::condition_variable cv;
+  std::unordered_map<uint64_t, libcallc::DynamicLibrary> libs;
+  std::unordered_map<uint64_t, libcallc::DynamicLibrary::FunctionType> funcs;
 
   uint8_t read() {
     if (ip + 1 >= end) throw std::out_of_range("The 'end' flag is reached.\n"
@@ -417,8 +397,97 @@ private:
     regs.set(50, std::system(format(buff).c_str()));
   }
 
-  #warning todo: scalled() function.
-  void scallec() {} 
+  void sldlib() {
+    /* Calling a C-external function.
+     If the DynamicLibrary class throws an error, 
+     it's the process that will handle this error.
+     However, if it's the extern C function that throw the error, 
+     in the first case we need to handle this error into this function, 
+     and then throw a C++ Exception. */
+
+    std::string lib = "";
+    // The pointer is stored in the 48 register.
+    auto mybeg = regs.get(48);
+    auto len = regs.get(49);
+
+    if (mybeg < beg || mybeg > end) throw std::out_of_range("syscall call C: pointer out of range: " + std::to_string(mybeg));
+    if (mybeg + len > end) throw std::out_of_range("Too large string (out of segment): " + std::to_string(mybeg+len));
+    
+    for (uint64_t i = 0; i < len; i++) lib += memory[mybeg+i];
+    
+    libs[regs.get(50)].loadLibrary(lib.c_str());
+  }
+  
+  void sldlcfun() {
+    auto mybeg = regs.get(48);
+    auto len = regs.get(49);
+
+    std::string func = "";
+
+    if (mybeg < beg || mybeg > end) throw std::out_of_range("syscall call C: pointer out of range: " + std::to_string(mybeg));
+    if (mybeg + len > end) throw std::out_of_range("Too large string (out of segment): " + std::to_string(mybeg+len));
+    
+    for (uint64_t i = 0; i < len; i++) func += memory[mybeg+i];
+
+    if (libs.find(regs.get(50)) == libs.end()) {
+      std::ostringstream oss;
+      oss << "Null pointing dynamic librarie handle: 0x"
+          << std::hex << std::uppercase << regs.get(50) << std::endl
+          << "\tThread:\t" << std::dec << thread_id 
+          << "\n\tIP:\t\t" << ip 
+          << "\n\tLIP:\t\t" << local_ip
+          << "\n\tloading:\t" << func << std::endl;
+      throw std::runtime_error(oss.str());
+    }
+
+    auto funcptr = libs[regs.get(50)].loadFunction(func.c_str());
+    funcs[reinterpret_cast<uint64_t>(funcptr)] = funcptr;
+    regs.set(50, reinterpret_cast<uint64_t>(funcptr));
+  }
+
+  void suldlib() {
+    auto libHandle = regs.get(48);
+    
+    if ((libs.find(libHandle)) == libs.end()) {
+      std::ostringstream oss;
+      oss << "Null pointing dynamic librarie handle: 0x"
+          << std::hex << std::uppercase << libHandle << std::endl
+          << "\tThread:\t" << std::dec << thread_id 
+          << "\n\tIP:\t\t" << ip 
+          << "\n\tLIP:\t\t" << local_ip << std::endl;
+      throw std::runtime_error(oss.str());
+    }
+
+    libs[libHandle].unloadLibrary();
+  }
+
+  void scfun() {
+    auto funHandle = regs.get(48);
+    
+    if ((funcs.find(funHandle)) == funcs.end()) {
+      std::ostringstream oss;
+      oss << "Null pointing function handle: 0x"
+          << std::hex << std::uppercase << funHandle << std::endl
+          << "\tThread:\t" << std::dec << thread_id 
+          << "\n\tIP:\t\t" << ip 
+          << "\n\tLIP:\t\t" << local_ip << std::endl;
+      throw std::runtime_error(oss.str());
+    }
+
+    /* Create arguments. */
+    while (segments::keyboard_reserved) ;
+    segments::keyboard_reserved = true;
+
+    libcallc::arg_t arg{};
+    arg.keyboardstart = &memory[KEYBOARD_SEGMENT_START];
+    arg.regspointer   = &regs;
+    arg.segstart      = &memory[beg];
+    arg.seglen        = end - beg;
+
+    funcs[funHandle](&arg);
+
+    segments::keyboard_reserved = false;
+  }
 
   void sstartt() {
     auto beg = regs.get(48);
@@ -490,10 +559,13 @@ private:
     &core::swritec_stderr,
     &core::sreadc,
     &core::scsystem,
-    &core::scallec,
+    &core::sldlib,
     &core::sstartt,
     &core::spseg,
     &core::sreads, 
+    /* New */
+    &core::sldlcfun, 
+    &core::suldlib,
   };
 
 public:
@@ -506,6 +578,7 @@ public:
     ip  = beg;
     is_system = _is_system;
     thread_id = _name;
+    std::cout << _memory_segment_begin << ":" << _memory_segment_end << std::endl;
 
     set[eins::nop] = &core::nop;
     set[eins::lea] = &core::ilea;
@@ -581,15 +654,21 @@ std::string name() {
 
 void run(std::istream &file) {
   std::cout << version() << " —— " << name() << std::endl;
-  char buffer[512]{0};
-  file.read(buffer, sizeof(buffer));
+  
+  unsigned int sectors = 0;
+  while (!file.eof() && (sectors*512) < SYSTEM_SEGMENT_SIZE) {
+    char buffer[512]{0};
+    file.read(buffer, sizeof(buffer));
 
-  for (unsigned int i = 0; i < sizeof(buffer); i++) 
-    memory[SYSTEM_SEGMENT_START+i] = buffer[i];
+    for (unsigned int i = 0; i < sizeof(buffer); i++) 
+      memory[SYSTEM_SEGMENT_START+i] = buffer[i];
+    
+    sectors++;
+  }
   
   core c;
   std::cout << "Preparing..." << std::endl;
-  c.init(SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START + sizeof(buffer), true, 0);
+  c.init(SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START + SYSTEM_SEGMENT_SIZE, true, 0);
   std::cout << "Invoking..." << std::endl;
   auto start_exec = std::chrono::steady_clock::now();
   c.run();
@@ -601,7 +680,7 @@ void run(std::istream &file) {
 
 int main(int argc, char *const argv[]) {
   if (argc <= 1) throw std::invalid_argument("No one task given.");
-  std::cout << "Wys’s Wyland Virtual Machine" << std::endl;
+  std::cout << "Wys's Wyland Virtual Machine" << std::endl;
 
   for (int i = 1; i < argc; i++) {
     try {
@@ -626,6 +705,9 @@ int main(int argc, char *const argv[]) {
       std::cerr << "[e]:\tout of range\n\twhat():\t" << e.what() << std::endl;
     } catch (const std::logic_error &e) {
       std::cerr << "[e]:\tlogic error\n\twhat():\t" << e.what() << std::endl;
+    } catch (const std::bad_alloc &e) {
+      std::cerr << "[e]:\tbad alloc\n\twhat():\t" << e.what() << std::endl;
+      std::cerr << "\texecution stopped after a bad allocation." << std::endl;
     } catch (const std::exception &e) {
       std::cerr << "[e]:\texception\n\twhat():\t" << e.what() << std::endl;
     } 
