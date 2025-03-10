@@ -23,7 +23,7 @@ constexpr std::size_t operator""_GB(unsigned long long size) {
   return size * 1024 * 1024 * 1024;
 }
 
-#define SYSCALL_COUNT 10
+#define SYSCALL_COUNT 11
 
 template <typename TyVec>
 std::string format(const std::initializer_list<TyVec> &v, char del = ' ') {
@@ -316,7 +316,7 @@ private:
     auto ad = read<uint64_t>();
 
     if (ad >= SYSTEM_SEGMENT_START && !is_system) 
-      throw std::runtime_error("Permission denied: Accessing system’s segment.\n"
+      throw std::runtime_error("Permission denied: Accessing system's segment.\n"
       "Thread: " + std::to_string(thread_id));
     
     if (ad >= HARDWARE_SEGMENT_START) {
@@ -334,7 +334,7 @@ private:
     auto at = read<uint64_t>(); /* This function will at memory[at]. */
     
     if (at >= SYSTEM_SEGMENT_START && !is_system) 
-    throw std::runtime_error("Permission denied: Accessing system’s segment.\n"
+    throw std::runtime_error("Permission denied: Accessing system's segment.\n"
     "Thread: " + std::to_string(thread_id));
   
     if (at >= HARDWARE_SEGMENT_START) {
@@ -379,7 +379,7 @@ private:
     auto len = regs.get(49);
 
     if (beg + len >= SYSTEM_SEGMENT_START && !is_system) 
-      throw std::runtime_error("Permission denied: Accessing system’s segment.\n"
+      throw std::runtime_error("Permission denied: Accessing system's segment.\n"
         "Thread: " + std::to_string(thread_id)); 
 
     if (beg + len >= HARDWARE_SEGMENT_START) {
@@ -421,6 +421,7 @@ private:
   void sldlcfun() {
     auto mybeg = regs.get(48);
     auto len = regs.get(49);
+    auto lib = regs.get(50);
 
     std::string func = "";
 
@@ -429,10 +430,10 @@ private:
     
     for (uint64_t i = 0; i < len; i++) func += memory[mybeg+i];
 
-    if (libs.find(regs.get(50)) == libs.end()) {
+    if (libs.find(lib) == libs.end()) {
       std::ostringstream oss;
       oss << "Null pointing dynamic librarie handle: 0x"
-          << std::hex << std::uppercase << regs.get(50) << std::endl
+          << std::hex << std::uppercase << lib << std::endl
           << "\tThread:\t" << std::dec << thread_id 
           << "\n\tIP:\t\t" << ip 
           << "\n\tLIP:\t\t" << local_ip
@@ -440,7 +441,7 @@ private:
       throw std::runtime_error(oss.str());
     }
 
-    auto funcptr = libs[regs.get(50)].loadFunction(func.c_str());
+    auto funcptr = libs[lib].loadFunction(func.c_str());
     funcs[reinterpret_cast<uint64_t>(funcptr)] = funcptr;
     regs.set(50, reinterpret_cast<uint64_t>(funcptr));
   }
@@ -566,6 +567,7 @@ private:
     /* New */
     &core::sldlcfun, 
     &core::suldlib,
+    &core::scfun,
   };
 
 public:
@@ -578,7 +580,6 @@ public:
     ip  = beg;
     is_system = _is_system;
     thread_id = _name;
-    std::cout << _memory_segment_begin << ":" << _memory_segment_end << std::endl;
 
     set[eins::nop] = &core::nop;
     set[eins::lea] = &core::ilea;
