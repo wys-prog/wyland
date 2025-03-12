@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://cjnjpq85tqorb"]
+
+[node name="Home" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="VMBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_right = 384.0
+offset_bottom = 320.0

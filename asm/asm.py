@@ -2,18 +2,16 @@ import re
 import struct
 import argparse
 
-# Global symbol table, address counter, defines, and macros
+# Global symbol table, address counter, and defines
 symbol_table = {}
 current_address = 0
 defines = {}
-macros = {}
 verbose = False  # Global verbose flag
 
 # Regex to match optional label, directive, and values
 pattern = re.compile(r'^(?:(?P<label>[\w.:@]+):)?\s*(?P<directive>\w+)?\s*(?P<values>.*)$')
 define_pattern = re.compile(r'^\s*%define\s+(?P<name>\w+)\s+(?P<value>.+)$')
-macro_pattern = re.compile(r'^\s*%macro\s+(?P<name>\w+)\s*(?P<params>.*)$')
-endmacro_pattern = re.compile(r'^\s*%endmacro\s*$')
+macro_pattern = re.compile(r'%define\s+(\w+)\(([^)]+)\)\s+(.+)')
 
 def log(message):
     """Print message if verbose mode is enabled."""
@@ -22,7 +20,7 @@ def log(message):
 
 def parse_line(line):
     """Parse an assembly line into (label, directive, values)."""
-    line = line.split(';')[0].strip()  # Remove comments
+    line = line.split('#')[0].strip()  # Remove comments (using # instead of ;)
     if not line:
         return None
     match = pattern.match(line)
@@ -48,55 +46,17 @@ def process_define(line):
             print(f"Error: Invalid value for %define {name}: {value}")
     return False
 
-
-def process_macro(lines, index):
-    """Process a macro definition with the correct syntax."""
-    match = macro_pattern.match(lines[index])
-    if not match:
-        return index
-
-    name = match.group('name')
-    params = [p.strip() for p in match.group('params').split(',') if p.strip()]
-    macro_body = []
-
-    index += 1
-    while index < len(lines):
-        line = lines[index].strip()
-        if endmacro_pattern.match(line):
-            break
-        macro_body.append(line)
-        index += 1
-
-    macros[name] = (params, macro_body)
-    return index
-
-
-def expand_macro(line):
-    """Expand a macro call by replacing parameters properly."""
-    parts = line.split()
-    name = parts[0]
-    
-    if name not in macros:
-        return [line]  # If not a macro, return as is.
-
-    params, macro_body = macros[name]
-    args = [p.strip() for p in ' '.join(parts[1:]).split(',')]
-
-    if len(args) != len(params):
-        raise ValueError(f"Macro {name} expects {len(params)} arguments, got {len(args)}")
-
-    # Create a dictionary of replacements
-    replacements = {f"${param}": arg for param, arg in zip(params, args)}
-
-    expanded_lines = []
-    for body_line in macro_body:
-        for param, arg in replacements.items():
-            body_line = body_line.replace(param, arg)  # Replace variables correctly
-        expanded_lines.append(body_line)
-
-    return expanded_lines  # Now correctly expanded!
-
-
+def process_macro(line):
+    """Process macros with parameters (e.g. %define Something(X, Y) dq X ; db Y)."""
+    match = macro_pattern.match(line)
+    if match:
+        macro_name = match.group(1)
+        params = match.group(2)
+        body = match.group(3)
+        defines[macro_name] = (params, body)
+        log(f"Macro {macro_name} defined with parameters: {params}")
+        return True
+    return False
 
 def process_directive(directive, values):
     """Process data directives (db, dw, dd, dq) and handle strings, chars, and ints."""
@@ -164,69 +124,61 @@ def resolve_defines(values):
         values = values.replace(name, str(value))
     return values
 
+def replace_macros(values):
+    """Replace macros with parameters in the given values."""
+    for macro_name, (params, body) in defines.items():
+        # Replace the macro parameters in the body with the values
+        macro_values = {param.strip(): f'{{{param.strip()}}}' for param in params.split(',')}
+        for param, replacement in macro_values.items():
+            body = body.replace(param, replacement)
+        values = values.replace(f'%{macro_name}({params})', body)
+    return values
+
 def assemble(source_code):
     """Assemble source code into binary."""
     global current_address, symbol_table
     binary_data = bytearray()
-    lines = source_code.splitlines()
-    
-    # First pass: process macros
-    index = 0
-    while index < len(lines):
-        line = lines[index].strip()
-        if line.startswith('%macro'):
-            index = process_macro(lines, index)
-        index += 1
+    lines = re.split(r'[&\n]', source_code)
 
+    # First pass: process defines and macros
+    for line in lines:
+        line = line.strip()
+        if line.startswith('%define'):
+            if not process_define(line) and not process_macro(line):
+                print(f"Error: Failed to process %define: {line}")
+    
     # Second pass: assemble code
-    label = None
-    index = 0
-    while index < len(lines):
-        line = lines[index].strip()
+    for line in lines:
+        line = line.strip()
         if not line or line.startswith('%'):
-            index += 1
             continue
 
-        # Expand macros
-        expanded_lines = expand_macro(line)
-        for expanded_line in expanded_lines:
-            if expanded_line.startswith('%define'):
-                process_define(expanded_line)
-                continue
+        parsed = parse_line(line)
+        if parsed is None:
+            continue
 
-            parsed = parse_line(expanded_line)
-            if parsed is None:
-                continue
+        current_label, directive, values = parsed
+        if current_label:
+            symbol_table[current_label] = current_address
+            log(f"{current_address:#018X}: {current_label.ljust(10)}")
 
-            current_label, directive, values = parsed
-            if current_label:
-                label = current_label
-                symbol_table[label] = current_address
-                log(f"{current_address:#018X}: {label.ljust(10)}")
+        if directive in [';', '//', '#']: continue
 
-            if directive == 'org':
-                try:
-                    new_address = int(values, 0)
-                    log(f"{new_address:#018X}: New origin")
-                    current_address = new_address
-                except ValueError:
-                    print(f"Error: Invalid address for ORG: {values}")
-                continue
-
-            if directive in ['db', 'dw', 'dd', 'dq']:
-                data = process_directive(directive, values)
-                binary_data.extend(data)
-            elif directive in symbol_table:
-                binary_data.extend(struct.pack('>Q', symbol_table.get(directive)))
-                current_address += 8
-            elif directive == "$":
-                continue
-
-            # Reset label after processing the directive
-            if label and directive:
-                label = None
-
-        index += 1
+        if directive == 'org':
+            try:
+                current_address = int(values, 0)
+                log(f"{current_address:#018X}: New origin")
+            except ValueError:
+                print(f"Error: Invalid address for ORG: {values}")
+        elif directive in ['db', 'dw', 'dd', 'dq']:
+            values = replace_macros(values)  # Replace macros in values
+            data = process_directive(directive, values)
+            binary_data.extend(data)
+        elif directive in symbol_table:
+            binary_data.extend(struct.pack('>Q', symbol_table[directive]))
+            current_address += 8
+        elif directive == "$":
+            continue
 
     return binary_data
 
@@ -243,21 +195,21 @@ def main():
     global verbose
     args = parse_args()
     verbose = args.verbose
-
+    
+    count = 0
+    
     with open(args.source_file, 'r') as usrin:
         with open(args.output, 'wb') as out:
             for line in usrin:
                 try:
-                    binary = assemble(line)
-                    out.write(binary)
+                    out.write(assemble(line))
                 except Exception as e:
-                    print(e, "\nline: ")
+                    print(e, f'\nline: [{line.strip()}]:{count}:{args.source_file}')
                     return -1
-            
+                
+                count += 1
+                    
     print(f"Binary saved to {args.output}")
-    
 
 if __name__ == '__main__':
     main()
-
-
