@@ -663,7 +663,6 @@ void run(std::istream &file) {
 
     for (unsigned int i = 0; i < sizeof(buffer); i++) 
       memory[SYSTEM_SEGMENT_START+i] = buffer[i];
-    
     sectors++;
   }
   
