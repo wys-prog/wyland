@@ -9,15 +9,8 @@
 #include <utility>
 #include <type_traits>
 
-template <typename T>
-std::vector<uint8_t> to_big_endian(T value) {
-  static_assert(std::is_integral<T>::value, "T must be an integral type");
-  std::vector<uint8_t> bytes(sizeof(T));
-  for (size_t i = 0; i < sizeof(T); ++i) {
-    bytes[sizeof(T) - 1 - i] = static_cast<uint8_t>(value >> (i * 8));
-  }
-  return bytes;
-}
+#include "binary.hpp"
+#include "text.hpp"
 
 class Label {
 private:
@@ -109,9 +102,47 @@ private:
   std::unordered_map<std::string, Label> Labels;
   std::unordered_map<std::string, Constant> Constants;
 
+  const std::vector<Wys::BasicString<Wys::UTF8>> instructions {
+    "%db "_utf8, "%dw "_utf8, "%dd "_utf8, "%dq "_utf8, 
+    "%load "_utf8, "%loadat "_utf8, "%sotre "_utf8, "%lea "_utf8, 
+    "%mov "_utf8, "%add "_utf8, "%sub "_utf8, "%mul "_utf8, "%div "_utf8, "%mod "_utf8, "%movad "_utf8,
+    "%jmp "_utf8, "%je "_utf8, "%jne "_utf8, "%jg "_utf8, "%jl "_utf8, "%jge "_utf8, "%jle "_utf8, 
+    "%int "_utf8, 
+    "%cmp "_utf8, 
+    "%ret "_utf8, 
+    "%nop "_utf8,
+    "%times "_utf8,
+    "%.utf8"_utf8, 
+    "%.utf16"_utf8, 
+    "%.utf32"_utf8, 
+    "%.ascii"_utf8, 
+  };
+
+  void db(const Wys::StringUTF8 &String) {
+    auto args = String.ExtractArguments();
+    for (const auto&arg:args) {
+      if (!arg.IsNumber()) {
+        Output.write((char*)arg.Base().c_str(), arg.Base().size());
+      } else if (arg.IsNegatifNumber()) {
+        char buffer[1]{(uint8_t)arg.ToUint()};
+        Output.write(buffer, sizeof(buffer));
+      } else {
+        char buffer[1]{(uint8_t)arg.ToInt()};
+        Output.write(buffer, sizeof(buffer));
+      }
+    }
+  }
+
 public:
 
   void Compile() {
-    
+    std::string buff;
+    while (std::getline(Source, buff)) {
+      Wys::StringUTF8 line(buff);
+      auto tokens = line.SplitMultiple(instructions);
+      for (const auto&token:tokens) {
+        if (token == "%db "_utf8);
+      }
+    }
   }
 };
