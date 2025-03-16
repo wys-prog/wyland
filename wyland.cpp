@@ -10,6 +10,7 @@
 #include <thread>
 #include <chrono>
 #include <mutex>
+#include <new>
 
 #include "regs.hpp"
 #include "wylrt.h"
@@ -582,7 +583,7 @@ public:
     thread_id = _name;
 
     set[eins::nop] = &core::nop;
-    set[eins::lea] = &core::ilea;
+    set[eins::lea] = &core::ilea; 
     set[eins::load] = &core::iload;
     set[eins::store] = &core::istore;
     set[eins::mov] = &core::imov;
@@ -650,7 +651,7 @@ std::string version() {
 }
 
 std::string name() {
-  return "Orkhon Töresi";
+  return "welf runtime";
 }
 
 void run(std::istream &file) {
@@ -671,7 +672,24 @@ void run(std::istream &file) {
   c.init(SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START + SYSTEM_SEGMENT_SIZE, true, 0);
   std::cout << "Invoking..." << std::endl;
   auto start_exec = std::chrono::steady_clock::now();
-  c.run();
+
+  try {
+    c.run();
+  } catch (const std::invalid_argument &e) {
+    std::cerr << "[e]:\tinvalid argument\n\twhat():\t" << e.what() << std::endl;;
+  } catch (const std::runtime_error &e) {
+    std::cerr << "[e]:\truntime error\n\twhat():\t" << e.what() << std::endl;
+  } catch (const std::out_of_range &e) {
+    std::cerr << "[e]:\tout of range\n\twhat():\t" << e.what() << std::endl;
+  } catch (const std::logic_error &e) {
+    std::cerr << "[e]:\tlogic error\n\twhat():\t" << e.what() << std::endl;
+  } catch (const std::bad_alloc &e) {
+    std::cerr << "[e]:\tbad alloc\n\twhat():\t" << e.what() << std::endl;
+    std::cerr << "\texecution stopped after a bad allocation." << std::endl;
+  } catch (const std::exception &e) {
+    std::cerr << "[e]:\texception\n\twhat():\t" << e.what() << std::endl;
+  } 
+  
   auto end_exec = std::chrono::steady_clock::now();
   std::cout << "Invokation duration:\t" 
   << std::chrono::duration_cast<std::chrono::nanoseconds>(end_exec - start_exec).count()
