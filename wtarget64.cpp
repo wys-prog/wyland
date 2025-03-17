@@ -18,143 +18,9 @@
 #include "libcallc.hpp"
 
 #include "targets.h"
-
-constexpr std::size_t operator""_MB(unsigned long long size) {
-  return size * 1024 * 1024;
-}
-
-constexpr std::size_t operator""_GB(unsigned long long size) {
-  return size * 1024 * 1024 * 1024;
-}
-
-#define SYSCALL_COUNT 11
-
-template <typename TyVec>
-std::string format(const std::initializer_list<TyVec> &v, char del = ' ') {
-  std::string my_format = "";
-  for (const auto &e:v) my_format += std::to_string(e) + del;
-  my_format.pop_back();
-  return my_format;
-}
-
-std::string format(const std::initializer_list<uint8_t> &v, char del = ' ') {
-  std::ostringstream oss;
-
-  oss << std::hex << std::uppercase;
-
-  for (const auto&e:v) oss << (int)e << del;
-  
-  auto my_fmt = oss.str();
-  
-  my_fmt.pop_back();
-
-  return my_fmt;
-}
-
-std::string format(const std::string &raw_string) {
-  std::string result;
-  for (char c : raw_string) {
-    if (static_cast<unsigned char>(c) < 128) {
-      result += c;
-    }
-  }
-  return result;
-}
-
-template <typename T>
-inline uint8_t* to_bin(const T &__T) {
-  static_assert(std::is_integral_v<T>, "T must be an integral type");
-
-  uint8_t *buff = new uint8_t[sizeof(T)];
-
-  for (size_t i = 0; i < sizeof(T); i++) {
-    buff[i] = (__T >> ((sizeof(T) - 1 - i) * 8)) & 0xFF;
-  }
-
-  return buff;
-}
-
-#define CODE_SEGMENT_SIZE 400_MB
-#define HARDWARE_SEGMENT_SIZE 100_MB
-#define SYSTEM_SEGMENT_SIZE 12_MB
-
-#define CODE_SEGMENT_START 0
-#define HARDWARE_SEGMENT_START (CODE_SEGMENT_START + CODE_SEGMENT_SIZE)
-#define SYSTEM_SEGMENT_START (HARDWARE_SEGMENT_START + HARDWARE_SEGMENT_SIZE)
-
-#define KEYBOARD_SEGMENT_START HARDWARE_SEGMENT_START
-#define KEYBOARD_SEGMENT_END   HARDWARE_SEGMENT_START + 2_MB 
-
-typedef void (*lambda)();
-
-uint8_t memory[512_MB]{0};
-
-namespace segments {
-  static bool keyboard_reserved;
-}
-
-namespace manager {
-  /* Don't use this namespace ! */
-  namespace _ {
-    std::vector<std::pair<uint64_t, uint64_t>> regions;
-    bool regions_reserved;
-  }
-
-  void create_region(uint64_t a, uint64_t b) {
-    while (_::regions_reserved) ;
-    _::regions_reserved = true;
-
-    for (const auto &pair : _::regions) {
-      if (!(b <= pair.first || a >= pair.second)) 
-        throw std::logic_error("Thread memory region overlaps with an existing one.");
-    }
-
-    _::regions.push_back({a, b});
-
-    _::regions_reserved = false;
-  }
-
-  bool is_region_created(uint64_t a) {
-    while (_::regions_reserved) ;
-    _::regions_reserved = true;
-
-    for (const auto &pair : _::regions) {
-      if (a >= pair.first && a < pair.second) {
-        _::regions_reserved = false;
-        return true;
-      }
-    }
-
-    _::regions_reserved = false;
-    return false;
-}
-
-}
-
-enum eins : uint8_t {
-  nop, 
-  lea,
-  load, 
-  store, 
-  mov, 
-  add, 
-  sub, 
-  mul, 
-  odiv, 
-  mod, 
-  jmp, 
-  je, 
-  jne, 
-  jl, 
-  jg, 
-  jle, 
-  jge,
-  cmp,
-  xint,
-  loadat, 
-  ret, 
-  movad, 
-};
+#include "wmmbase.hpp"
+#include "wtypes.h"
+#include "wformat.hpp"
 
 class core {
   using syscall_t = void(core::*)();
@@ -585,28 +451,28 @@ public:
     is_system = _is_system;
     thread_id = _name;
 
-    set[eins::nop] = &core::nop;
-    set[eins::lea] = &core::ilea; 
-    set[eins::load] = &core::iload;
-    set[eins::store] = &core::istore;
-    set[eins::mov] = &core::imov;
-    set[eins::add] = &core::iadd;
-    set[eins::sub] = &core::isub;
-    set[eins::mul] = &core::imul;
-    set[eins::odiv] = &core::idiv;
-    set[eins::mod] = &core::imov;
-    set[eins::jmp] = &core::ijmp;
-    set[eins::je] = &core::ije;
-    set[eins::jne] = &core::ijne;
-    set[eins::jl] = &core::ijl;
-    set[eins::jg] = &core::ijg;
-    set[eins::jle] = &core::ijle;
-    set[eins::jge] = &core::ijge;
-    set[eins::cmp] = &core::icmp;
-    set[eins::xint] = &core::ixint;
-    set[eins::loadat] = &core::iloadat;
-    set[eins::ret]    = &core::iret;
-    set[eins::movad]  = &core::imovad;
+    set[set_wtarg64::nop] = &core::nop;
+    set[set_wtarg64::lea] = &core::ilea; 
+    set[set_wtarg64::load] = &core::iload;
+    set[set_wtarg64::store] = &core::istore;
+    set[set_wtarg64::mov] = &core::imov;
+    set[set_wtarg64::add] = &core::iadd;
+    set[set_wtarg64::sub] = &core::isub;
+    set[set_wtarg64::mul] = &core::imul;
+    set[set_wtarg64::odiv] = &core::idiv;
+    set[set_wtarg64::mod] = &core::imov;
+    set[set_wtarg64::jmp] = &core::ijmp;
+    set[set_wtarg64::je] = &core::ije;
+    set[set_wtarg64::jne] = &core::ijne;
+    set[set_wtarg64::jl] = &core::ijl;
+    set[set_wtarg64::jg] = &core::ijg;
+    set[set_wtarg64::jle] = &core::ijle;
+    set[set_wtarg64::jge] = &core::ijge;
+    set[set_wtarg64::cmp] = &core::icmp;
+    set[set_wtarg64::xint] = &core::ixint;
+    set[set_wtarg64::loadat] = &core::iloadat;
+    set[set_wtarg64::ret]    = &core::iret;
+    set[set_wtarg64::movad]  = &core::imovad;
   }
 
   void run() {
@@ -648,134 +514,3 @@ public:
     }
   }
 };
-
-std::string version() {
-  return "Wyland 1.1";
-}
-
-std::string name() {
-  return "welf runtime";
-}
-
-void run(std::istream &file) {
-  std::cout << version() << " —— " << name() << std::endl;
-  
-  unsigned int sectors = 0;
-  while (!file.eof() && (sectors*512) < SYSTEM_SEGMENT_SIZE) {
-    char buffer[512]{0};
-    file.read(buffer, sizeof(buffer));
-
-    for (unsigned int i = 0; i < sizeof(buffer); i++) 
-      memory[SYSTEM_SEGMENT_START+i] = buffer[i];
-    sectors++;
-  }
-  
-  core c;
-  std::cout << "Preparing..." << std::endl;
-  c.init(SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START + SYSTEM_SEGMENT_SIZE, true, 0);
-  std::cout << "Invoking..." << std::endl;
-  auto start_exec = std::chrono::steady_clock::now();
-
-  try {
-    c.run();
-  } catch (const std::invalid_argument &e) {
-    std::cerr << "[e]:\tinvalid argument\n\twhat():\t" << e.what() << std::endl;;
-  } catch (const std::runtime_error &e) {
-    std::cerr << "[e]:\truntime error\n\twhat():\t" << e.what() << std::endl;
-  } catch (const std::out_of_range &e) {
-    std::cerr << "[e]:\tout of range\n\twhat():\t" << e.what() << std::endl;
-  } catch (const std::logic_error &e) {
-    std::cerr << "[e]:\tlogic error\n\twhat():\t" << e.what() << std::endl;
-  } catch (const std::bad_alloc &e) {
-    std::cerr << "[e]:\tbad alloc\n\twhat():\t" << e.what() << std::endl;
-    std::cerr << "\texecution stopped after a bad allocation." << std::endl;
-  } catch (const std::exception &e) {
-    std::cerr << "[e]:\texception\n\twhat():\t" << e.what() << std::endl;
-  } 
-
-  auto end_exec = std::chrono::steady_clock::now();
-  std::cout << "Invokation duration:\t" 
-  << std::chrono::duration_cast<std::chrono::nanoseconds>(end_exec - start_exec).count()
-  << " ns" << std::endl;
-}
-
-std::vector<std::string> get_disks() {
-  std::vector<std::string> disks;
-  std::vector<std::filesystem::path> directories = {"./", "../"};
-
-  for (const auto& dir : directories) {
-    for (const auto& entry : std::filesystem::recursive_directory_iterator(dir)) {
-      if (entry.is_regular_file() && entry.path().extension() == ".disk") {
-        disks.push_back(entry.path().string());
-      }
-    }
-  }
-
-  return disks;
-}
-
-int main(int argc, char *const argv[]) {
-  if (argc <= 1) throw std::invalid_argument("No one task given.");
-  std::cout << "Wys's Wyland Virtual Machine" << std::endl;
-
-  for (int i = 1; i < argc; i++) {
-    try {
-        if (std::string(argv[i]) == "--v") std::cout << version() << std::endl;
-        else if (std::string(argv[i]) == "--n") std::cout << name() << std::endl;
-        else if (std::string(argv[i]) == "-run") {
-          if (i+1 >= argc) throw std::runtime_error("Excepted input file after '-run' token.");
-          std::ifstream input(argv[++i]);
-
-          if (!input.is_open()) throw std::invalid_argument("Unable to open file:\t" + std::string(argv[i-1]));
-
-          run(input);
-        } else {
-          throw std::invalid_argument("Unknown flag:\t" + std::string(argv[i]));
-        }
-      
-    } catch (const std::invalid_argument &e) {
-      std::cerr << "[e]:\tinvalid argument\n\twhat():\t" << e.what() << std::endl;;
-    } catch (const std::runtime_error &e) {
-      std::cerr << "[e]:\truntime error\n\twhat():\t" << e.what() << std::endl;
-    } catch (const std::out_of_range &e) {
-      std::cerr << "[e]:\tout of range\n\twhat():\t" << e.what() << std::endl;
-    } catch (const std::logic_error &e) {
-      std::cerr << "[e]:\tlogic error\n\twhat():\t" << e.what() << std::endl;
-    } catch (const std::bad_alloc &e) {
-      std::cerr << "[e]:\tbad alloc\n\twhat():\t" << e.what() << std::endl;
-      std::cerr << "\texecution stopped after a bad allocation." << std::endl;
-    } catch (const std::exception &e) {
-      std::cerr << "[e]:\texception\n\twhat():\t" << e.what() << std::endl;
-    } 
-  }
-
-  return 0;
-}
-
-/* Arguments: 
-  --v, --version:  prints the version
-  --n, --name:     prints the name
-  --b, --build:    prints the build name
-  --target:        prints the current target
-  --target-info:   prints informations about targers
-  --check:         finds all files in .disk in ./ and ../        
-
-  -target <x>:     sets the target to x
-  -run <file>:     run <file> 
-  -parse <file>:   parses the <file>.
-  -debug <file>:   debugs a <file>
-  -new-env <name>: creates a new environnement 
-
-  --- in the future --- 
-  -compile <file>: compiles the <file>
-  -libsof <file>:  returns libs in <file>
-  -api <lib>:      tries to load <lib> as library
-
-  --- targets ---
-  wtarg64: Basic Target 
-  wtarg32: Basic Target in 32 bits mode
-  wtargmarch: Target built for Mathematics Operations, and big floats.
-  wtargfast: NON-STANDARD ! The fastest (jumps are limited to: jmp, je)
-
-
-*/
