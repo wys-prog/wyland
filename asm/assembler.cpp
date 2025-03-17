@@ -104,18 +104,18 @@ private:
 
   const std::vector<Wys::BasicString<Wys::UTF8>> instructions {
     "%db "_utf8, "%dw "_utf8, "%dd "_utf8, "%dq "_utf8, 
-    "%load "_utf8, "%loadat "_utf8, "%sotre "_utf8, "%lea "_utf8, 
+    /*"%load "_utf8, "%loadat "_utf8, "%sotre "_utf8, "%lea "_utf8, 
     "%mov "_utf8, "%add "_utf8, "%sub "_utf8, "%mul "_utf8, "%div "_utf8, "%mod "_utf8, "%movad "_utf8,
     "%jmp "_utf8, "%je "_utf8, "%jne "_utf8, "%jg "_utf8, "%jl "_utf8, "%jge "_utf8, "%jle "_utf8, 
     "%int "_utf8, 
     "%cmp "_utf8, 
     "%ret "_utf8, 
-    "%nop "_utf8,
+    "%nop "_utf8,*/
     "%times "_utf8,
     "%.utf8"_utf8, 
     "%.utf16"_utf8, 
     "%.utf32"_utf8, 
-    "%.ascii"_utf8, 
+    "%.ascii"_utf8,
   };
 
   void db(const Wys::StringUTF8 &String) {
@@ -124,11 +124,75 @@ private:
       if (!arg.IsNumber()) {
         Output.write((char*)arg.Base().c_str(), arg.Base().size());
       } else if (arg.IsNegatifNumber()) {
-        char buffer[1]{(uint8_t)arg.ToUint()};
+        char buffer[1]{(int8_t)arg.ToInt()};
         Output.write(buffer, sizeof(buffer));
       } else {
-        char buffer[1]{(uint8_t)arg.ToInt()};
+        char buffer[1]{(uint8_t)arg.ToUint()};
         Output.write(buffer, sizeof(buffer));
+      }
+    }
+  }
+
+  void dw(const Wys::StringUTF8 &String) {
+    auto args = String.ExtractArguments();
+    for (const auto&arg:args) {
+      if (!arg.IsNumber()) {
+        auto encoded = arg.EncodeOn<uint16_t>();
+        for (const auto&e:encoded) {
+          auto bytes = Wys::Serialize(e);
+          Output.write((char*)bytes.data(), bytes.size());
+        }
+      } else if (arg.IsNegatifNumber()) {
+        auto value = (int16_t)arg.ToInt();
+        auto bytes = Wys::Serialize(value);
+        Output.write((char*)bytes.data(), bytes.size());
+      } else {
+        auto value = (uint16_t)arg.ToUint();
+        auto bytes = Wys::Serialize(value);
+        Output.write((char*)bytes.data(), bytes.size());
+      }
+    }
+  }
+
+  void dd(const Wys::StringUTF8 &String) {
+    auto args = String.ExtractArguments();
+    for (const auto&arg:args) {
+      if (!arg.IsNumber()) {
+        auto encoded = arg.EncodeOn<uint32_t>();
+        for (const auto&e:encoded) {
+          auto bytes = Wys::Serialize(e);
+          Output.write((char*)bytes.data(), bytes.size());
+        }
+      } else if (arg.IsNegatifNumber()) {
+        auto value = (int32_t)arg.ToInt();
+        auto bytes = Wys::Serialize(value);
+        Output.write((char*)bytes.data(), bytes.size());
+      } else {
+        auto value = (uint32_t)arg.ToUint();
+        auto bytes = Wys::Serialize(value);
+        Output.write((char*)bytes.data(), bytes.size());
+      }
+    }
+  }
+
+  void dq(const Wys::StringUTF8 &String) {
+    auto args = String.ExtractArguments();
+    for (auto&arg:args) {
+      arg.Trim();
+      if (!arg.IsNumber()) {
+        auto encoded = arg.EncodeOn<uint64_t>();
+        for (const auto&e:encoded) {
+          auto bytes = Wys::Serialize(e);
+          Output.write((char*)bytes.data(), bytes.size());
+        }
+      } else if (arg.IsNegatifNumber()) {
+        auto value = (int64_t)arg.ToInt();
+        auto bytes = Wys::Serialize(value);
+        Output.write((char*)bytes.data(), bytes.size());
+      } else {
+        auto value = (uint64_t)arg.ToUint();
+        auto bytes = Wys::Serialize(value);
+        Output.write((char*)bytes.data(), bytes.size());
       }
     }
   }
@@ -140,8 +204,15 @@ public:
     while (std::getline(Source, buff)) {
       Wys::StringUTF8 line(buff);
       auto tokens = line.SplitMultiple(instructions);
-      for (const auto&token:tokens) {
-        if (token == "%db "_utf8);
+      for (auto&token:tokens) {
+        token.Trim();
+        if (token.StartsWith("%db "_utf8)) db(token.Substr(4, token.Size()-4));
+        else if (token.StartsWith("%dw "_utf8)) dw(token.Substr(4, token.Size()-4));
+        else if (token.StartsWith("%dd "_utf8)) dd(token.Substr(4, token.Size()-4));
+        else if (token.StartsWith("%dq "_utf8)) dq(token.Substr(4, token.Size()-4));
+        else if (token.StartsWith("%times "_utf8)) {
+          
+        }
       }
     }
   }

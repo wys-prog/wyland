@@ -307,6 +307,16 @@ namespace Wys {
       return !data.empty() && data[0] == '-' && std::all_of(data.begin() + 1, data.end(), ::isdigit);
     }
 
+    template<typename T>
+    std::vector<T> EncodeOn() const {
+      std::vector<T> buff;
+      for (const auto&e:data) {
+        buff.push_back(reinterpret_cast<T>(e));
+      }
+      buff.shrink_to_fit();
+      return buff;
+    }
+
     bool operator==(const BasicString<TyCharEncoding>& other) const {
       return data == other.data;
     }
@@ -447,14 +457,14 @@ namespace Wys {
   using StringASCII = String<uint8_t, char>;
 }
 
-inline Wys::StringUTF8 operator""_utf8(const char *str, size_t) {
+inline Wys::BasicString<Wys::UTF8> operator""_utf8(const char *str, size_t) {
   return Wys::StringUTF8(str);
 }
 
-inline Wys::StringUTF16 operator""_utf16(const char16_t *str, size_t) {
+inline Wys::BasicString<Wys::UTF16> operator""_utf16(const char16_t *str, size_t) {
   return Wys::StringUTF16(str);
 }
 
-inline Wys::StringUTF32 operator""_utf32(const char32_t *str, size_t) {
+inline Wys::BasicString<Wys::UTF32> operator""_utf32(const char32_t *str, size_t) {
   return Wys::StringUTF32(str);
 }

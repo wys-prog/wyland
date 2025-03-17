@@ -2,6 +2,7 @@
 #include <initializer_list>
 #include <unordered_map>
 #include <functional>
+#include <filesystem>
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -647,7 +648,7 @@ public:
 };
 
 std::string version() {
-  return "Wyland 1.0";
+  return "Wyland 1.1";
 }
 
 std::string name() {
@@ -689,11 +690,26 @@ void run(std::istream &file) {
   } catch (const std::exception &e) {
     std::cerr << "[e]:\texception\n\twhat():\t" << e.what() << std::endl;
   } 
-  
+
   auto end_exec = std::chrono::steady_clock::now();
   std::cout << "Invokation duration:\t" 
   << std::chrono::duration_cast<std::chrono::nanoseconds>(end_exec - start_exec).count()
   << " ns" << std::endl;
+}
+
+std::vector<std::string> get_disks() {
+  std::vector<std::string> disks;
+  std::vector<std::filesystem::path> directories = {"./", "../"};
+
+  for (const auto& dir : directories) {
+    for (const auto& entry : std::filesystem::recursive_directory_iterator(dir)) {
+      if (entry.is_regular_file() && entry.path().extension() == ".disk") {
+        disks.push_back(entry.path().string());
+      }
+    }
+  }
+
+  return disks;
 }
 
 int main(int argc, char *const argv[]) {
@@ -733,3 +749,31 @@ int main(int argc, char *const argv[]) {
 
   return 0;
 }
+
+/* Arguments: 
+  --v, --version:  prints the version
+  --n, --name:     prints the name
+  --b, --build:    prints the build name
+  --target:        prints the current target
+  --target-info:   prints informations about targers
+  --check:         finds all files in .disk in ./ and ../        
+
+  -target <x>:     sets the target to x
+  -run <file>:     run <file> 
+  -parse <file>:   parses the <file>.
+  -debug <file>:   debugs a <file>
+  -new-env <name>: creates a new environnement 
+
+  --- in the future --- 
+  -compile <file>: compiles the <file>
+  -libsof <file>:  returns libs in <file>
+  -api <lib>:      tries to load <lib> as library
+
+  --- targets ---
+  wtarg64: Basic Target 
+  wtarg32: Basic Target in 32 bits mode
+  wtargmarch: Target built for Mathematics Operations, and big floats.
+  wtargfast: NON-STANDARD ! The fastest (jumps are limited to: jmp, je)
+
+
+*/
