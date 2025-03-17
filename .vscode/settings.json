@@ -110,6 +110,7 @@
     "thread": "cpp",
     "valarray": "cpp",
     "__config": "cpp",
-    "*.ds_store": "c"
+    "*.ds_store": "c",
+    "filesystem": "cpp"
   }
 }

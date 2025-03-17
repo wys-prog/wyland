@@ -16,15 +16,14 @@
 #include "regs.hpp"
 #include "wylrt.h"
 #include "libcallc.hpp"
-
 #include "targets.h"
 #include "wmmbase.hpp"
 #include "wtypes.h"
 #include "wformat.hpp"
 
-class core {
-  using syscall_t = void(core::*)();
-  using setfunc_t = void(core::*)();
+class corewtarg64 {
+  using syscall_t = void(corewtarg64::*)();
+  using setfunc_t = void(corewtarg64::*)();
 
 private:
   uint64_t beg = 0x0000000000000000;
@@ -372,7 +371,7 @@ private:
       throw std::runtime_error("Thread memory region overlaps with HARDWARE_SEGMENT_START.\n"
         "Thread: " + std::to_string(thread_id));
       
-    core* c = new core();
+    corewtarg64* c = new corewtarg64();
     manager::create_region(beg, end);
     c->init(beg, end, false, end+1);
 
@@ -426,18 +425,18 @@ private:
   }
 
   syscall_t syscalls[SYSCALL_COUNT] = {
-    &core::swritec,
-    &core::swritec_stderr,
-    &core::sreadc,
-    &core::scsystem,
-    &core::sldlib,
-    &core::sstartt,
-    &core::spseg,
-    &core::sreads, 
+    &corewtarg64::swritec,
+    &corewtarg64::swritec_stderr,
+    &corewtarg64::sreadc,
+    &corewtarg64::scsystem,
+    &corewtarg64::sldlib,
+    &corewtarg64::sstartt,
+    &corewtarg64::spseg,
+    &corewtarg64::sreads, 
     /* New */
-    &core::sldlcfun, 
-    &core::suldlib,
-    &core::scfun,
+    &corewtarg64::sldlcfun, 
+    &corewtarg64::suldlib,
+    &corewtarg64::scfun,
   };
 
 public:
@@ -451,28 +450,28 @@ public:
     is_system = _is_system;
     thread_id = _name;
 
-    set[set_wtarg64::nop] = &core::nop;
-    set[set_wtarg64::lea] = &core::ilea; 
-    set[set_wtarg64::load] = &core::iload;
-    set[set_wtarg64::store] = &core::istore;
-    set[set_wtarg64::mov] = &core::imov;
-    set[set_wtarg64::add] = &core::iadd;
-    set[set_wtarg64::sub] = &core::isub;
-    set[set_wtarg64::mul] = &core::imul;
-    set[set_wtarg64::odiv] = &core::idiv;
-    set[set_wtarg64::mod] = &core::imov;
-    set[set_wtarg64::jmp] = &core::ijmp;
-    set[set_wtarg64::je] = &core::ije;
-    set[set_wtarg64::jne] = &core::ijne;
-    set[set_wtarg64::jl] = &core::ijl;
-    set[set_wtarg64::jg] = &core::ijg;
-    set[set_wtarg64::jle] = &core::ijle;
-    set[set_wtarg64::jge] = &core::ijge;
-    set[set_wtarg64::cmp] = &core::icmp;
-    set[set_wtarg64::xint] = &core::ixint;
-    set[set_wtarg64::loadat] = &core::iloadat;
-    set[set_wtarg64::ret]    = &core::iret;
-    set[set_wtarg64::movad]  = &core::imovad;
+    set[set_wtarg64::nop] = &corewtarg64::nop;
+    set[set_wtarg64::lea] = &corewtarg64::ilea; 
+    set[set_wtarg64::load] = &corewtarg64::iload;
+    set[set_wtarg64::store] = &corewtarg64::istore;
+    set[set_wtarg64::mov] = &corewtarg64::imov;
+    set[set_wtarg64::add] = &corewtarg64::iadd;
+    set[set_wtarg64::sub] = &corewtarg64::isub;
+    set[set_wtarg64::mul] = &corewtarg64::imul;
+    set[set_wtarg64::odiv] = &corewtarg64::idiv;
+    set[set_wtarg64::mod] = &corewtarg64::imov;
+    set[set_wtarg64::jmp] = &corewtarg64::ijmp;
+    set[set_wtarg64::je] = &corewtarg64::ije;
+    set[set_wtarg64::jne] = &corewtarg64::ijne;
+    set[set_wtarg64::jl] = &corewtarg64::ijl;
+    set[set_wtarg64::jg] = &corewtarg64::ijg;
+    set[set_wtarg64::jle] = &corewtarg64::ijle;
+    set[set_wtarg64::jge] = &corewtarg64::ijge;
+    set[set_wtarg64::cmp] = &corewtarg64::icmp;
+    set[set_wtarg64::xint] = &corewtarg64::ixint;
+    set[set_wtarg64::loadat] = &corewtarg64::iloadat;
+    set[set_wtarg64::ret]    = &corewtarg64::iret;
+    set[set_wtarg64::movad]  = &corewtarg64::imovad;
   }
 
   void run() {
