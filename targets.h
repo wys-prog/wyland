@@ -2,13 +2,32 @@
 #define ___WYLAND_TARGETS___
 
 #include <stdint.h>
+#include <string.h>
 
 typedef int __wtarget;
 
-__wtarget wtarg64    = 0xA64;
-__wtarget wtarg32    = 0xA32; /* Not implemented */
-__wtarget wtargmarch = 0xAC;
-__wtarget wtargfast  = 0xAFA; /* Deprecated, not implemented */
+const __wtarget wtarg64    = 0xA64;
+const __wtarget wtarg32    = 0xA32; /* Not implemented */
+const __wtarget wtargmarch = 0xA +'m'+'a'+'t'+'h';
+const __wtarget wtargfast  = 0xAFA; /* Deprecated, not implemented */
+
+const char *nameof(__wtarget tar) {
+  switch (tar) {
+    case wtarg64: return "wtarg64"; break;
+    case wtarg32: return "wtarg64"; break;
+    case wtargmarch: return "wtarg64"; break;
+    case wtargfast: return "wtarg64"; break;
+    default: return "unknown"; break;
+  }
+}
+
+__wtarget ofname(const char *name) {
+  if (strcmp(name, nameof(wtarg64)) == 0) return wtarg64;
+  else if (strcmp(name, nameof(wtarg32)) == 0) return wtarg32;
+  else if (strcmp(name, nameof(wtargmarch)) == 0) return wtargmarch;
+  else if (strcmp(name, nameof(wtargfast)) == 0) return wtargfast;
+  else return wtarg64;
+}
 
 enum set_wtarg64 {
   nop, 

@@ -2,6 +2,8 @@
 
 #include <string>
 #include <sstream>
+#include <vector>
+#include <cstdint>
 
 template <typename TyVec>
 std::string format(const std::initializer_list<TyVec> &v, char del = ' ') {
@@ -33,4 +35,8 @@ std::string format(const std::string &raw_string) {
     }
   }
   return result;
+}
+
+std::istringstream to_string(const std::u8string &bytestring) {
+  return std::istringstream((char*)bytestring.c_str());
 }
