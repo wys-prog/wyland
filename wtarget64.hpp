@@ -1,3 +1,5 @@
+#pragma once
+
 #include <condition_variable>
 #include <initializer_list>
 #include <unordered_map>
@@ -20,8 +22,9 @@
 #include "wmmbase.hpp"
 #include "wtypes.h"
 #include "wformat.hpp"
+#include "wtargb.hpp"
 
-class corewtarg64 {
+class corewtarg64 : public core_base {
   using syscall_t = void(corewtarg64::*)();
   using setfunc_t = void(corewtarg64::*)();
 
@@ -443,7 +446,7 @@ public:
   void init(uint64_t _memory_segment_begin, 
             uint64_t _memory_segment_end, 
             bool _is_system = false, 
-            uint64_t _name = '?') {
+            uint64_t _name = '?') override {
     beg = _memory_segment_begin;
     end = _memory_segment_end;
     ip  = beg;
@@ -474,7 +477,7 @@ public:
     set[set_wtarg64::movad]  = &corewtarg64::imovad;
   }
 
-  void run() {
+  void run() override {
     while (!halted) {
       
       if (ip < beg || ip > end) 

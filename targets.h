@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <string.h>
 
-typedef int __wtarget;
+typedef int16_t __wtarget;
 
 const __wtarget wtarg64    = 0xA64;
 const __wtarget wtarg32    = 0xA32; /* Not implemented */

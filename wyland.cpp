@@ -21,13 +21,16 @@
 #include "wformat.hpp"
 #include "wmmbase.hpp"
 #include "wtypes.h"
+#include "wfiles.h"
+#include "wtargb.hpp"
 #include "wyland.h"
+#include "wyland.hpp"
 
 typedef void (*taskHandle)(const std::vector<std::string>&);
 
 typedef struct {
-  std::string source;
   __wtarget   target;
+  uint32_t    version;
   /* In the future.. */
 } rt_task_t;
 
@@ -57,7 +60,7 @@ taskHandle target_info = [](const std::vector<std::string>&) {
 };
 
 taskHandle set_target = [](const std::vector<std::string> &args) {
-  if (args.size() < 0) {
+  if (args.size() == 0) {
     std::cerr << "[e]: " << std::invalid_argument("expected <x> target after -target token.").what() << std::endl;
     exit(-1);
   } else if (args.size() > 1) {
@@ -68,15 +71,57 @@ taskHandle set_target = [](const std::vector<std::string> &args) {
 };
 
 taskHandle run = [](const std::vector<std::string> &args) {
-  if (args.size() < 0) {
+  if (args.size() == 0) {
     std::cerr << "[e]: " << std::invalid_argument("expected <x> target after -target token.").what() << std::endl;
+    exit(-1);
+  } else if (args.size() > 1) {
+    std::cerr << "[w]: too much arguments (" << args.size() << "). Excepted 1." << std::endl;
+  }
+
+  std::fstream disk(args[0]);
+
+  if (!disk) {
+    std::cerr << "[e]: unable to open disk file: " << args[0] << std::endl;
     exit(-1);
   }
 
-  
+  wblock *block = new wblock;
+  disk.read((char*)block->array, sizeof(block->array));
+  auto header = wyland_files_make_header(block);
+
+  if (!wyland_files_parse(&header, task.target, task.version)) {
+    std::cerr << "[e]: " << std::invalid_argument("invalid header file.").what() << std::endl;
+    exit(-1);
+  }
+
+  delete block;
+
+  core_base *core = create_core_ptr(task.target);
+  load_file(disk, header);
+  core->init(SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START+SYSTEM_SEGMENT_SIZE, true, 'S'+'y'+'s'+'t'+'e'+'m');
+  run_core(core);
+
+  delete core;
 };
 
+std::unordered_map<std::string, taskHandle> handles;
+
 int main(int argc, char *const argv[]) {
+  if (argc - 1 == 0) {
+    std::cerr << "[e]: excepted a task." << std::endl;
+    return -1;
+  }
+
+  for (int i = 1; i < argc; i++) {
+    if (handles.find(std::string(argv[i])) != handles.end()) {
+      std::vector<std::string> args;
+      for (int j = i; j < argc; j++) args.push_back(argv[i]);
+      handles[std::string(argv[i])](args);
+    } else {
+      std::cerr << "[e]: unknown argument: " << argv[i] << std::endl;
+      return -1;
+    }
+  }
 
   return 0;
 }
