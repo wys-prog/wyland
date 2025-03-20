@@ -61,10 +61,10 @@ taskHandle target_info = [](std::vector<std::string>&) {
 
 taskHandle set_target = [](std::vector<std::string> &args) {
   if (args.size() == 0) {
-    std::cerr << "[e]: " << std::invalid_argument("expected <x> target after -target token.").what() << std::endl;
+    std::cerr << "[e]: " << std::invalid_argument("Expected <x> target after -target token.").what() << std::endl;
     exit(-1);
   } else if (args.size() > 1) {
-    std::cerr << "[w]: too much arguments (" << args.size() << "). Excepted 1." << std::endl;
+    std::cerr << "[w]: Too much arguments (" << args.size() << "). Excepted 1." << std::endl;
   } 
 
   task.target = ofname(args[0].c_str());
@@ -72,16 +72,16 @@ taskHandle set_target = [](std::vector<std::string> &args) {
 
 taskHandle run = [](std::vector<std::string> &args) {
   if (args.size() == 0) {
-    std::cerr << "[e]: " << std::invalid_argument("expected <x> target after -target token.").what() << std::endl;
+    std::cerr << "[e]: " << std::invalid_argument("Expected <x> disk after -run token.").what() << std::endl;
     exit(-1);
   } else if (args.size() > 1) {
-    std::cerr << "[w]: too much arguments (" << args.size() << "). Excepted 1." << std::endl;
+    std::cerr << "[w]: Too much arguments (" << args.size() << "). Excepted 1." << std::endl;
   }
 
   std::fstream disk(args[0]);
 
   if (!disk) {
-    std::cerr << "[e]: unable to open disk file: " << args[0] << std::endl;
+    std::cerr << "[e]: Unable to open disk file: " << args[0] << std::endl;
     exit(-1);
   }
 
@@ -90,7 +90,7 @@ taskHandle run = [](std::vector<std::string> &args) {
   auto header = wyland_files_make_header(block);
 
   if (!wyland_files_parse(&header, task.target, task.version)) {
-    std::cerr << "[e]: " << std::invalid_argument("invalid header file.").what() << std::endl;
+    std::cerr << "[e]: " << std::invalid_argument("Invalid header file.").what() << std::endl;
     exit(-1);
   }
 
@@ -105,21 +105,21 @@ taskHandle run = [](std::vector<std::string> &args) {
 };
 
 taskHandle run_raw = [](std::vector<std::string> &args) {
-  std::cerr << "[w]: running -run-raw mode." << std::endl;
+  std::cerr << "[w]: Running -run-raw mode." << std::endl;
   if (args.size() == 0) {
-    std::cerr << "[e]: " << std::invalid_argument("expected <x> target after -target token.").what() << std::endl;
+    std::cerr << "[e]: " << std::invalid_argument("Expected <x> target after -target token.").what() << std::endl;
     exit(-1);
   } else if (args.size() > 1) {
-    std::cerr << "[w]: too much arguments (" << args.size() << "). Excepted 1." << std::endl;
+    std::cerr << "[w]: Too much arguments (" << args.size() << "). Excepted 1." << std::endl;
   }
 
   std::fstream disk(args[0]);
 
   if (!disk) {
-    std::cerr << "[e]: unable to open disk file: " << args[0] << std::endl;
+    std::cerr << "[e]: Unable to open disk file: " << args[0] << std::endl;
     exit(-1);
   } else { 
-    std::cout << "[i]: disk opened." << std::endl;
+    std::cout << "[i]: Disk opened." << std::endl;
   }
 
   size_t i = 0;
@@ -143,6 +143,28 @@ taskHandle run_raw = [](std::vector<std::string> &args) {
   delete core;
 };
 
+taskHandle check = [](std::vector<std::string> &args) {
+  for (const auto &arg:args) {
+    std::ifstream disk(arg);
+
+    if (!disk) std::cerr << "[e]: not a file: " << arg << std::endl;
+
+    wblock *block = new wblock;
+    disk.read((char*)block->array, sizeof(block->array));
+    auto header = wyland_files_make_header(block);
+  
+    
+    std::cout << "certificat:\t" << (char*)header.certificat << "\n"
+                 "target:\t" << header.target << " - " << nameof(header.target) << "\n"
+                 "version:\t" << header.version << "\n"
+                 "code start:\t" << std::hex << header.code << "\n"
+                 "data start:\t" << header.data << "\n"
+                 "lib. start:\t" << header.lib << "\n"
+    << std::endl;
+    
+  }
+};
+
 std::unordered_map<std::string, taskHandle> handles {
   {"--v", version},
   {"--version", version},
@@ -152,7 +174,7 @@ std::unordered_map<std::string, taskHandle> handles {
   {"--build", build},
   {"--target", target},
   {"--target-info", target_info},
-  //{"--check", check},
+  {"--check", check},
   {"-target", set_target},
   {"-run", run},
   {"-run-raw", run_raw},
@@ -167,7 +189,7 @@ std::unordered_map<std::string, taskHandle> handles {
 
 int main(int argc, char *const argv[]) {
   if (argc - 1 == 0) {
-    std::cerr << "[e]: expected a task." << std::endl;
+    std::cerr << "[e]: Expected a task." << std::endl;
     return -1;
   }
 
@@ -187,7 +209,7 @@ int main(int argc, char *const argv[]) {
 
       i = j - 1;
     } else {
-      std::cerr << "[e]: unknown argument: " << arg << std::endl;
+      std::cerr << "[e]: Unknown argument: " << arg << std::endl;
       return -1;
     }
   }

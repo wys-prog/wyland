@@ -4,8 +4,9 @@ import tempfile
 import markdown
 import subprocess
 
-# Define the allowed file for safety
+# Define the allowed file and repository path
 ALLOWED_FILE = "/Users/wys/Documents/wyweb/announcement.html"
+REPO_PATH = "/Users/wys/Documents/wyweb/"
 ANNOUNCEMENT_START = '<div class="announcement" data-name="{name}">'
 ANNOUNCEMENT_END = "</div>"
 
@@ -25,6 +26,20 @@ def open_editor(initial_content=""):
     os.unlink(tmpfile.name)
     return content.strip()
 
+def git_commit_and_push(message):
+    """Commits and pushes changes to the Git repository."""
+    subprocess.run(["git", "-C", REPO_PATH, "add", ALLOWED_FILE])
+    subprocess.run(["git", "-C", REPO_PATH, "commit", "-m", message])
+    subprocess.run(["git", "-C", REPO_PATH, "push"])
+
+def ask_for_git_push(action, name):
+    """Asks the user whether to push changes to Git."""
+    choice = input("🚀 Do you want to push this update to the website? (y/n) ").strip().lower()
+    if choice in ["y", "yes"]:
+        message = f"{action} announcement: {name}"
+        git_commit_and_push(message)
+        print("✅ Changes pushed to the website.")
+
 def add_announcement(file_path, name, content, format_md=False):
     """Adds an announcement to the HTML file."""
     validate_file(file_path)
@@ -35,6 +50,7 @@ def add_announcement(file_path, name, content, format_md=False):
             content = markdown.markdown(content)
         f.write(content + "\n" + ANNOUNCEMENT_END + "\n")
     print(f"✅ Announcement '{name}' added successfully.")
+    ask_for_git_push("Added", name)
 
 def remove_announcement(file_path, name):
     """Removes an announcement by name."""
@@ -56,7 +72,11 @@ def remove_announcement(file_path, name):
                 temp_file.write(line)
 
     os.replace(temp_file.name, file_path)
-    print("🗑️ Announcement removed." if found else "⚠️ Announcement not found.")
+    if found:
+        print(f"🗑️ Announcement '{name}' removed.")
+        ask_for_git_push("Removed", name)
+    else:
+        print("⚠️ Announcement not found.")
 
 def clear_announcements(file_path):
     """Removes all announcements."""
