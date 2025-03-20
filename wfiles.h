@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <stdio.h>
 
 typedef struct {
   uint8_t  certificat[3];
@@ -31,11 +32,36 @@ wheader_t wyland_files_make_header(const wblock *block) {
 }
 
 int wyland_files_parse(const wheader_t *header, int16_t target, int32_t version) {
-  if (strcmp((char*)header->certificat, "wlf") != 0) return 0;
+  if (strcmp((char*)header->certificat, "wlf") != 0) {
+    fprintf(stderr, "[e]: Invalid certificate.\n");
+    return 0;
+  }
 
-  /* Other checks later... */
+  if (header->target != target) {
+    fprintf(stderr, 
+      "[e]: Mismatched target. File was built for target %d, but running on target %d. "
+      "This may cause runtime errors.\n", 
+      header->target, target
+    );
+  }
+
+  if (header->version > (uint32_t)version) {
+    fprintf(stderr, 
+      "[e]: File version (%d) is newer than supported version (%d). Cannot proceed.\n",
+      header->version, version
+    );
+    return 0;
+  }
+
+  if (header->version < (uint32_t)version) {
+    fprintf(stderr, 
+      "[w]: File version (%d) is older than the supported version (%d). Compatibility issues may occur.\n",
+      header->version, version
+    );
+  }
 
   return 1;
 }
+
 
 #endif // ___WYLAND_FILES_H___

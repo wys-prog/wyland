@@ -14,9 +14,9 @@ const __wtarget wtargfast  = 0xAFA; /* Deprecated, not implemented */
 const char *nameof(__wtarget tar) {
   switch (tar) {
     case wtarg64: return "wtarg64"; break;
-    case wtarg32: return "wtarg64"; break;
-    case wtargmarch: return "wtarg64"; break;
-    case wtargfast: return "wtarg64"; break;
+    case wtarg32: return "wtarg32"; break;
+    case wtargmarch: return "wtargmarch"; break;
+    case wtargfast: return "wtargfast"; break;
     default: return "unknown"; break;
   }
 }

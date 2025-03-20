@@ -26,7 +26,7 @@
 #include "wyland.h"
 #include "wyland.hpp"
 
-typedef void (*taskHandle)(const std::vector<std::string>&);
+typedef void (*taskHandle)(std::vector<std::string>&);
 
 typedef struct {
   __wtarget   target;
@@ -34,32 +34,32 @@ typedef struct {
   /* In the future.. */
 } rt_task_t;
 
-rt_task_t task;
+rt_task_t task{wtarg64, WYLAND_VERSION_UINT32};
 
-taskHandle name = [](const std::vector<std::string>&) {
+taskHandle name = [](std::vector<std::string>&) {
   std::cout << WYLAND_NAME << std::endl;
 };
 
-taskHandle version = [](const std::vector<std::string>&) {
+taskHandle version = [](std::vector<std::string>&) {
   std::cout << WYLAND_VERSION << std::endl;
 };
 
-taskHandle build = [](const std::vector<std::string>&) {
+taskHandle build = [](std::vector<std::string>&) {
   std::cout << WYLAND_BUILD << std::endl;
 };
 
-taskHandle target = [](const std::vector<std::string>&) {
+taskHandle target = [](std::vector<std::string>&) {
   std::cout << wtarg64 << ": " << nameof(wtarg64) << std::endl;
 };
 
-taskHandle target_info = [](const std::vector<std::string>&) {
+taskHandle target_info = [](std::vector<std::string>&) {
   std::cout << wtarg64 << ": " << nameof(wtarg64) << std::endl;
   std::cout << wtarg32 << ": " << nameof(wtarg32) << std::endl;
   std::cout << wtargmarch << ": " << nameof(wtargmarch) << std::endl;
   std::cout << wtargfast << ": " << nameof(wtargfast) << std::endl;
 };
 
-taskHandle set_target = [](const std::vector<std::string> &args) {
+taskHandle set_target = [](std::vector<std::string> &args) {
   if (args.size() == 0) {
     std::cerr << "[e]: " << std::invalid_argument("expected <x> target after -target token.").what() << std::endl;
     exit(-1);
@@ -70,7 +70,7 @@ taskHandle set_target = [](const std::vector<std::string> &args) {
   task.target = ofname(args[0].c_str());
 };
 
-taskHandle run = [](const std::vector<std::string> &args) {
+taskHandle run = [](std::vector<std::string> &args) {
   if (args.size() == 0) {
     std::cerr << "[e]: " << std::invalid_argument("expected <x> target after -target token.").what() << std::endl;
     exit(-1);
@@ -104,27 +104,97 @@ taskHandle run = [](const std::vector<std::string> &args) {
   delete core;
 };
 
-std::unordered_map<std::string, taskHandle> handles;
+taskHandle run_raw = [](std::vector<std::string> &args) {
+  std::cerr << "[w]: running -run-raw mode." << std::endl;
+  if (args.size() == 0) {
+    std::cerr << "[e]: " << std::invalid_argument("expected <x> target after -target token.").what() << std::endl;
+    exit(-1);
+  } else if (args.size() > 1) {
+    std::cerr << "[w]: too much arguments (" << args.size() << "). Excepted 1." << std::endl;
+  }
+
+  std::fstream disk(args[0]);
+
+  if (!disk) {
+    std::cerr << "[e]: unable to open disk file: " << args[0] << std::endl;
+    exit(-1);
+  } else { 
+    std::cout << "[i]: disk opened." << std::endl;
+  }
+
+  size_t i = 0;
+  while (!disk.eof() && i < SYSTEM_SEGMENT_SIZE) {
+    char buff[1]{0};
+    disk.read(buff, sizeof(buff));
+    memory[SYSTEM_SEGMENT_START+i] = buff[0];
+    i++;
+  }
+
+  core_base *core = create_core_ptr(task.target);
+
+  if (core == nullptr) {
+    std::cerr << "[e]: *core is a bad pointer." << std::endl;
+    exit(-400);
+  }
+
+  core->init(SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START+SYSTEM_SEGMENT_SIZE, true, 'S'+'y'+'s'+'t'+'e'+'m');
+  run_core(core);
+
+  delete core;
+};
+
+std::unordered_map<std::string, taskHandle> handles {
+  {"--v", version},
+  {"--version", version},
+  {"--n", name},
+  {"--name", name},
+  {"--b", build},
+  {"--build", build},
+  {"--target", target},
+  {"--target-info", target_info},
+  //{"--check", check},
+  {"-target", set_target},
+  {"-run", run},
+  {"-run-raw", run_raw},
+  //{"-parse", parse},
+  //{"-debug", debug},
+  //{"-new-env", new_env},
+  // Future tasks
+  //{"-compile", compile},
+  //{"-libsof", libsof},
+  //{"-api", api}
+};
 
 int main(int argc, char *const argv[]) {
   if (argc - 1 == 0) {
-    std::cerr << "[e]: excepted a task." << std::endl;
+    std::cerr << "[e]: expected a task." << std::endl;
     return -1;
   }
 
   for (int i = 1; i < argc; i++) {
-    if (handles.find(std::string(argv[i])) != handles.end()) {
+    std::string arg = argv[i];
+
+    if (handles.find(arg) != handles.end()) {
       std::vector<std::string> args;
-      for (int j = i; j < argc; j++) args.push_back(argv[i]);
-      handles[std::string(argv[i])](args);
+
+      int j = i + 1;
+      while (j < argc && handles.find(argv[j]) == handles.end()) {
+        args.push_back(argv[j]);
+        j++;
+      }
+
+      handles[arg](args);
+
+      i = j - 1;
     } else {
-      std::cerr << "[e]: unknown argument: " << argv[i] << std::endl;
+      std::cerr << "[e]: unknown argument: " << arg << std::endl;
       return -1;
     }
   }
 
   return 0;
 }
+
 
 /* Arguments: 
   --v, --version:  prints the version
