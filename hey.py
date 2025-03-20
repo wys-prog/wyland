@@ -1,28 +1,45 @@
-# /Users/wys/Documents/wyweb/announcement.html
 import argparse
 import os
 import tempfile
 import markdown
+import subprocess
 
+# Define the allowed file for safety
+ALLOWED_FILE = "/Users/wys/Documents/wyweb/announcement.html"
 ANNOUNCEMENT_START = '<div class="announcement" data-name="{name}">'
-ANNOUNCEMENT_END = '</div>'
+ANNOUNCEMENT_END = "</div>"
+
+def validate_file(file_path):
+    """Ensures only the allowed file is modified."""
+    if os.path.abspath(file_path) != os.path.abspath(ALLOWED_FILE):
+        raise ValueError("❌ Error: Modifications are restricted to the allowed file.")
+
+def open_editor(initial_content=""):
+    """Opens the system's default text editor for input."""
+    with tempfile.NamedTemporaryFile(suffix=".tmp", mode="w+", delete=False) as tmpfile:
+        tmpfile.write(initial_content)
+        tmpfile.flush()
+        subprocess.run([os.getenv("EDITOR", "nano"), tmpfile.name])
+        tmpfile.seek(0)
+        content = tmpfile.read()
+    os.unlink(tmpfile.name)
+    return content.strip()
 
 def add_announcement(file_path, name, content, format_md=False):
-    """Adds an announcement to the HTML file with a unique name."""
+    """Adds an announcement to the HTML file."""
+    validate_file(file_path)
     mode = "a" if os.path.exists(file_path) else "w"
     with open(file_path, mode, encoding="utf-8") as f:
-        f.write("\n")
-        f.write(ANNOUNCEMENT_START.format(name=name) + "\n")
+        f.write("\n" + ANNOUNCEMENT_START.format(name=name) + "\n")
         if format_md:
             content = markdown.markdown(content)
-        f.write(content + "\n")
-        f.write(ANNOUNCEMENT_END + "\n")
+        f.write(content + "\n" + ANNOUNCEMENT_END + "\n")
     print(f"✅ Announcement '{name}' added successfully.")
 
 def remove_announcement(file_path, name):
-    """Removes an announcement by searching for its name."""
+    """Removes an announcement by name."""
+    validate_file(file_path)
     temp_file = tempfile.NamedTemporaryFile(delete=False, mode="w", encoding="utf-8")
-
     inside_announcement = False
     found = False
 
@@ -39,85 +56,70 @@ def remove_announcement(file_path, name):
                 temp_file.write(line)
 
     os.replace(temp_file.name, file_path)
-
-    if found:
-        print(f"🗑️ Announcement '{name}' removed.")
-    else:
-        print(f"⚠️ Announcement '{name}' not found.")
+    print("🗑️ Announcement removed." if found else "⚠️ Announcement not found.")
 
 def clear_announcements(file_path):
     """Removes all announcements."""
+    validate_file(file_path)
     temp_file = tempfile.NamedTemporaryFile(delete=False, mode="w", encoding="utf-8")
-
     with open(file_path, "r", encoding="utf-8") as f, temp_file:
-        inside_announcement = False
         for line in f:
-            if '<div class="announcement"' in line:
-                inside_announcement = True
-            if inside_announcement and ANNOUNCEMENT_END in line:
-                inside_announcement = False
+            if "<div class=\"announcement\"" in line:
                 continue
-            if not inside_announcement:
-                temp_file.write(line)
-
+            temp_file.write(line)
     os.replace(temp_file.name, file_path)
     print("🚮 All announcements have been removed.")
 
-def interactive_mode(file_path):
-    """Interactive mode for managing announcements."""
-    print("🔧 Interactive mode activated (type 'exit' to quit)")
-    while True:
-        action = input("Command (add/remove/clear/list/exit) ? ").strip().lower()
-        if action == "exit":
-            break
-        elif action == "add":
-            name = input("Announcement name: ").strip()
-            print("Enter announcement content (end with an empty line):")
-            content_lines = []
-            while True:
-                line = input()
-                if line == "":
-                    break
-                content_lines.append(line)
-            content = "\n".join(content_lines)
-            format_md = input("Use Markdown? (y/n) ").strip().lower() == "y"
-            add_announcement(file_path, name, content, format_md)
-        elif action == "remove":
-            name = input("Name of the announcement to remove: ").strip()
-            remove_announcement(file_path, name)
-        elif action == "clear":
-            confirm = input("⚠️ Remove all announcements? (y/n) ").strip().lower()
-            if confirm == "y":
-                clear_announcements(file_path)
-        elif action == "list":
-            print("📋 List of announcements:")
-            with open(file_path, "r", encoding="utf-8") as f:
-                for line in f:
-                    if '<div class="announcement"' in line:
-                        name = line.split('data-name="')[1].split('"')[0]
-                        print(f" - {name}")
-        else:
-            print("❌ Unknown command.")
+def list_announcements(file_path):
+    """Lists all announcements by name."""
+    validate_file(file_path)
+    print("📋 List of announcements:")
+    with open(file_path, "r", encoding="utf-8") as f:
+        for line in f:
+            if '<div class="announcement"' in line:
+                name = line.split('data-name="')[1].split('"')[0]
+                print(f" - {name}")
 
 def main():
-    parser = argparse.ArgumentParser(description="Manage HTML announcements in a file.")
-    parser.add_argument("file", type=str, help="Target HTML file (e.g., output.txt)")
-    parser.add_argument("--add", nargs=2, metavar=("NAME", "CONTENT"), help="Add an announcement")
-    parser.add_argument("--remove", metavar="NAME", help="Remove an announcement by name")
-    parser.add_argument("--clear", action="store_true", help="Remove all announcements")
-    parser.add_argument("--md", action="store_true", help="Use Markdown for formatting content")
-    
+    parser = argparse.ArgumentParser(description="Manage HTML announcements.")
+    subparsers = parser.add_subparsers(dest="command")
+
+    # Add announcement
+    parser_add = subparsers.add_parser("add", help="Add a new announcement")
+    parser_add.add_argument("name", type=str, help="Unique name for the announcement")
+    parser_add.add_argument("--content", type=str, help="Text content or file path")
+    parser_add.add_argument("--md", action="store_true", help="Format content as Markdown")
+
+    # Remove announcement
+    parser_remove = subparsers.add_parser("remove", help="Remove an announcement by name")
+    parser_remove.add_argument("name", type=str, help="Name of the announcement to remove")
+
+    # Clear all announcements
+    subparsers.add_parser("clear", help="Remove all announcements")
+
+    # List announcements
+    subparsers.add_parser("list", help="List all announcements")
+
     args = parser.parse_args()
 
-    if args.add:
-        name, content = args.add
-        add_announcement(args.file, name, content, args.md)
-    elif args.remove:
-        remove_announcement(args.file, args.remove)
-    elif args.clear:
-        clear_announcements(args.file)
+    if args.command == "add":
+        if args.content and os.path.exists(args.content):
+            with open(args.content, "r", encoding="utf-8") as f:
+                content = f.read().strip()
+        elif args.content:
+            content = args.content
+        else:
+            print("✏️ Opening editor... Save and exit when done.")
+            content = open_editor()
+        add_announcement(ALLOWED_FILE, args.name, content, args.md)
+    elif args.command == "remove":
+        remove_announcement(ALLOWED_FILE, args.name)
+    elif args.command == "clear":
+        clear_announcements(ALLOWED_FILE)
+    elif args.command == "list":
+        list_announcements(ALLOWED_FILE)
     else:
-        interactive_mode(args.file)
+        parser.print_help()
 
 if __name__ == "__main__":
     main()
