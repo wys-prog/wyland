@@ -165,6 +165,49 @@ taskHandle check = [](std::vector<std::string> &args) {
   }
 };
 
+taskHandle make_disk = [](std::vector<std::string> &args) {
+  if (args.size() == 0) {
+    std::cerr << "[e]: " << std::invalid_argument("Excepted disk name.").what() << std::endl;
+    exit(-1);
+  }
+
+  std::ofstream disk(args[0]);
+  
+  if (!disk) {
+    std::cerr << "[e]: Unable to create file " << args[0] << std::endl;
+    exit(-1);
+  }
+
+  wheader_t header = wyland_files_basic_header();
+  disk.write((char*)wyland_files_header_to_block(&header).array, sizeof(wblock));
+
+  for (size_t i = 0; i < args.size(); i++) {
+    if (args[i] == "-version") {
+      header.version = std::stoul(args[++i]);
+    } else if (args[i] == "-target") {
+      header.version = std::stoul(args[++i]);
+    }
+  }
+
+  for (size_t i = 1; i < args.size(); i++) {
+    std::ifstream file(args[i]);
+    if (!file) {
+      std::cerr << "[e]: Unable to create file " << args[i] << std::endl;
+      exit(-1);
+    }
+
+    while (!file.eof()) {
+      char buff[64]{0};
+      file.read(buff, sizeof(buff));
+      disk.write(buff, sizeof(buff));
+    }
+
+    file.close();
+  }
+
+  disk.close();
+};
+
 std::unordered_map<std::string, taskHandle> handles {
   {"--v", version},
   {"--version", version},
@@ -174,10 +217,11 @@ std::unordered_map<std::string, taskHandle> handles {
   {"--build", build},
   {"--target", target},
   {"--target-info", target_info},
-  {"--check", check},
+  {"-check", check},
   {"-target", set_target},
   {"-run", run},
   {"-run-raw", run_raw},
+  {"-make-disk", make_disk},
   //{"-parse", parse},
   //{"-debug", debug},
   //{"-new-env", new_env},

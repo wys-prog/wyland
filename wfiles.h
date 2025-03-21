@@ -5,6 +5,9 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "targets.h"
+#include "wyland.h"
+
 typedef struct {
   uint8_t  certificat[3];
   uint16_t target;
@@ -63,5 +66,33 @@ int wyland_files_parse(const wheader_t *header, int16_t target, int32_t version)
   return 1;
 }
 
+wblock wyland_files_header_to_block(const wheader_t *header) {
+  wblock block = {};
+
+  memcpy(block.array, header->certificat, sizeof(header->certificat));
+  memcpy(block.array + sizeof(header->certificat), &header->target, sizeof(header->target));
+  memcpy(block.array + sizeof(header->certificat) + sizeof(header->target), &header->version, sizeof(header->version));
+  memcpy(block.array + sizeof(header->certificat) + sizeof(header->target) + sizeof(header->version), &header->code, sizeof(header->code));
+  memcpy(block.array + sizeof(header->certificat) + sizeof(header->target) + sizeof(header->version) + sizeof(header->code), &header->data, sizeof(header->data));
+  memcpy(block.array + sizeof(header->certificat) + sizeof(header->target) + sizeof(header->version) + sizeof(header->code) + sizeof(header->data), &header->lib, sizeof(header->lib));
+
+  return block;
+}
+
+wheader_t wyland_files_basic_header() {
+  wheader_t header = {};
+
+  header.certificat[0] = 'w';
+  header.certificat[1] = 'l';
+  header.certificat[2] = 'f';
+  
+  header.code = 0x00000000000000FF;
+  header.data = 0x0000000000FFFFFF;
+  header.lib  = 0x0000000010AAEEEE;
+  header.target = wtarg64;
+  header.version = WYLAND_VERSION_UINT32;
+
+  return header;
+};
 
 #endif // ___WYLAND_FILES_H___
