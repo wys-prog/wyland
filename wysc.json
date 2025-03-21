@@ -1,26 +1,47 @@
 {
   "Wyland - MacOS": {
-      "compiler": "g++",
-      "files": ["wyland.cpp"],
-      "includes": ["./"],
-      "std": "c++23",
-      "output": "wyland-macOS-u",
-      "platform": "MacOS"
-  },
-  "Wyland - Windowsx64": {
     "compiler": "g++",
     "files": ["wyland.cpp"],
     "includes": ["./"],
     "std": "c++23",
-    "output": "wyland-windows-x64",
-    "platform": "Windows 64 bits"
+    "output": "./builds/wyland-macOS-u",
+    "platform": "MacOS", 
+    "args": ["-Wall", "-Wextra", "-O3", "-funroll-loops"]
   },
-  "Wyland - Windowsx32": {
-    "compiler": "g++",
+  "Wyland - Windows x64": {
+    "compiler": "x86_64-w64-mingw32-g++",
     "files": ["wyland.cpp"],
     "includes": ["./"],
     "std": "c++23",
-    "output": "wyland-windows-x32",
-    "platform": "Windows 32 bits"
+    "output": "./builds/wyland-windows-x64",
+    "platform": "Windows 64 bits", 
+    "args": ["-Wall", "-Wextra", "-O3", "-funroll-loops"]
+  },
+  "Wyland - Windows x86": {
+    "compiler": "i686-w64-mingw32-g++",
+    "files": ["wyland.cpp"],
+    "includes": ["./"],
+    "std": "c++23",
+    "output": "./builds/wyland-windows-x86",
+    "platform": "Windows 32 bits",
+    "args": ["-Wall", "-Wextra", "-O3", "-funroll-loops"]
+  }, 
+  "Wyland - Linux x64": {
+    "compiler": "x86_64-elf-gcc",
+    "files": ["wyland.cpp"],
+    "includes": ["./"],
+    "std": "c++23",
+    "output": "./builds/wyland-linux-x64",
+    "platform": "Windows 64 bits", 
+    "args": ["-Wall", "-Wextra", "-O3", "-funroll-loops"]
+  },
+  "Wyland - Linux x86": {
+    "compiler": "i686-elf-gcc",
+    "files": ["wyland.cpp"],
+    "includes": ["./"],
+    "std": "c++23",
+    "output": "./builds/wyland-linux-x86",
+    "platform": "Windows 32 bits",
+    "args": ["-Wall", "-Wextra", "-O3", "-funroll-loops", "-m32"]
   }
 }
