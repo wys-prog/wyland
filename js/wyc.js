@@ -45,76 +45,147 @@ const targets = {
   wtargfast: 2810
 };
 
-// Function to create a Wheader with default or extracted values from files
-function makeHeader(target = targets.wtarg64, version = 1, 
-                    code = 48, 
-                    data = 0xEEEEEEEEEEEEEEEEn, 
-                    libs = 0xFFFFFFFFFFFFFFFFn) {
-  let wheader = new Wheader(
-    new Uint8Array(['w'.charCodeAt(0), 'l'.charCodeAt(0), 'f'.charCodeAt(0)]), // certificat = ['w', 'l', 'f']
-    target,
-    version,
-    BigInt(code),
-    BigInt(data),
-    BigInt(libs)
-  );
-  return wheader;
-}
-
-// Function to load a file if it exists
-function loadFile(fileName) {
+// Function to read file content
+function readFileSync(filePath) {
   try {
-    if (fs.existsSync(fileName)) {
-      const fileContent = fs.readFileSync(fileName, 'utf8');
-      return fileContent;
+    if (fs.existsSync(filePath)) {
+      return fs.readFileSync(filePath);
     } else {
-      console.log(`The file ${fileName} does not exist.`);
+      console.log(`File not found: ${filePath}`);
       return null;
     }
-  } catch (err) {
-    console.error('Error reading the file:', err);
+  } catch (error) {
+    console.error(`Error reading file ${filePath}:`, error);
     return null;
   }
 }
 
-// Function to create a Wheader from files
-function createWheaderFromFile() {
-  // Check if the main file "wyland.section.data" exists
+// Function to create Wheader and resolve addresses
+function createWheaderFromFiles() {
   const dataFile = 'wyland.section.data';
   const codeFile = 'wyland.section.code';
   const libFile = 'wyland.section.lib';
 
-  // Read the files if they exist
-  const dataContent = loadFile(dataFile);
-  const codeContent = loadFile(codeFile);
-  const libContent = loadFile(libFile);
+  // Read the contents of the files
+  const dataContent = readFileSync(dataFile);
+  const codeContent = readFileSync(codeFile);
+  const libContent = readFileSync(libFile);
 
-  // If the file 'wyland.section.data' exists, we can create a Wheader
-  if (dataContent) {
-    // Customize the following based on how you want to retrieve the data
-    const target = targets.wtarg64; // Use the default target or read a specific value from the files
-    const version = 1; // Use a default version or extract from a file if necessary
-    const code = codeContent ? BigInt(codeContent.trim()) : 48n;  // If the .code file exists, use it, otherwise use the default value
-    const data = BigInt('0x' + dataContent.trim());  // Assume the file content is a hexadecimal number
-    const lib = libContent ? BigInt(libContent.trim()) : 0xFFFFFFFFFFFFFFFFn;  // Same for the .lib file
-
-    // Create a Wheader with the extracted values
-    const wheader = new Wheader(
-      new Uint8Array(['w'.charCodeAt(0), 'l'.charCodeAt(0), 'f'.charCodeAt(0)]), // Certificat = ['w', 'l', 'f']
-      target,
-      version,
-      code,
-      data,
-      lib
-    );
-
-    console.log('Wheader created from file:', wheader);
-    return wheader;
-  } else {
-    console.log("Unable to create Wheader because the data file is missing.");
+  if (dataContent === null || codeContent === null || libContent === null) {
+    console.log("Error: one or more input files are missing.");
     return null;
+  }
+
+  // Define default values if files are empty
+  const target = targets.wtarg64; // You can modify this based on your needs
+  const version = 1; // You can modify this based on your needs
+
+  // Calculate the sizes of each section (in bytes)
+  const headerSize = 3 + 2 + 4 + 8 + 8 + 8; // certificat (3 bytes) + target (2 bytes) + version (4 bytes) + code (8 bytes) + data (8 bytes) + lib (8 bytes)
+  const codeSize = codeContent.length;
+  const dataSize = dataContent.length;
+  const libSize = libContent.length;
+
+  // Resolve the addresses based on section sizes
+  const codeAddress = BigInt(headerSize);
+  const dataAddress = codeAddress + BigInt(codeSize);
+  const libAddress = dataAddress + BigInt(dataSize);
+
+  // Create the Wheader object
+  const wheader = new Wheader(
+    new Uint8Array([119, 108, 102]), // 'wlf' as certificat
+    target,
+    version,
+    codeAddress,
+    dataAddress,
+    libAddress
+  );
+
+  console.log("Wheader created with addresses:");
+  console.log("Code address:", codeAddress);
+  console.log("Data address:", dataAddress);
+  console.log("Lib address:", libAddress);
+
+  return { wheader, codeContent, dataContent, libContent };
+}
+
+// Function to write Wheader to file
+function writeWheaderToFile(wheader, codeContent, dataContent, libContent) {
+  const fs = require('fs');
+
+  // Combine header and sections into a single buffer
+  const headerBuffer = Buffer.from([
+    ...wheader.certificat,
+    ...Buffer.alloc(2).writeUInt16LE(wheader.target, 0), // target as 2 bytes (little-endian)
+    ...Buffer.alloc(4).writeUInt32LE(wheader.version, 0), // version as 4 bytes (little-endian)
+    ...Buffer.alloc(8).writeBigInt64LE(wheader.code, 0), // code address as 8 bytes (little-endian)
+    ...Buffer.alloc(8).writeBigInt64LE(wheader.data, 0), // data address as 8 bytes (little-endian)
+    ...Buffer.alloc(8).writeBigInt64LE(wheader.lib, 0), // lib address as 8 bytes (little-endian)
+  ]);
+
+  // Write the combined data to the output file
+  const outputFile = 'wyland.section.all';
+  const combinedBuffer = Buffer.concat([headerBuffer, codeContent, dataContent, libContent]);
+
+  fs.writeFile(outputFile, combinedBuffer, (err) => {
+    if (err) {
+      console.error('Error writing to wyland.section.all:', err);
+      return;
+    }
+    console.log('Wheader successfully written to wyland.section.all');
+  });
+}
+
+// Main function to compile the files and write the output
+function compileAndWrite() {
+  const { wheader, codeContent, dataContent, libContent } = createWheaderFromFiles();
+
+  if (wheader) {
+    writeWheaderToFile(wheader, codeContent, dataContent, libContent);
+  } else {
+    console.log("Failed to create Wheader due to missing files.");
   }
 }
 
-// Example call to the function to create a Wheader
-createWheaderFromFile();
+// Run the compilation process
+compileAndWrite();
+
+/*
+  files: 
+    input(s):
+      wyland.section.data
+        content: data section. Can be null or empty.
+      wyland.section.code
+        content: code section. Can be null or empty.
+      wyland.section.lib
+        content: lib section. Can be null or empty.
+
+    output:
+      wyland.section.all
+        content:
+        ! 3 bytes: "wlf" string
+        ! 2 bytes: target
+        ! 4 bytes: version
+        ! 8 bytes: address of the 'code' section
+        ! 8 bytes: address of the 'data' section
+        ! 8 bytes: address of the 'lib' section
+
+    compilation:
+      open each files.
+      Resorlve addresses.
+      The addresse of the code section is:
+      sizeof(header)
+      same for other addresses.
+      Address of data is <code> + sizeof(code)
+      etc !
+
+typedef struct {
+  uint8_t  certificat[3];
+  uint16_t target;
+  uint32_t version;
+  uint64_t code;
+  uint64_t data;
+  uint64_t lib;
+} wheader_t;
+
+    */
