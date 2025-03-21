@@ -113,20 +113,25 @@ function createWheaderFromFiles() {
 function writeWheaderToFile(wheader, codeContent, dataContent, libContent) {
   const fs = require('fs');
 
+  // Create buffers for each part of the header
+  const certificatBuffer = Buffer.from(wheader.certificat);
+  const targetBuffer = Buffer.alloc(2);
+  targetBuffer.writeUInt16LE(wheader.target, 0);
+  const versionBuffer = Buffer.alloc(4);
+  versionBuffer.writeUInt32LE(wheader.version, 0);
+  const codeBuffer = Buffer.alloc(8);
+  codeBuffer.writeBigInt64LE(wheader.code, 0);
+  const dataBuffer = Buffer.alloc(8);
+  dataBuffer.writeBigInt64LE(wheader.data, 0);
+  const libBuffer = Buffer.alloc(8);
+  libBuffer.writeBigInt64LE(wheader.lib, 0);
+
   // Combine header and sections into a single buffer
-  const headerBuffer = Buffer.from([
-    ...wheader.certificat,
-    ...Buffer.alloc(2).writeUInt16LE(wheader.target, 0), // target as 2 bytes (little-endian)
-    ...Buffer.alloc(4).writeUInt32LE(wheader.version, 0), // version as 4 bytes (little-endian)
-    ...Buffer.alloc(8).writeBigInt64LE(wheader.code, 0), // code address as 8 bytes (little-endian)
-    ...Buffer.alloc(8).writeBigInt64LE(wheader.data, 0), // data address as 8 bytes (little-endian)
-    ...Buffer.alloc(8).writeBigInt64LE(wheader.lib, 0), // lib address as 8 bytes (little-endian)
-  ]);
+  const headerBuffer = Buffer.concat([certificatBuffer, targetBuffer, versionBuffer, codeBuffer, dataBuffer, libBuffer]);
+  const combinedBuffer = Buffer.concat([headerBuffer, codeContent, dataContent, libContent]);
 
   // Write the combined data to the output file
   const outputFile = 'wyland.section.all';
-  const combinedBuffer = Buffer.concat([headerBuffer, codeContent, dataContent, libContent]);
-
   fs.writeFile(outputFile, combinedBuffer, (err) => {
     if (err) {
       console.error('Error writing to wyland.section.all:', err);
@@ -149,43 +154,3 @@ function compileAndWrite() {
 
 // Run the compilation process
 compileAndWrite();
-
-/*
-  files: 
-    input(s):
-      wyland.section.data
-        content: data section. Can be null or empty.
-      wyland.section.code
-        content: code section. Can be null or empty.
-      wyland.section.lib
-        content: lib section. Can be null or empty.
-
-    output:
-      wyland.section.all
-        content:
-        ! 3 bytes: "wlf" string
-        ! 2 bytes: target
-        ! 4 bytes: version
-        ! 8 bytes: address of the 'code' section
-        ! 8 bytes: address of the 'data' section
-        ! 8 bytes: address of the 'lib' section
-
-    compilation:
-      open each files.
-      Resorlve addresses.
-      The addresse of the code section is:
-      sizeof(header)
-      same for other addresses.
-      Address of data is <code> + sizeof(code)
-      etc !
-
-typedef struct {
-  uint8_t  certificat[3];
-  uint16_t target;
-  uint32_t version;
-  uint64_t code;
-  uint64_t data;
-  uint64_t lib;
-} wheader_t;
-
-    */
