@@ -24,6 +24,8 @@
 #include "wformat.hpp"
 #include "wtargb.hpp"
 
+WYLAND_BEGIN
+
 class corewtarg64 : public core_base {
   using syscall_t = void(corewtarg64::*)();
   using setfunc_t = void(corewtarg64::*)();
@@ -516,3 +518,5 @@ public:
     }
   }
 };
+
+WYLAND_END

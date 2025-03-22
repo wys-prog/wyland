@@ -13,12 +13,16 @@
 #include <mutex>
 #include <new>
 
-#include "regs.hpp"
+/* Runtime */
 #include "wylrt.h"
 #include "libcallc.hpp"
+/* Targets */
 #include "targets.h"
 #include "wtarget64.hpp"
 #include "wtarget32.hpp"
+#include "wtargetfast.hpp"
+
+#include "regs.hpp"
 #include "wformat.hpp"
 #include "wmmbase.hpp"
 #include "wtypes.h"
@@ -26,6 +30,8 @@
 #include "wtargb.hpp"
 #include "wyland.h"
 #include "wyland.hpp"
+
+WYLAND_BEGIN
 
 typedef void (*taskHandle)(std::vector<std::string>&);
 
@@ -99,7 +105,8 @@ taskHandle run = [](std::vector<std::string> &args) {
 
   core_base *core = create_core_ptr(task.target);
   load_file(disk, header);
-  core->init(SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START+SYSTEM_SEGMENT_SIZE, true, 'S'+'y'+'s'+'t'+'e'+'m');
+  std::cout << "[i]: initializing object 0x" << std::hex << reinterpret_cast<uintptr_t>(core) << std::endl;
+  core->init(SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START+SYSTEM_SEGMENT_SIZE, true, 0);
   run_core(core);
 
   delete core;
@@ -138,7 +145,8 @@ taskHandle run_raw = [](std::vector<std::string> &args) {
     exit(-400);
   }
 
-  core->init(SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START+SYSTEM_SEGMENT_SIZE, true, 'S'+'y'+'s'+'t'+'e'+'m');
+  std::cout << "[i]: initializing object 0x" << std::hex << reinterpret_cast<uintptr_t>(core) << std::endl;
+  core->init(SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START+SYSTEM_SEGMENT_SIZE, true, 0);
   run_core(core);
 
   delete core;
@@ -232,7 +240,7 @@ std::unordered_map<std::string, taskHandle> handles {
   //{"-api", api}
 };
 
-int main(int argc, char *const argv[]) {
+int wylandMain(int argc, char *const argv[]) {
   if (argc - 1 == 0) {
     std::cerr << "[e]: Expected a task." << std::endl;
     return -1;
@@ -262,6 +270,11 @@ int main(int argc, char *const argv[]) {
   return 0;
 }
 
+WYLAND_END
+
+int main(int argc, char *const argv[]) {
+  return wylma::wyland::wylandMain(argc, argv);
+}
 
 /* Arguments: 
   --v, --version:  prints the version
@@ -286,7 +299,7 @@ int main(int argc, char *const argv[]) {
   wtarg64: Basic Target 
   wtarg32: Basic Target in 32 bits mode
   wtargmarch: Target built for Mathematics Operations, and big floats.
-  wtargfast: NON-STANDARD ! The fastest (jumps are limited to: jmp, je)
+  wtargfast: NON-STANDARD ! The fastest (jumps are limited to: jmp, je, jg and jl)
 
   Pay attention ! 
   -run <disk>, here, <disk> is not an input file like an OS. It's a disk !

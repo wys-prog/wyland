@@ -28,6 +28,8 @@
 #include "wtargb.hpp"
 #include "wyland.h"
 
+WYLAND_BEGIN
+
 core_base *create_core_ptr(__wtarget target) {
   if (target == wtarg64) {
     auto ptr = new corewtarg64;
@@ -104,3 +106,5 @@ void run_core(core_base *base) {
               << std::hex << reinterpret_cast<uintptr_t>(base) << std::endl;
   }
 }
+
+WYLAND_END

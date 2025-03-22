@@ -4,6 +4,10 @@
 #include <cstdint>
 #include <stdexcept>
 
+
+#define WYLAND_BEGIN namespace wylma { namespace wyland {
+#define WYLAND_END   } }
+
 #define CODE_SEGMENT_SIZE 400_MB
 #define HARDWARE_SEGMENT_SIZE 100_MB
 #define SYSTEM_SEGMENT_SIZE 12_MB
@@ -25,6 +29,7 @@ constexpr std::size_t operator""_GB(unsigned long long size) {
   return size * 1024 * 1024 * 1024;
 }
 
+WYLAND_BEGIN
 
 uint8_t memory[512_MB]{0};
 
@@ -82,3 +87,5 @@ inline uint8_t* to_bin(const T &__T) {
 
   return buff;
 }
+
+WYLAND_END
