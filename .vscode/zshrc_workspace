@@ -1,0 +1,6 @@
+echo "🚀 Hello, Wys !"
+
+alias gs='git status'
+alias ll='ls -lah'
+
+alias compile='node "/Users/wys/Documents/wyland/js/wysctc.js"'

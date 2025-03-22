@@ -78,10 +78,14 @@ taskHandle set_target = [](std::vector<std::string> &args) {
 };
 
 taskHandle run = [](std::vector<std::string> &args) {
+  bool auto_targ = false;
+
   if (args.size() == 0) {
     std::cerr << "[e]: " << std::invalid_argument("Expected <x> disk after -run token.").what() << std::endl;
     exit(-1);
   } else if (args.size() > 1) {
+    if (args[1] == "-target-auto") auto_targ = true;
+
     std::cerr << "[w]: Too much arguments (" << args.size() << "). Excepted 1." << std::endl;
   }
 
@@ -95,6 +99,8 @@ taskHandle run = [](std::vector<std::string> &args) {
   wblock *block = new wblock;
   disk.read((char*)block->array, sizeof(block->array));
   auto header = wyland_files_make_header(block);
+
+  if (auto_targ) task.target = header.target;
 
   if (!wyland_files_parse(&header, task.target, task.version)) {
     std::cerr << "[e]: " << std::invalid_argument("Invalid header file.").what() << std::endl;
@@ -188,17 +194,29 @@ taskHandle make_disk = [](std::vector<std::string> &args) {
   }
 
   wheader_t header = wyland_files_basic_header();
-  disk.write((char*)wyland_files_header_to_block(&header).array, sizeof(wblock));
-
-  for (size_t i = 0; i < args.size(); i++) {
+  
+  for (size_t i = 1; i < args.size(); i++) {
     if (args[i] == "-version") {
       header.version = std::stoul(args[++i]);
     } else if (args[i] == "-target") {
-      header.version = std::stoul(args[++i]);
-    }
+      header.version = ofname(args[++i].c_str());
+    } else if (args[i] == "-data") {
+      header.data = std::stoull(args[++i]);
+    } else if (args[i] == "-code") {
+      header.code = std::stoull(args[++i]);
+    } else if (args[i] == "-lib") {
+      header.lib = std::stoull(args[++i]);
+    }  
   }
+  
+  disk.write((char*)wyland_files_header_to_block(&header).array, sizeof(wblock));
 
   for (size_t i = 1; i < args.size(); i++) {
+    if (args[i].starts_with("-")) {
+      i++;
+      continue;
+    }
+
     std::ifstream file(args[i]);
     if (!file) {
       std::cerr << "[e]: Unable to create file " << args[i] << std::endl;
@@ -231,6 +249,7 @@ std::unordered_map<std::string, taskHandle> handles {
   {"-run", run},
   {"-run-raw", run_raw},
   {"-make-disk", make_disk},
+  {"-build-disk", make_disk}, 
   //{"-parse", parse},
   //{"-debug", debug},
   //{"-new-env", new_env},
@@ -253,7 +272,7 @@ int wylandMain(int argc, char *const argv[]) {
       std::vector<std::string> args;
 
       int j = i + 1;
-      while (j < argc && handles.find(argv[j]) == handles.end()) {
+      while (j < argc) {
         args.push_back(argv[j]);
         j++;
       }
