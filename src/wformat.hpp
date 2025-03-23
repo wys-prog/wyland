@@ -40,6 +40,29 @@ namespace wylma {
       return result;
     }
 
+    template <typename T>
+    std::string format(const T *array, size_t len) {
+      std::string result;
+      for (size_t i = 0; i < len; i++) {
+        result += std::to_string(array[i]);
+      }
+
+      return result;
+    }
+
+    std::string format(const uint8_t *array, size_t len) {
+      std::string result;
+      for (size_t i = 0; i < len; i++) {
+        result += (char)(array[i]); 
+        result += ", ";
+      }
+
+      result.pop_back();
+      result.pop_back();
+
+      return result;
+    }
+
     std::istringstream to_string(const std::u8string &bytestring) {
       return std::istringstream((char*)bytestring.c_str());
     }

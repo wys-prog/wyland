@@ -50,11 +50,11 @@ core_base *create_core_ptr(__wtarget target) {
   return nullptr;
 }
 
-void load_file(std::fstream &file, const wheader_t &header) {
+bool load_file(std::fstream &file, const wheader_t &header) {
   file.seekg(header.code);
   if (!file.good()) {
     std::cerr << "[e]: failed to seek to code position in disk file." << std::endl;
-    exit(-1);
+    return false;
   }
 
   size_t i = 0;
@@ -64,6 +64,8 @@ void load_file(std::fstream &file, const wheader_t &header) {
     memory[SYSTEM_SEGMENT_START+i] = buff[0];
     i++;
   }
+
+  return true;
 }
 
 void run_core(core_base *base) {

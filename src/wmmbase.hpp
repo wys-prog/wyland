@@ -88,9 +88,4 @@ inline uint8_t* to_bin(const T &__T) {
   return buff;
 }
 
-template <typename T>
-const char *nameof(const T&) {
-  return typeid(T).name();
-}
-
 WYLAND_END

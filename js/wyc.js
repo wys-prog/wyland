@@ -93,8 +93,15 @@ function main() {
 
   console.info('Building disk config file...');
 
-  console.info(`command to run: 
-  <wyland> -build-disk wyland.section.bin -version ${options.version} -target ${options.target} -data ${codeSectionSize} -code ${40} -libs ${dataSectionSize + codeSectionSize} ${codeSections.join(' ')}  ${dataSections.join(' ')}  ${libsSections.join(' ')}`);
+  let combinedBuffer = `wyland -build-disk wyland.section.bin -version ${options.version} -target ${options.target} -data ${codeSectionSize} -code ${40} -libs ${dataSectionSize + codeSectionSize} ${codeSections.join(' ')}  ${dataSections.join(' ')}  ${libsSections.join(' ')}`
+
+  fs.writeFile('wyland.buildcommand.txt', combinedBuffer, (err) => {
+    if (err) {
+      console.error('Error writing to wyland.section.all:', err);
+      return;
+    }
+    console.log('Wheader successfully written to wyland.section.all');
+  });
 
   // Example of using the parsed options
   console.log(`Using version: ${options.version}`);

@@ -7,6 +7,7 @@
 #include <sstream>
 #include <fstream>
 #include <cstdint>
+#include <iomanip>
 #include <string>
 #include <thread>
 #include <chrono>
@@ -30,6 +31,8 @@
 #include "wtargb.hpp"
 #include "wyland.h"
 #include "wyland.hpp"
+
+#include "sock2.h"
 
 WYLAND_BEGIN
 
@@ -60,10 +63,10 @@ taskHandle target = [](std::vector<std::string>&) {
 };
 
 taskHandle target_info = [](std::vector<std::string>&) {
-  std::cout << wtarg64 << ": " << nameof(wtarg64) << std::endl;
-  std::cout << wtarg32 << ": " << nameof(wtarg32) << std::endl;
-  std::cout << wtargmarch << ": " << nameof(wtargmarch) << std::endl;
-  std::cout << wtargfast << ": " << nameof(wtargfast) << std::endl;
+  std::cout << wtarg64 << ": " << nameof(wtarg64) << " (implemented)" << std::endl;
+  std::cout << wtarg32 << ": " << nameof(wtarg32) << " (working on)" << std::endl;
+  std::cout << wtargmarch << ": " << nameof(wtargmarch) << " (working on)" << std::endl;
+  std::cout << wtargfast << ": " << nameof(wtargfast) << " (working on)" << std::endl;
 };
 
 taskHandle set_target = [](std::vector<std::string> &args) {
@@ -84,7 +87,7 @@ taskHandle run = [](std::vector<std::string> &args) {
     std::cerr << "[e]: " << std::invalid_argument("Expected <x> disk after -run token.").what() << std::endl;
     exit(-1);
   } else if (args.size() > 1) {
-    if (args[1] == "-target-auto") auto_targ = true;
+    if (args[2] == "-auto") auto_targ = true;
 
     std::cerr << "[w]: Too much arguments (" << args.size() << "). Excepted 1." << std::endl;
   }
@@ -104,13 +107,20 @@ taskHandle run = [](std::vector<std::string> &args) {
 
   if (!wyland_files_parse(&header, task.target, task.version)) {
     std::cerr << "[e]: " << std::invalid_argument("Invalid header file.").what() << std::endl;
+    std::cout << "Extracted header:\n" << wyland_files_header_fmt(&header) << std::endl;
+
     exit(-1);
   }
 
   delete block;
 
   core_base *core = create_core_ptr(task.target);
-  load_file(disk, header);
+  
+  if (!load_file(disk, header)) {
+    delete core;
+    exit(-1);
+  }
+
   std::cout << "[i]: initializing object 0x" << std::hex << reinterpret_cast<uintptr_t>(core) << std::endl;
   core->init(SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START+SYSTEM_SEGMENT_SIZE, true, 0);
   run_core(core);
@@ -159,24 +169,38 @@ taskHandle run_raw = [](std::vector<std::string> &args) {
 };
 
 taskHandle check = [](std::vector<std::string> &args) {
-  for (const auto &arg:args) {
-    std::ifstream disk(arg);
+  for (size_t i = 0; i < args.size(); i++) {
+    if (args[i] == "--raw") {
+      std::ifstream disk(args[++i]);
+      wblock *block = new wblock;
 
-    if (!disk) std::cerr << "[e]: not a file: " << arg << std::endl;
+      disk.read((char*)block->array, sizeof(block->array));
+
+      for (int i = 0; i < sizeof(block->array); i++) std::cout << (int)block->array[i];
+      std::cout << std::endl;
+      disk.close();
+      delete block;
+    }
+
+    if (args[i] == "--spec") {
+      std::ifstream disk(args[++i]);
+      wblock *block = new wblock;
+
+      disk.read((char*)block->array, sizeof(block->array));
+      std::cout << wyland_files_fmt_header_spec(block, '\n') << std::endl;
+      disk.close();
+      delete block;
+    }
+
+    std::ifstream disk(args[i]);
+
+    if (!disk) std::cerr << "[e]: not a file: " << args[i] << std::endl;
 
     wblock *block = new wblock;
     disk.read((char*)block->array, sizeof(block->array));
     auto header = wyland_files_make_header(block);
-  
     
-    std::cout << "certificat:\t" << (char*)header.certificat << "\n"
-                 "target:\t" << header.target << " - " << nameof(header.target) << "\n"
-                 "version:\t" << header.version << "\n"
-                 "code start:\t" << std::hex << header.code << "\n"
-                 "data start:\t" << header.data << "\n"
-                 "lib. start:\t" << header.lib << "\n"
-    << std::endl;
-    
+    std::cout << wyland_files_header_fmt(&header) << std::endl;
   }
 };
 
@@ -224,7 +248,7 @@ taskHandle make_disk = [](std::vector<std::string> &args) {
     }
 
     while (!file.eof()) {
-      char buff[64]{0};
+      char buff[4]{0};
       file.read(buff, sizeof(buff));
       disk.write(buff, sizeof(buff));
     }
@@ -233,6 +257,9 @@ taskHandle make_disk = [](std::vector<std::string> &args) {
   }
 
   disk.close();
+
+  std::cout << wyland_files_header_fmt(&header) << std::endl;
+  std::cout << "Saved to: " << args[0] << std::endl;
 };
 
 std::unordered_map<std::string, taskHandle> handles {
@@ -253,7 +280,7 @@ std::unordered_map<std::string, taskHandle> handles {
   //{"-parse", parse},
   //{"-debug", debug},
   //{"-new-env", new_env},
-  // Future tasks
+  // Future tasks (Maybe in the std:wy4 standard !)
   //{"-compile", compile},
   //{"-libsof", libsof},
   //{"-api", api}
