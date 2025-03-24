@@ -17,6 +17,7 @@
 
 #include "regs.hpp"
 #include "wylrt.h"
+#include "wylrt.hpp"
 #include "libcallc.hpp"
 #include "targets.h"
 #include "wtarget64.hpp"
@@ -103,6 +104,10 @@ void run_core(core_base *base) {
     std::cerr << "[e]: general exception caught at address 0x" 
               << std::hex << reinterpret_cast<uintptr_t>(base) 
               << "\n\twhat(): " << e.what() << std::endl;
+  } catch (const runtime::wyland_runtime_error &e) {
+    std::cerr << "[e]: wyland error caught at address 0x"
+              << std::hex << reinterpret_cast<uintptr_t>(base) 
+              << "\n\twhat(): " << e.fmterr("\t");
   } catch (...) {
     std::cerr << "[e]: unknown exception caught at address 0x" 
               << std::hex << reinterpret_cast<uintptr_t>(base) << std::endl;

@@ -7,9 +7,10 @@ typedef struct {
   char    *what;
   char    *name;
   char    *caller;
+  char    *exception_type;
   uint64_t ip;
   uint64_t thread;
-  uint64_t *segmeg;
+  uint64_t *segmbeg;
   uint64_t *segmend;
   uint64_t  segsize;
 } wylrterror;
