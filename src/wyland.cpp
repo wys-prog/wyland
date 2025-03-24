@@ -21,6 +21,7 @@
 #include "targets.h"
 #include "wtarget64.hpp"
 #include "wtarget32.hpp"
+#include "wtargmarch.hpp"
 #include "wtargetfast.hpp"
 
 #include "regs.hpp"
@@ -38,13 +39,27 @@ WYLAND_BEGIN
 
 typedef void (*taskHandle)(std::vector<std::string>&);
 
+
 typedef struct {
   __wtarget   target;
   uint32_t    version;
+  bool        auto_targ;
   /* In the future.. */
 } rt_task_t;
 
-rt_task_t task{wtarg64, WYLAND_VERSION_UINT32};
+rt_task_t task{wtarg64, WYLAND_VERSION_UINT32, false};
+
+void handle_arguments(const std::vector<std::string> &args, std::vector<std::string> &files) {
+  for (size_t i = 0; i < args.size(); i++) {
+    if (args[i] == "-auto") task.auto_targ = true;
+    else if (args[i] == "-target") {
+      task.target = ofname(args[++i].c_str());
+      std::cout << "[i]: target set to: " << task.target << " (" << args[i] << ")" << std::endl;
+    } else {
+      files.push_back(args[i]);
+    }
+  }
+}
 
 taskHandle name = [](std::vector<std::string>&) {
   std::cout << WYLAND_NAME << std::endl;
@@ -69,6 +84,18 @@ taskHandle target_info = [](std::vector<std::string>&) {
   std::cout << wtargfast << ": " << nameof(wtargfast) << " (working on)" << std::endl;
 };
 
+taskHandle infos = [](std::vector<std::string>&) {
+  std::cout << "name:\t\t" << WYLAND_NAME << "\n"
+            << "version:\t" << WYLAND_VERSION "(" << WYLAND_VERSION_UINT32 << ")\n"
+            << "build:\t\t" << WYLAND_BUILD << "\n"
+            << "targets:\t\n" 
+              "\t- wtarg64 (" << (wtarg64) << ")\n"
+              "\t- wtarg32 (" << (wtarg32) << ")\n"
+              "\t- wtargmarch (" << (wtargmarch) << ")\n"
+              "\t- wtargfast (" << (wtargfast) << ")\n"
+  << std::endl;
+};
+
 taskHandle set_target = [](std::vector<std::string> &args) {
   if (args.size() == 0) {
     std::cerr << "[e]: " << std::invalid_argument("Expected <x> target after -target token.").what() << std::endl;
@@ -81,51 +108,55 @@ taskHandle set_target = [](std::vector<std::string> &args) {
 };
 
 taskHandle run = [](std::vector<std::string> &args) {
-  bool auto_targ = false;
-
   if (args.size() == 0) {
     std::cerr << "[e]: " << std::invalid_argument("Expected <x> disk after -run token.").what() << std::endl;
     exit(-1);
-  } else if (args.size() > 1) {
-    if (args[2] == "-auto") auto_targ = true;
-
-    std::cerr << "[w]: Too much arguments (" << args.size() << "). Excepted 1." << std::endl;
   }
 
-  std::fstream disk(args[0]);
+  std::vector<std::string> files;
+  handle_arguments(args, files);
 
-  if (!disk) {
-    std::cerr << "[e]: Unable to open disk file: " << args[0] << std::endl;
-    exit(-1);
-  }
+  for (const auto&file:files) {
+    std::fstream disk(file);
 
-  wblock *block = new wblock;
-  disk.read((char*)block->array, sizeof(block->array));
-  auto header = wyland_files_make_header(block);
-
-  if (auto_targ) task.target = header.target;
-
-  if (!wyland_files_parse(&header, task.target, task.version)) {
-    std::cerr << "[e]: " << std::invalid_argument("Invalid header file.").what() << std::endl;
-    std::cout << "Extracted header:\n" << wyland_files_header_fmt(&header) << std::endl;
-
-    exit(-1);
-  }
-
-  delete block;
-
-  core_base *core = create_core_ptr(task.target);
+    if (!disk) {
+      std::cerr << "[e]: Unable to open disk file: " << file << std::endl;
+      exit(-1);
+    }
   
-  if (!load_file(disk, header)) {
+    wblock *block = new wblock;
+    disk.read((char*)block->array, sizeof(block->array));
+    auto header = wyland_files_make_header(block);
+  
+    if (task.auto_targ) task.target = header.target;
+  
+    if (!wyland_files_parse(&header, task.target, task.version)) {
+      std::cerr << "[e]: " << std::invalid_argument("Invalid header file.").what() << std::endl;
+      std::cout << "Extracted header:\n" << wyland_files_header_fmt(&header) << std::endl;
+  
+      exit(-1);
+    }
+  
+    delete block;
+  
+    core_base *core = create_core_ptr(task.target);
+    
+    if (!load_file(disk, header)) {
+      delete core;
+      exit(-1);
+    }
+  
+    if (core == nullptr) {
+      std::cerr << "[e]: *core is a bad pointer." << std::endl;
+      exit(-400);
+    }
+
+    std::cout << "[i]: initializing object 0x" << std::hex << reinterpret_cast<uintptr_t>(core) << std::endl;
+    core->init(SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START+SYSTEM_SEGMENT_SIZE, true, 0);
+    run_core(core);
+  
     delete core;
-    exit(-1);
   }
-
-  std::cout << "[i]: initializing object 0x" << std::hex << reinterpret_cast<uintptr_t>(core) << std::endl;
-  core->init(SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START+SYSTEM_SEGMENT_SIZE, true, 0);
-  run_core(core);
-
-  delete core;
 };
 
 taskHandle run_raw = [](std::vector<std::string> &args) {
@@ -133,39 +164,42 @@ taskHandle run_raw = [](std::vector<std::string> &args) {
   if (args.size() == 0) {
     std::cerr << "[e]: " << std::invalid_argument("Expected <x> target after -target token.").what() << std::endl;
     exit(-1);
-  } else if (args.size() > 1) {
-    std::cerr << "[w]: Too much arguments (" << args.size() << "). Excepted 1." << std::endl;
   }
 
-  std::fstream disk(args[0]);
+  std::vector<std::string> files;
+  handle_arguments(args, files);
 
-  if (!disk) {
-    std::cerr << "[e]: Unable to open disk file: " << args[0] << std::endl;
-    exit(-1);
-  } else { 
-    std::cout << "[i]: Disk opened." << std::endl;
+  for (const auto&file:files) {
+    std::fstream disk(file);
+
+    if (!disk) {
+      std::cerr << "[e]: Unable to open disk file: " << file << std::endl;
+      exit(-1);
+    } else { 
+      std::cout << "[i]: Disk opened." << std::endl;
+    }
+
+    size_t i = 0;
+    while (!disk.eof() && i < SYSTEM_SEGMENT_SIZE) {
+      char buff[1]{0};
+      disk.read(buff, sizeof(buff));
+      memory[SYSTEM_SEGMENT_START+i] = buff[0];
+      i++;
+    }
+
+    core_base *core = create_core_ptr(task.target);
+
+    if (core == nullptr) {
+      std::cerr << "[e]: *core is a bad pointer." << std::endl;
+      exit(-400);
+    }
+
+    std::cout << "[i]: initializing object 0x" << std::hex << reinterpret_cast<uintptr_t>(core) << std::endl;
+    core->init(SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START+SYSTEM_SEGMENT_SIZE, true, 0);
+    run_core(core);
+
+    delete core;
   }
-
-  size_t i = 0;
-  while (!disk.eof() && i < SYSTEM_SEGMENT_SIZE) {
-    char buff[1]{0};
-    disk.read(buff, sizeof(buff));
-    memory[SYSTEM_SEGMENT_START+i] = buff[0];
-    i++;
-  }
-
-  core_base *core = create_core_ptr(task.target);
-
-  if (core == nullptr) {
-    std::cerr << "[e]: *core is a bad pointer." << std::endl;
-    exit(-400);
-  }
-
-  std::cout << "[i]: initializing object 0x" << std::hex << reinterpret_cast<uintptr_t>(core) << std::endl;
-  core->init(SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START+SYSTEM_SEGMENT_SIZE, true, 0);
-  run_core(core);
-
-  delete core;
 };
 
 taskHandle check = [](std::vector<std::string> &args) {
@@ -271,6 +305,8 @@ std::unordered_map<std::string, taskHandle> handles {
   {"--build", build},
   {"--target", target},
   {"--target-info", target_info},
+  {"--info", infos}, 
+  {"--i", infos},
   {"-check", check},
   {"-target", set_target},
   {"-run", run},
@@ -296,6 +332,12 @@ int wylandMain(int argc, char *const argv[]) {
     std::string arg = argv[i];
 
     if (handles.find(arg) != handles.end()) {
+      if (arg.starts_with("--")) {
+        std::vector<std::string> args{};
+        handles[arg]({args});
+        continue;
+      }
+
       std::vector<std::string> args;
 
       int j = i + 1;

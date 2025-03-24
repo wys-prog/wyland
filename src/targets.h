@@ -8,7 +8,7 @@ typedef int16_t __wtarget;
 
 const __wtarget wtarg64    = 0xA64;
 const __wtarget wtarg32    = 0xA32; /* Not implemented */
-const __wtarget wtargmarch = 0xA +'m'+'a'+'t'+'h';
+const __wtarget wtargmarch = 0xA + (0x13)*'m'+'a'+'t'+'h' + 2; /* These numbers are just 'random'. */
 const __wtarget wtargfast  = 0xAFA; /* Deprecated, not implemented */
 
 const char *nameof(__wtarget tar) {
@@ -26,7 +26,7 @@ __wtarget ofname(const char *name) {
   else if (strcmp(name, nameof(wtarg32)) == 0) return wtarg32;
   else if (strcmp(name, nameof(wtargmarch)) == 0) return wtargmarch;
   else if (strcmp(name, nameof(wtargfast)) == 0) return wtargfast;
-  else return wtarg64;
+  else return strlen(name); /* This can create errors... BUT WHY SET TO AN UNKNOWN TARGET ? */
 }
 
 enum set_wtarg64 {
