@@ -16,6 +16,7 @@
 
 /* Runtime */
 #include "wylrt.h"
+#include "wylrt.hpp"
 #include "libcallc.hpp"
 /* Targets */
 #include "targets.h"

@@ -2,4 +2,4 @@
 .godot/
 /android/
 *.DS_Store
-runtime/
+wyland-runtime/
