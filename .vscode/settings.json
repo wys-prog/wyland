@@ -118,5 +118,6 @@
       "args": ["--rcs", "-i", "-c", "source $(pwd)/.vscode/zshrc_workspace && zsh"]
     }
   },
+  "cmake.sourceDirectory": "/Users/wys/Documents/wyland/src",
   //"terminal.integrated.defaultProfile.osx": "zsh"
 }

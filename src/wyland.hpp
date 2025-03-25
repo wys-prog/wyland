@@ -16,8 +16,8 @@
 #include <new>
 
 #include "regs.hpp"
-#include "wylrt.h"
-#include "wylrt.hpp"
+#include "wyland-runtime/wylrt.h"
+#include "wyland-runtime/wylrt.hpp"
 #include "libcallc.hpp"
 #include "targets.h"
 #include "wtarget64.hpp"

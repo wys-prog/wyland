@@ -15,8 +15,8 @@
 #include <new>
 
 /* Runtime */
-#include "wylrt.h"
-#include "wylrt.hpp"
+#include "wyland-runtime/wylrt.h"
+#include "wyland-runtime/wylrt.hpp"
 #include "libcallc.hpp"
 /* Targets */
 #include "targets.h"

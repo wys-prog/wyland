@@ -16,7 +16,7 @@
 #include <new>
 
 #include "regs.hpp"
-#include "wylrt.h"
+#include "wyland-runtime/wylrt.h"
 #include "libcallc.hpp"
 #include "targets.h"
 #include "wmmbase.hpp"

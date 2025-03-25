@@ -3,3 +3,35 @@
 /android/
 *.DS_Store
 wyland-runtime/
+
+# Ignore build directories
+/build/
+/bin/
+/obj/
+/CMakeFiles/
+/CMakeCache.txt
+/cmake_install.cmake
+/Makefile
+
+# Ignore other temporary files
+*.o
+*.obj
+*.exe
+*.log
+*.tmp
+*.out
+*.a
+*.lib
+*.so
+*.dll
+*.dylib
+
+# Ignore IDE specific files
+.vscode/
+.idea/
+*.suo
+*.user
+*.userossc
+*.sln
+*.swp
+*.DS_Store

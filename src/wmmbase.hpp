@@ -21,6 +21,8 @@
 
 #define SYSCALL_COUNT 11
 
+#define REG_KEY (16+16)
+
 constexpr std::size_t operator""_MB(unsigned long long size) {
   return size * 1024 * 1024;
 }

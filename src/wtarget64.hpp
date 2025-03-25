@@ -15,8 +15,11 @@
 #include <mutex>
 #include <new>
 
+#include "wyland-runtime/keys.h"
+#include "wyland-runtime/wylrt.h"
+#include "wyland-runtime/wylrt.hpp"
+
 #include "regs.hpp"
-#include "wylrt.h"
 #include "libcallc.hpp"
 #include "targets.h"
 #include "wmmbase.hpp"
@@ -494,6 +497,9 @@ public:
       
       if (fetched == 0xFF) { halted = true; continue; }
 
+      wyland_uint key = get_key();
+      if (key)  regs.set(REG_KEY, key);
+      
       if (fetched >= sizeof(set) / sizeof(set[0])) {
         std::ostringstream oss;
         oss << "Invalid instruction: " << std::hex << std::uppercase << (int)fetched << "\n"
