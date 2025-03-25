@@ -3,6 +3,7 @@
 /android/
 *.DS_Store
 wyland-runtime/
+compiler/
 
 # Ignore build directories
 /build/
