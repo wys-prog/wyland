@@ -52,6 +52,9 @@ enum set_wtarg64 {
   loadat, 
   ret, 
   movad, 
+  sal, 
+  sar, 
+  wthrow, 
 };
 
 enum set_wtargmarch {

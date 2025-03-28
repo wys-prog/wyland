@@ -1,0 +1,95 @@
+nop (0)
+  - Description: No operation.
+  - Arguments: None.
+
+ilea (1)
+  - Description: Load effective address into a register.
+  - Arguments: r1 (register), ad (address, uint64_t).
+
+iload (2)
+  - Description: Load a value into a register.
+  - Arguments: size (8, 16, 32, or 64 bits), r1 (register).
+
+istore (3)
+  - Description: Store a value from a register into memory.
+  - Arguments: size (in bits), r1 (register), org (memory address, uint64_t).
+
+imov (4)
+  - Description: Move a value from one register to another.
+  - Arguments: Two registers.
+
+iadd (5)
+  - Description: Add values from two registers and store the result in the first register.
+  - Arguments: Two registers.
+
+isub (6)
+  - Description: Subtract the value of the second register from the first and store the result in the first register.
+  - Arguments: Two registers.
+
+imul (7)
+  - Description: Multiply values from two registers and store the result in the first register.
+  - Arguments: Two registers.
+
+idiv (8)
+  - Description: Divide the value of the first register by the second and store the result in the first register.
+  - Arguments: Two registers.
+
+imod (9)
+  - Description: Compute the modulus of the first register by the second and store the result in the first register.
+  - Arguments: Two registers.
+
+ijmp (10)
+  - Description: Jump to a specific memory address.
+  - Arguments: Address (uint64_t).
+
+ije (11)
+  - Description: Jump to a specific address if the flags indicate equality.
+  - Arguments: Address (uint64_t).
+
+ijne (12)
+  - Description: Jump to a specific address if the flags indicate inequality.
+  - Arguments: Address (uint64_t).
+
+ijg (13)
+  - Description: Jump to a specific address if the flags indicate greater than.
+  - Arguments: Address (uint64_t).
+
+ijl (14)
+  - Description: Jump to a specific address if the flags indicate less than.
+  - Arguments: Address (uint64_t).
+
+ijge (15)
+  - Description: Jump to a specific address if the flags indicate greater than or equal.
+  - Arguments: Address (uint64_t).
+
+ijle (16)
+  - Description: Jump to a specific address if the flags indicate less than or equal.
+  - Arguments: Address (uint64_t).
+
+icmp (17)
+  - Description: Compare values from two registers and set flags accordingly.
+  - Arguments: Two registers.
+
+iloadat (18)
+  - Description: Load a value from memory at a specific address into a register.
+  - Arguments: dst (register), at (address, uint64_t).
+
+iret (19)
+  - Description: Return to the address stored in register 63.
+  - Arguments: None.
+
+imovad (20)
+  - Description: Move a value from memory at the address stored in one register to another register.
+  - Arguments: Two registers.
+
+isal (21)
+  - Description: Shift the value in a register left by a specified number of bits.
+  - Arguments: r1 (register), with (uint64_t).
+
+isar (22)
+  - Description: Shift the value in a register right by a specified number of bits.
+  - Arguments: r1 (register), with (uint64_t).
+
+iwthrow (23)
+  - Description: Throw a runtime error with a specified message.
+  - Arguments: Null-terminated string.

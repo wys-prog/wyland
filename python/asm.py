@@ -1,221 +1,220 @@
-import re
-import struct
-import argparse
-
-# Global symbol table, address counter, and defines
-symbol_table = {}
-current_address = 0
-defines = {
-    "nop": "db 0", 
-    "lea": "db 1,",
-    "load": "db 2",
-    "store": "db 3",
-    "mov": "db 4,",
-    "add": "db 5,",
-    "sub": "db 6,",
-    "mul": "db 7,",
-    "div": "db 8,",
-    "mod": "db 9,",
-    "jmp": "db 10",
-    "je": "db 11",
-    "jne": "db 12",
-    "jl": "db 13",
-    "jg": "db 14",
-    "jle": "db 15",
-    "jge": "db 16",
-    "cmp": "db 17,",
-    "int": "db 19",
-    "loadat": "db 20",
-    "ret": "db 21",
-    "movad": "db 22",
-    "swritec": "db 19, 0", 
-    "swritecerr": "db 19, 1", 
-    "sreadc": "db 19, 2", 
-    "scsystem": "db 19, 3", 
-    "sldlib": "db 19, 4", 
-    "sstartt": "db 19, 5", 
-    "spseg": "db 19, 6", 
-    "sreads": "db 19, 7", 
-    "sldlcfun": "db 19, 8", 
-    "suldlib": "db 19, 9", 
-    "scfun": "db 19, 10", 
-    "CODE_SEGMENT_SIZE": "419430400",
-    "HARDWARE_SEGMENT_SIZE": "104857600", 
-    "SYSTEM_SEGMENT_SIZE": "12582912", 
-    "CODE_SEGMENT_START": "0", 
-    "HARDWARE_SEGMENT_START": "419430400", 
-    "SYSTEM_SEGMENT_START": "524288000", 
-    "KEYBOARD_SEGMENT_START": "419430400",
-    "KEYBOARD_SEGMENT_END": "421527552",
+instruction_set = {
+    'nop': 0,
+    'lea': 1,
+    'load': 2,
+    'store': 3,
+    'mov': 4,
+    'add': 5,
+    'sub': 6,
+    'mul': 7,
+    'div': 8,
+    'mod': 9,
+    'jmp': 10,
+    'je': 11,
+    'jne': 12,
+    'jl': 13,
+    'jg': 14,
+    'jle': 15,
+    'jge': 16,
+    'cmp': 17,
+    'xint': 18,
+    'syscall': 18,
+    'loadat': 19,
+    'ret': 20,
+    'movad': 21,
+    'sal': 22,
+    'sar': 23,
+    'wthrow': 24,
 }
-verbose = False  # Global verbose flag
 
-# Regex to match optional label, directive, and values
-pattern = re.compile(r'^(?:(?P<label>[\w.:@]+):)?\s*(?P<directive>\w+)?\s*(?P<values>.*)$')
-define_pattern = re.compile(r'^\s*%define\s+(?P<name>\w+)\s+(?P<value>.+)$')
-ex_pattern = re.compile(r'%ex\s+(\w+)\(([^)]+)\)\s+(.+)')
 
-def log(message):
-    """Print message if verbose mode is enabled."""
-    if verbose:
-        print(message)
 
-def parse_line(line):
-    """Parse an assembly line into (label, directive, values)."""
-    line = line.split('#')[0].strip()  # Remove comments (using # instead of ;)
-    if not line:
+op_type = {
+    'byte': 8,
+    'word': 16, 
+    'dword': 32, 
+    'qword': 64,
+}
+
+
+# Registers
+# byte:  bmm0, ..., bmm15
+# word:  wmm0, ..., wmm15
+# dword: dmm0, ..., dmm15
+# qword: qmm0, ..., qmm31
+
+register = {
+    # Byte registers
+    **{f'bmm{i}': i for i in range(16)},
+    # Word registers
+    **{f'wmm{i}': i + 16 for i in range(16)},
+    # Dword registers
+    **{f'dmm{i}': i + 32 for i in range(16)},
+    # Qword registers
+    **{f'qmm{i}': i + 48 for i in range(32)},
+}
+
+symbols = {}
+
+def error(what: str, line: str, line_count: int, word: str):
+    emsg = f"Error {what.strip()}\n\t{line_count}:{line.strip()}\n\t"
+    posw = line.find(word)
+    if posw != -1:
+        emsg += ' ' * (posw + len(str(line_count)) - 1) + '~' * len(word)
+    print(emsg)
+
+def get_int(word: str, line: str, line_count):
+    base = 10
+    if word.lower().startswith('0x'): base = 16
+    elif word.lower().startswith('0o'): base = 8
+
+    try:
+        return int(word, base)
+    except ValueError:
+        error(f"Not an integer: '{word.strip()}'", line, line_count, word.strip())
         return None
-    match = pattern.match(line)
-    if match:
-        label = match.group('label')
-        directive = match.group('directive').lower() if match.group('directive') else None
-        values = match.group('values').strip() if match.group('values') else None
-        return label, directive, values
-    return None
 
-def process_define(line):
-    """Process %define and store in dictionary."""
-    match = define_pattern.match(line)
-    if match:
-        name = match.group('name')
-        value = match.group('value').strip()
-        
-        defines[name] = value
-        
-
-def process_directive(directive, values):
-    """Process data directives (db, dw, dd, dq) and handle strings, chars, and ints."""
-    global current_address
-    data = bytearray()
-    values = resolve_defines(values)
+def assemble_word(word):
+    word = word.strip()
+    if word in instruction_set:
+        return bin(instruction_set[word])[2:].zfill(8)
+    elif word in register:
+        return bin(register[word])[2:].zfill(8)
     
-    # Split values while preserving quoted strings
-    # parts = re.findall(r'"[^"]*"|\'[^\']*\'|\S+', values)
-    parts = values.split(',')
+    else:
+        return None
     
-    for part in parts:
-        if part.startswith("'") and part.endswith("'") and len(part) == 3:
-            # Handle char
-            char_data = ord(part[1])
-            if directive == 'db':
-                data.extend(struct.pack('>B', char_data))
-                current_address += 1
-            elif directive == 'dw':
-                data.extend(struct.pack('>H', char_data))
-                current_address += 2
-            elif directive == 'dd':
-                data.extend(struct.pack('>I', char_data))
-                current_address += 4
-            elif directive == 'dq':
-                data.extend(struct.pack('>Q', char_data))
-                current_address += 8
+def encode_value(word, base): # Idk what my IDE is sayin.. But OK.
+    try:
+        value = int(word, base)
+        
+        if value <= 0xFF:  # 8 bits
+            return bin(value)[2:].zfill(8), 1
+        elif value <= 0xFFFF:  # 16 bits
+            return bin(value)[2:].zfill(16), 2
+        elif value <= 0xFFFFFFFF:  # 32 bits
+            return bin(value)[2:].zfill(32), 4
+        elif value <= 0xFFFFFFFFFFFFFFFF:  # 64 bits
+            return bin(value)[2:].zfill(64), 8
         else:
-            # Handle int
-            num = int(part, 0)
-            if directive == 'db':
-                data.extend(struct.pack('>B', num & 0xFF))
-                current_address += 1
-            elif directive == 'dw':
-                data.extend(struct.pack('>H', num & 0xFFFF))
-                current_address += 2
-            elif directive == 'dd':
-                data.extend(struct.pack('>I', num & 0xFFFFFFFF))
-                current_address += 4
-            elif directive == 'dq':
-                data.extend(struct.pack('>Q', num))
-                current_address += 8
-    return data
+            return None, 0  
+    except ValueError:
+        return None, 0  
 
-def resolve_defines(values):
-    previous_values = None
-    while previous_values != values:
-        previous_values = values
-        for name, value in defines.items():
-            values = re.sub(rf'\b{name}\b', str(value), values)
-    return values
-
-
-def assemble(source_code):
-    """Assemble source code into binary."""
-    global current_address, symbol_table
-    binary_data = bytearray()
-    lines = re.split(r'[&\n]', source_code)
-
-    # First pass: process defines and macros
-    for line in lines:
-        line = line.strip()
-        if line.startswith('%define'):
-            process_define(line)
+def assemble_file(input_file, output_file):
+    global current_address
+    error_register = 0
+    current_address = 0
+    line_count = 0
     
-    # Second pass: assemble code
-    for line in lines:
-        line = line.strip()
-        if not line or line.startswith('%'):
-            continue
-
-        parsed = parse_line(resolve_defines(line))
-        if parsed is None:
-            continue
-
-        current_label, directive, values = parsed
-        if current_label:
-            symbol_table[current_label] = current_address
-            log(f"{current_address:#018X}: {current_label.ljust(10)}")
-
-        if directive in [';', '//', '#']: continue
-
-        if directive == 'org':
-            try:
-                current_address = int(values, 0)
-                log(f"{current_address:#018X}: New origin")
-            except ValueError:
-                print(f"Error: Invalid address for ORG: {values}")
-        elif directive in ['db', 'dw', 'dd', 'dq']:
-            values = resolve_defines(values)  # Replace macros in values
-            unlabeledValues = values.split(' ')
-            labeled = []
-
-            for unlabeled in unlabeledValues: 
-                if unlabeled in symbol_table:
-                    labeled.append(str(symbol_table[unlabeled]))
-                else: labeled.append(unlabeled)
-
-            data = process_directive(directive, ''.join(labeled))
-            binary_data.extend(data)
-        elif directive in symbol_table:
-            binary_data.extend(struct.pack('>Q', symbol_table[directive]))
-            current_address += 8        
-
-    return binary_data
-
-def parse_args():
-    """Parse command-line arguments."""
-    parser = argparse.ArgumentParser(description="Simple assembler to binary")
-    parser.add_argument('source_file', type=str, help="Path to input source file")
-    parser.add_argument('-o', '--output', type=str, default='output.bin', help="Output binary file")
-    parser.add_argument('-v', '--verbose', action='store_true', help="Enable verbose mode")
-    return parser.parse_args()
-
-def main():
-    """Main function to assemble the file."""
-    global verbose
-    args = parse_args()
-    verbose = args.verbose
-    
-    count = 0
-    
-    with open(args.source_file, 'r') as usrin:
-        with open(args.output, 'wb') as out:
-            for line in usrin:
-                try:
-                    out.write(assemble(line))
-                except Exception as e:
-                    print(e, f'\nline: [{line.strip()}]:{count}:{args.source_file}')
-                    return -1
+    with open(input_file, 'r') as infile, open(output_file, 'wb') as outfile:
+        for line in infile:
+            line_count += 1
+            words = line.split(' ')
+            for i in range(0, len(words)):
+                word = words[i].strip()
                 
-                count += 1
-                    
-    print(f"Binary saved to {args.output}")
+                if word == '.string':
+                    wpos = line.find(word)
+                    beg = line.find('"', wpos + len(word))
+                    end = line.find('"', beg + 1)
+                    if beg != -1 and end != -1:
+                        string_content = line[beg + 1:end] 
+                        outfile.write(string_content.encode('utf-8')) 
+                        outfile.write(b'\x00')
+                        current_address += len(string_content.encode('utf-8')) + 1
+                    else:
+                        error(f"Malformed string", line.strip(), line_count, line.strip())
+                        error_register += 1
+                    break
+                elif word == '.ascii':
+                    wpos = line.find(word)
+                    beg = line.find('"', wpos + len(word))
+                    end = line.find('"', beg + 1)
+                    if beg != -1 and end != -1:
+                        string_content = line[beg + 1:end] 
+                        outfile.write(string_content.encode('ascii')) 
+                        outfile.write(b'\x00')
+                        current_address += len(string_content.encode('ascii')) + 1
+                    else:
+                        error(f"Malformed string", line.strip(), line_count, line.strip())
+                        error_register += 1
+                    break
 
-if __name__ == '__main__':
-    main()
+                binary_instruction = assemble_word(word)
+                
+                if binary_instruction:
+                    byte = int(binary_instruction, 2).to_bytes(1, byteorder='big')
+                    outfile.write(byte)
+                elif word == '': 
+                    continue
+                elif word.lower().startswith('0x'):
+                    rawdata, size = encode_value(word[2:], 16)
+                    if not rawdata:
+                        error(f"Too large or bad format: '{word.strip()}'", line, line_count, word.strip())
+                        error_register += 1
+                        continue
+                    outfile.write(int(rawdata, 2).to_bytes(size, byteorder='big'))
+                    current_address += size
+                elif word.lower().startswith('0o'):
+                    rawdata, size = encode_value(word[2:], 8)
+                    if not rawdata:
+                        error(f"Too large or bad format: '{word.strip()}'", line, line_count, word.strip())
+                        error_register += 1
+                        continue
+                    outfile.write(int(rawdata, 2).to_bytes(size, byteorder='big'))
+                    current_address += size
+                elif word.lower() == "@here":
+                    outfile.write(current_address.to_bytes(8, byteorder='big'))
+                    current_address += 8
+                elif word.startswith('@'):
+                    if word.endswith(':'):
+                        symbols[word[1:len(word)-1]] = current_address
+                    else:
+                        symbols[word[1:]] = current_address
+                elif word.startswith('%'):
+                    if not word[1:] in symbols:
+                        error(f"Unknown referenced symbol (could not resovle): '{word.strip()}'", line, line_count, word.strip())
+                        error_register += 1
+                        continue
+                
+                    outfile.write(symbols[word[1:]].to_bytes(8, byteorder='big'))
+                    current_address += 8
+                elif word.lower() == 'org':
+                    if i + 1 < len(words):  
+                        value = get_int(words[i + 1], line, line_count)
+                        i += 1  
+                        if value is not None:  
+                            current_address = value
+                        else:
+                            error(f"Invalid 'org' argument", line, line_count, words[i])
+                            
+                            error_register += 1
+                    else:
+                        error(' Missing argument for \'org\'', line, line_count, '')
+                        error_register += 1
+                    continue
+                else:
+                    rawdata, size = encode_value(word, 10)
+                    if rawdata:
+                        outfile.write(int(rawdata, 2).to_bytes(size, byteorder='big'))
+                        current_address += size
+                    else:
+                        error(f'Unknown instruction "{word.strip()}"', line, line_count, word.strip())
+                        error_register += 1
+        
+    
+        if error_register != 0:
+            print(f'{error_register} generated.')
+            outfile.truncate(0)
+            return error_register
+                    
+    
+    return 0
+
+
+input_file = 'input.asm'
+output_file = 'output.bin'
+
+import sys
+sys.exit(assemble_file(input_file, output_file))

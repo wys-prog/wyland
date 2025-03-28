@@ -151,21 +151,21 @@ private:
     auto size = read();
     auto r1 = read();
 
-    switch (size) {
+    switch (size) { 
       case 8:  regs.set(r1, read<uint8_t>()); break;
       case 16: regs.set(r1, read<uint16_t>()); break;
       case 32: regs.set(r1, read<uint32_t>()); break;
       case 64: regs.set(r1, read<uint64_t>()); break;
       default: throw std::invalid_argument("in iload(): Invalid size: " + std::to_string(size)
-        + "\n\tfetched: [" + std::to_string((int)size) + "]"
-          "\n\tThread:  " + std::to_string(thread_id) 
-        + "\n\tIP:      " + std::to_string(ip)
-        + "\n\tLIP:     " + std::to_string(local_ip)
-        + "\n\tARGS:    [" + std::to_string((int)size) + ", " + std::to_string((int)r1) +  "]"); 
+      + "\n\tfetched: [" + std::to_string((int)size) + "]"
+        "\n\tThread:  " + std::to_string(thread_id) 
+      + "\n\tIP:      " + std::to_string(ip)
+      + "\n\tLIP:     " + std::to_string(local_ip)
+      + "\n\tARGS:    [" + std::to_string((int)size) + ", " + std::to_string((int)r1) + "]"); 
       break;
     }
-    
-  };
+
+  }
 
   void istore() {
     auto size = read() / 8;
@@ -231,10 +231,38 @@ private:
     regs.set(a, memory[regs.get(b)]);
   }
 
-  setfunc_t set[22];
+  void isal() { /* New in std:wy2.3 ! */
+    auto r1 = read();
+    auto with = read<uint64_t>();
+    regs.set(r1, regs.get(r1) << with);
+  }
+
+  void isar() { /* New in std:wy2.3 ! */
+    auto r1 = read();
+    auto with = read<uint64_t>();
+    regs.set(r1, regs.get(r1) >> with);
+  }
+
+  void iwthrow() { /* New in std:wy2.3 ! */
+    std::string what = "";
+    uint8_t c = read();
+    while (c != 0) {
+      what += c;
+      c = read();
+    }
+
+    throw runtime::wyland_runtime_error(
+      strdup(what.c_str()), "wyland runtime error", "wyland:vm:iwthrow()", 
+      typeid(runtime::wyland_runtime_error).name(), ip, 
+      thread_id, (uint64_t*)&memory[beg], 
+      (uint64_t*)&memory[end], end - beg
+    );
+  }
+
+  setfunc_t set[25];
 
   void swritec() {
-    std::putchar((char)regs.get(0));
+    std::putchar(static_cast<char>(regs.get(0)));
   }
   
   void swritec_stderr() {
@@ -279,7 +307,7 @@ private:
      If the DynamicLibrary class throws an error, 
      it's the process that will handle this error.
      However, if it's the extern C function that throw the error, 
-     in the first case we need to handle this error into this function, 
+     in the first case  we need to handle this error into this function, 
      and then throw a C++ Exception. */
 
     std::string lib = "";
@@ -403,9 +431,7 @@ private:
   }
 
   void spseg() {
-    auto beg = regs.get(48);
-    auto len = regs.get(49);
-    auto org = regs.get(50);
+    auto beg = regs.get(48), len = regs.get(49), org = regs.get(50);
     
     if (manager::is_region_created(org)) 
       throw std::runtime_error("Operating on an assigned region: " + std::to_string(org));
@@ -480,9 +506,18 @@ public:
     set[set_wtarg64::loadat] = &corewtarg64::iloadat;
     set[set_wtarg64::ret]    = &corewtarg64::iret;
     set[set_wtarg64::movad]  = &corewtarg64::imovad;
+    set[set_wtarg64::sal] = &corewtarg64::isal;
+    set[set_wtarg64::sar] = &corewtarg64::isar;
+    set[set_wtarg64::wthrow] = &corewtarg64::iwthrow;
   }
 
   void run() override {
+    /* Initialize the core, with some "basic" values. */
+    /* First of all, define the 'org' constant. */
+    regs.set(R_ORG, beg);
+    regs.set(R_STACK_BASE, end - STACK_SIZE);
+    regs.set(0, 'A');
+
     while (!halted) {
       
       if (ip < beg || ip > end) 
