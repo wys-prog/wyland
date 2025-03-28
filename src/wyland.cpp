@@ -14,6 +14,8 @@
 #include <mutex>
 #include <new>
 
+#include <boost/stacktrace.hpp>
+
 /* Runtime */
 #include "wyland-runtime/wylrt.h"
 #include "wyland-runtime/wylrt.hpp"

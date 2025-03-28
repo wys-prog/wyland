@@ -17,7 +17,7 @@ instruction_set = {
     'jle': 15,
     'jge': 16,
     'cmp': 17,
-    'xint': 18,
+    'int': 18,
     'syscall': 18,
     'loadat': 19,
     'ret': 20,
@@ -57,10 +57,11 @@ register = {
 symbols = {}
 
 def error(what: str, line: str, line_count: int, word: str):
-    emsg = f"Error {what.strip()}\n\t{line_count}:{line.strip()}\n\t"
+    word = word.strip()
+    emsg = f"Error {what.strip()}\n  {line_count}: {line.strip()}\n  "
     posw = line.find(word)
     if posw != -1:
-        emsg += ' ' * (posw + len(str(line_count)) - 1) + '~' * len(word)
+        emsg += (' ' * (posw + len(str(line_count)))) + ('~' * len(word))
     print(emsg)
 
 def get_int(word: str, line: str, line_count):
@@ -191,8 +192,11 @@ def assemble_file(input_file, output_file):
                             
                             error_register += 1
                     else:
-                        error(' Missing argument for \'org\'', line, line_count, '')
+                        error('Missing argument for \'org\'', line, line_count, '')
                         error_register += 1
+                    continue
+                elif word.lower() in op_type:
+
                     continue
                 else:
                     rawdata, size = encode_value(word, 10)
@@ -212,9 +216,19 @@ def assemble_file(input_file, output_file):
     
     return 0
 
-
-input_file = 'input.asm'
-output_file = 'output.bin'
-
-import sys
-sys.exit(assemble_file(input_file, output_file))
+if __name__ == '__main__':
+    import sys
+    if len(sys.argv) == 3:
+        sys.exit(assemble_file(sys.argv[1], sys.argv[2]))
+    elif len(sys.argv) == 2:
+        output_file = 'wyland.section.disk.bin'
+        sys.exit(assemble_file(sys.argv[1], output_file))
+    elif len(sys.argv) == 1:
+        try:
+            sys.exit(assemble_file('wyland.section.main.asm', 'wyland.section.disk.bin'))
+        except FileNotFoundError:
+            error("Input file not found", "", 0, "wyland.section.main.asm")
+            sys.exit(-1)
+    else:
+        error("Invalid arguments", "", 0, " ".join(sys.argv[1:]))
+        sys.exit(-1)

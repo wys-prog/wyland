@@ -14,17 +14,28 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # Specify the source files
 set(SOURCE_FILES
-  wyland-runtime/wylrt.c
-  wyland-runtime/bindings.cpp
-  wyland.cpp
+    wyland-runtime/wylrt.c
+    wyland-runtime/bindings.cpp
+    wyland.cpp
 )
 
 # Add the executable
 add_executable(WylandExecutable ${SOURCE_FILES})
+add_compile_definitions(_GNU_SOURCE)
+
+# Find and include Boost
+set(BOOST_ROOT /opt/homebrew/Cellar/boost/1.87.0_1)
+set(BOOST_INCLUDEDIR /opt/homebrew/Cellar/boost/1.87.0_1/include)
+set(BOOST_LIBRARYDIR /opt/homebrew/Cellar/boost/1.87.0_1/lib)
+
+find_package(Boost REQUIRED)
+
+include_directories(${Boost_INCLUDE_DIRS})
+target_link_libraries(WylandExecutable ${Boost_LIBRARIES})
 
 # Specify the platform-specific output directory for object files
 set_target_properties(WylandExecutable PROPERTIES
-  ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build/obj/${CMAKE_SYSTEM_NAME}
-  LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build/obj/${CMAKE_SYSTEM_NAME}
-  RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/${CMAKE_SYSTEM_NAME}
+    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build/obj/${CMAKE_SYSTEM_NAME}
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build/obj/${CMAKE_SYSTEM_NAME}
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/${CMAKE_SYSTEM_NAME}
 )

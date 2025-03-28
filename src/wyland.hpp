@@ -15,6 +15,8 @@
 #include <mutex>
 #include <new>
 
+#include <boost/stacktrace.hpp>
+
 #include "regs.hpp"
 #include "wyland-runtime/wylrt.h"
 #include "wyland-runtime/wylrt.hpp"
@@ -82,35 +84,46 @@ void run_core(core_base *base) {
   } catch (const std::invalid_argument& e) {
     std::cerr << "[e]: invalid argument exception caught at address 0x" 
               << std::hex << reinterpret_cast<uintptr_t>(base) 
-              << "\n\twhat(): " << e.what() << std::endl;
+              << "\n\twhat(): " << e.what() 
+              << "\n\tstacktrace:\n" << boost::stacktrace::stacktrace()
+              << std::endl;
   } catch (const std::runtime_error& e) {
     std::cerr << "[e]: runtime error exception caught at address 0x" 
               << std::hex << reinterpret_cast<uintptr_t>(base) 
-              << "\n\twhat(): " << e.what() << std::endl;
+              << "\n\twhat(): " << e.what() 
+              << "\n\tstacktrace:\n" << boost::stacktrace::stacktrace() << std::endl;
   } catch (const std::out_of_range& e) {
     std::cerr << "[e]: out of range exception caught at address 0x" 
               << std::hex << reinterpret_cast<uintptr_t>(base) 
-              << "\n\twhat(): " << e.what() << std::endl;
+              << "\n\twhat(): " << e.what()
+              << "\n\tstacktrace:\n" << boost::stacktrace::stacktrace() << std::endl;
   } catch (const std::logic_error& e) {
     std::cerr << "[e]: logic error exception caught at address 0x" 
               << std::hex << reinterpret_cast<uintptr_t>(base) 
-              << "\n\twhat(): " << e.what() << std::endl;
+              << "\n\twhat(): " << e.what()
+              << "\n\tstacktrace:\n" << boost::stacktrace::stacktrace() << std::endl;
   } catch (const std::bad_alloc& e) {
     std::cerr << "[e]: bad allocation exception caught at address 0x" 
               << std::hex << reinterpret_cast<uintptr_t>(base) 
-              << "\n\twhat(): " << e.what() << std::endl;
+              << "\n\twhat(): " << e.what()
+              << "\n\tstacktrace:\n" << boost::stacktrace::stacktrace() << std::endl;
     std::cerr << "\texecution stopped after a bad allocation." << std::endl;
   } catch (const std::exception& e) {
     std::cerr << "[e]: general exception caught at address 0x" 
               << std::hex << reinterpret_cast<uintptr_t>(base) 
-              << "\n\twhat(): " << e.what() << std::endl;
+              << "\n\twhat(): " << e.what()
+              << "\n\tstacktrace:\n" << boost::stacktrace::stacktrace() << std::endl;
   } catch (const runtime::wyland_runtime_error &e) {
     std::cerr << "[e]: wyland error caught at address 0x"
               << std::hex << reinterpret_cast<uintptr_t>(base) 
-              << "\n\twhat(): " << e.fmterr("\t");
+              << "\n\twhat(): " << e.fmterr("\t")
+              << "\n\tstacktrace:\n" << boost::stacktrace::stacktrace()
+              << std::endl;
   } catch (...) {
     std::cerr << "[e]: unknown exception caught at address 0x" 
-              << std::hex << reinterpret_cast<uintptr_t>(base) << std::endl;
+              << std::hex << reinterpret_cast<uintptr_t>(base) 
+              << "\n\tstacktrace:\n" << boost::stacktrace::stacktrace()
+              << std::endl;
   }
 }
 
