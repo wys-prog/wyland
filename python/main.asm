@@ -6,9 +6,9 @@
   ; char *str
   lea qmm0 @calc: .code + 2
   load 8 qmm1 12
-  lea qmm15 @calc: .code + 14
   lea qmm4 @calc: .code
-  ret
+  lea qmm15 @calc: .here + 10
+  jmp @calc: .code + 14
   0xFF
 .mend
 
@@ -40,8 +40,5 @@
     load 8 bmm0 0x0A
     syscall 0
 
-    mov qmm15 qmm4
-    ; qmm4 is an argument.
-    ; qmm15 is the 'return-register'.
-    ; the 'ret' instruction will change ip to this one.
     ret ; Return
+

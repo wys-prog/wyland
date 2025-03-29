@@ -532,7 +532,7 @@ public:
         "\tfrom wtarg64::run()"
       );
       
-      auto fetched =  read();
+      auto fetched = read();
       local_ip++;
 
       if (fetched == 0xFF) { halted = true; continue; }

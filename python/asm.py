@@ -58,7 +58,7 @@ symbols = {
     'main': 524288000,
     'end_main': 524288128, 
     '.code': 524288128, 
-    '@here:': 0
+    '.here': 0
 }
 
 def error(what: str, line: str, line_count: int, word: str):
