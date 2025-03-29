@@ -4,6 +4,8 @@
 #include <stdexcept>
 #include <string>
 
+#include "wyland-runtime/wylrt.hpp"
+
 namespace wylma {
   namespace wyland {
     class reg_t {
@@ -11,7 +13,7 @@ namespace wylma {
       uint8_t  r8 [16]{0}; 
       uint16_t r16[16]{0}; 
       uint32_t r32[16]{0}; 
-      uint64_t r64[32]{0};  
+      uint64_t r64[32]{0};
 
       public:
       void set(uint8_t to, uint64_t u) {
@@ -24,7 +26,7 @@ namespace wylma {
         else if (to < 80) 
           r64[to - 48] = u;
         else 
-          throw std::out_of_range("Unexpected register index: " + std::to_string(to));
+          throw runtime::wyland_out_of_range(std::string("Unexpected register index: " + std::to_string(to)).c_str(), "out of range", "reg_t::set(...)", 0, 0, nullptr, nullptr, 0);
       }
 
       uint64_t get(uint8_t who) const {
@@ -37,7 +39,7 @@ namespace wylma {
         else if (who < 80) 
           return r64[who - 48];  
         else 
-          throw std::out_of_range("Unexpected register index: " + std::to_string(who));
+        throw runtime::wyland_out_of_range(std::string("Unexpected register index: " + std::to_string(who)).c_str(), "out of range", "reg_t::set(...)", 0, 0, nullptr, nullptr, 0);
       }
     };
   }

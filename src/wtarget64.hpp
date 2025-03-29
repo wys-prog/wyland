@@ -74,7 +74,7 @@ private:
   };
 
   void iadd() {
-    auto r1 = read(), r2 = read(); 
+    auto r1 = read(), r2 = read();
     auto v1 = regs.get(r1) + regs.get(r2);
     regs.set(r1, v1);
   };
@@ -105,33 +105,33 @@ private:
 
   void ije() {
     auto tmp = read<uint64_t>();
-    if (flags == 0) ip = tmp;
+    if (flags == EQUAL) ip = tmp;
   };
 
   void ijne() {
     auto tmp = read<uint64_t>();
-    if (flags == 0) return;
+    if (flags == EQUAL) return;
     ip = tmp;
   };
 
   void ijg() {
     auto tmp = read<uint64_t>();
-    if (flags == 1) ip = tmp;
+    if (flags == LARGER) ip = tmp;
   };
 
   void ijl() {
     auto tmp = read<uint64_t>();
-    if (flags == -1) ip = tmp;
+    if (flags == LESSER) ip = tmp;
   };
 
   void ijge() {
     auto tmp = read<uint64_t>();
-    if (flags == 1 || flags == 0) ip = tmp;
+    if (flags == LARGER || flags == EQUAL) ip = tmp;
   };
 
   void ijle() {
     auto tmp = read<uint64_t>();
-    if (flags == -1 || flags == 0) ip = tmp;
+    if (flags == LESSER || flags == EQUAL) ip = tmp;
   };
 
   void icmp() {
@@ -139,11 +139,11 @@ private:
     auto r2 = regs.get(read());
   
     if (r1 > r2) {
-      flags = 1;
+      flags = LARGER;
     } else if (r1 == r2) {
-      flags = 0;
+      flags = EQUAL;
     } else {
-      flags = -1;
+      flags = LESSER;
     }
   };
 
@@ -517,23 +517,31 @@ public:
     regs.set(R_ORG, beg);
     regs.set(R_STACK_BASE, end - STACK_SIZE);
     regs.set(0, 'A');
+    regs.set(1, 1);
+    regs.set(REG_KEY, 0x00);
 
     while (!halted) {
-      
       if (ip < beg || ip > end) 
-        throw std::out_of_range(
-          "Reading out of the local segment.\n"
-          "\tflag 'beg':\t" + std::to_string(beg) + "\n"
-          "\tflag 'end':\t" + std::to_string(end) + "\n"
-          "\tIP (global):\t" + std::to_string(ip)
-        );
+      throw std::out_of_range(
+        "Reading out of the local segment.\n"
+        "\tflag 'beg':\t" + std::to_string(beg) + "\n"
+        "\tflag 'end':\t" + std::to_string(end) + "\n"
+        "\tIP (global):\t" + std::to_string(ip) + "\n"
+        "\tthread:\t\t" + std::to_string(thread_id)  + "\n"
+        "\tlocal IP:\t" + std::to_string(local_ip) + "\n"
+        "\tfrom wtarg64::run()"
+      );
+      
       auto fetched =  read();
       local_ip++;
-      
+
       if (fetched == 0xFF) { halted = true; continue; }
+      if (fetched == 0xFE) { continue; } /* Specific mark for labels. Used for debugging. */
 
       wyland_uint key = get_key();
-      if (key)  regs.set(REG_KEY, key);
+      if (key)  {
+        regs.set(REG_KEY, key);
+      }
       
       if (fetched >= sizeof(set) / sizeof(set[0])) {
         std::ostringstream oss;
@@ -543,14 +551,17 @@ public:
         format({memory[ip-2],memory[ip-1],memory[ip],memory[ip+1]}, ',') 
         << "]\n"
         "\tCore IP:\t" << ip << std::dec << "\n"
-        "\tLocal IP:\t" << local_ip << "\n\tThread: " << thread_id;
+        "\tLocal IP:\t" << local_ip << "\n\tThread:\t" << thread_id;
         throw std::runtime_error(oss.str());
       }
 
-      (this->*set[fetched])();
-
-      if (beg + 1 >= end) throw std::out_of_range("Reading out of segment.\n"
-        "\tThread: " + std::to_string(thread_id));
+      try {
+        (this->*set[fetched])();
+      } catch (const std::exception &e) {
+        throw runtime::wyland_runtime_error(e.what(), "Instruction Invokation Exception", __func__, typeid(e).name(), ip, thread_id, NULL, NULL, end-beg);
+      } catch (const runtime::wyland_runtime_error &e) {
+        throw runtime::wyland_runtime_error(e.what(), e.name(), e.caller(), typeid(e).name(), ip, thread_id, NULL, NULL, end-beg);
+      }
     }
 
     {

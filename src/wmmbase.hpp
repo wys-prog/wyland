@@ -21,11 +21,15 @@
 
 #define SYSCALL_COUNT 11
 
-#define REG_KEY (16+16)
+#define REG_KEY (32)
 #define R_ORG 62
 #define R_RET 63
 #define R_STACK_BASE 64
 #define STACK_SIZE (1024*4)
+
+#define EQUAL  (0)
+#define LARGER (1)
+#define LESSER (2)
 
 constexpr std::size_t operator""_MB(unsigned long long size) {
   return size * 1024 * 1024;

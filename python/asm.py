@@ -54,7 +54,12 @@ register = {
     **{f'qmm{i}': i + 48 for i in range(32)},
 }
 
-symbols = {}
+symbols = {
+    'main': 524288000,
+    'end_main': 524288128, 
+    '.code': 524288128, 
+    '@here:': 0
+}
 
 def error(what: str, line: str, line_count: int, word: str):
     word = word.strip()
@@ -102,11 +107,41 @@ def encode_value(word, base): # Idk what my IDE is sayin.. But OK.
     except ValueError:
         return None, 0  
 
+def evaluate_expression(expression: str, line: str, line_count: int):
+    try:
+        tokens = expression.split()
+        result = 0
+        operator = '+'
+        for token in tokens:
+            if token in symbols:
+                value = symbols[token]
+            elif token.lower().startswith(('0x', '0o')) or token.isdigit():
+                value = get_int(token, line, line_count)
+                if value is None:
+                    return None
+            elif token in ('+', '-'):
+                operator = token
+                continue
+            else:
+                error(f"Unknown token in expression: '{token}'", line, line_count, token)
+                return None
+
+            if operator == '+':
+                result += value
+            elif operator == '-':
+                result -= value
+
+        return result
+    except Exception as e:
+        error(f"Failed to evaluate expression: {expression}", line, line_count, expression)
+        return None
+
 def assemble_file(input_file, output_file):
     global current_address
     error_register = 0
     current_address = 0
     line_count = 0
+    in_main = False
     
     with open(input_file, 'r') as infile, open(output_file, 'wb') as outfile:
         for line in infile:
@@ -114,6 +149,7 @@ def assemble_file(input_file, output_file):
             words = line.split(' ')
             for i in range(0, len(words)):
                 word = words[i].strip()
+                if (word.startswith(';') or word.startswith('#')): break
                 
                 if word == '.string':
                     wpos = line.find(word)
@@ -147,8 +183,17 @@ def assemble_file(input_file, output_file):
                 if binary_instruction:
                     byte = int(binary_instruction, 2).to_bytes(1, byteorder='big')
                     outfile.write(byte)
+                    current_address += 1
                 elif word == '': 
                     continue
+                elif word == '@at:':
+                    at = words[i + 1]
+                    byte = get_int(at, line, line_count)
+                    if not byte: continue
+                    byte = int(byte)
+                    outfile.write(byte.to_bytes(8, 'big'))
+                    current_address += 8
+                    break
                 elif word.lower().startswith('0x'):
                     rawdata, size = encode_value(word[2:], 16)
                     if not rawdata:
@@ -165,22 +210,48 @@ def assemble_file(input_file, output_file):
                         continue
                     outfile.write(int(rawdata, 2).to_bytes(size, byteorder='big'))
                     current_address += size
-                elif word.lower() == "@here":
+                elif word.lower() == '@calc:':
+                    if i + 1 < len(words):  
+                        expression = ' '.join(words[i + 1:]).strip()
+                        value = evaluate_expression(expression, line, line_count)
+                        if value is not None:
+                            outfile.write(value.to_bytes(8, byteorder='big'))
+                            current_address += 8
+                        else:
+                            error(f"Invalid expression for '@calc:': {expression}", line, line_count, expression)
+                            error_register += 1
+                        break
+                    else:
+                        error("Missing expression for '@calc:'", line, line_count, '')
+                        error_register += 1
+                        break
+                elif word.lower() == "@%here":
                     outfile.write(current_address.to_bytes(8, byteorder='big'))
                     current_address += 8
                 elif word.startswith('@'):
                     if word.endswith(':'):
                         symbols[word[1:len(word)-1]] = current_address
+                        if word[1:len(word)-1] == 'main': in_main = True
                     else:
                         symbols[word[1:]] = current_address
+                        if word[1:] == 'main': in_main = True
                 elif word.startswith('%'):
                     if not word[1:] in symbols:
                         error(f"Unknown referenced symbol (could not resovle): '{word.strip()}'", line, line_count, word.strip())
                         error_register += 1
                         continue
-                
                     outfile.write(symbols[word[1:]].to_bytes(8, byteorder='big'))
                     current_address += 8
+                elif word.lower() == '.worg':
+                    current_address = 524288000
+                elif word.lower() == '.wcorg':
+                    current_address = 524288128
+                elif word.lower() == '.mend':
+                    if in_main:
+                        outfile.write(b'\x00' * (symbols['end_main'] - current_address))
+                        current_address += symbols['end_main'] - current_address
+                        current_address = symbols['.code']
+                        in_main = False
                 elif word.lower() == 'org':
                     if i + 1 < len(words):  
                         value = get_int(words[i + 1], line, line_count)
@@ -189,15 +260,13 @@ def assemble_file(input_file, output_file):
                             current_address = value
                         else:
                             error(f"Invalid 'org' argument", line, line_count, words[i])
-                            
                             error_register += 1
                     else:
                         error('Missing argument for \'org\'', line, line_count, '')
                         error_register += 1
-                    continue
-                elif word.lower() in op_type:
-
-                    continue
+                    break
+                elif word.lower() == '.wyland_system_org':
+                    current_address = 524288000
                 else:
                     rawdata, size = encode_value(word, 10)
                     if rawdata:
@@ -206,8 +275,8 @@ def assemble_file(input_file, output_file):
                     else:
                         error(f'Unknown instruction "{word.strip()}"', line, line_count, word.strip())
                         error_register += 1
-        
-    
+            symbols['@here:'] = current_address
+            
         if error_register != 0:
             print(f'{error_register} generated.')
             outfile.truncate(0)
