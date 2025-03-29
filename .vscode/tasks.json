@@ -12,8 +12,6 @@
         "-std=c++23",
         "-Wall",
         "-Wextra",
-        "-I./{work${workspaceFolder}/runtime", 
-        "-I/opt/homebrew/Cellar/boost/1.87.0_1/include",
         //"-march=native", // Optimize for the host machine's CPU
         //"-funroll-loops", // Unroll loops for better performance
         //"-O3",

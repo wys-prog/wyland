@@ -25,8 +25,10 @@ namespace wylma {
           r32[to - 32] = static_cast<uint32_t>(u & 0xFFFFFFFF); 
         else if (to < 80) 
           r64[to - 48] = u;
-        else 
-          throw runtime::wyland_out_of_range(std::string("Unexpected register index: " + std::to_string(to)).c_str(), "out of range", "reg_t::set(...)", 0, 0, nullptr, nullptr, 0);
+        else {
+          std::string buff = "Unexpected register index: " + std::to_string(to);
+          throw runtime::wyland_out_of_range(buff.c_str(), "out of range", "reg_t::set(...)", 0, 0, nullptr, nullptr, 0);
+        }
       }
 
       uint64_t get(uint8_t who) const {
@@ -38,8 +40,10 @@ namespace wylma {
           return static_cast<uint64_t>(r32[who - 32]);  
         else if (who < 80) 
           return r64[who - 48];  
-        else 
-        throw runtime::wyland_out_of_range(std::string("Unexpected register index: " + std::to_string(who)).c_str(), "out of range", "reg_t::set(...)", 0, 0, nullptr, nullptr, 0);
+        else {
+          std::string buff = "Unexpected register index: " + std::to_string(who);
+          throw runtime::wyland_out_of_range(buff.c_str(), "out of range", "reg_t::set(...)", 0, 0, nullptr, nullptr, 0);
+        }
       }
     };
   }

@@ -7,7 +7,7 @@
   lea qmm0 @calc: .code + 2
   load 8 qmm1 12
   lea qmm15 @calc: .code + 14
-  lea qmm4 @calc: .code + 1
+  lea qmm4 @calc: .code
   ret
   0xFF
 .mend
