@@ -354,8 +354,9 @@ private:
     segments::keyboard_reserved = true;
 
     libcallc::arg_t arg{};
+    auto wrapped = regs.wrap();
     arg.keyboardstart = &memory[KEYBOARD_SEGMENT_START];
-    arg.regspointer   = &regs.wrap();
+    arg.regspointer   = &wrapped;
     arg.segstart      = &memory[beg];
     arg.seglen        = end - beg;
 

@@ -5,6 +5,7 @@
 wyland-runtime/
 wyland-godot/
 compiler/
+debug/
 
 # This is only for my fucking editor...
 boost/

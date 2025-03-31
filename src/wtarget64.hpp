@@ -269,7 +269,8 @@ private:
   void iclfn() { /* New in std:wy2.4 ! */
     uint32_t id = read<uint32_t>();
     libcallc::arg_t arguments;
-    arguments.regspointer = &regs.wrap();
+    auto wrapped = regs.wrap();
+    arguments.regspointer = &wrapped;
     arguments.keyboardstart = &memory[KEYBOARD_SEGMENT_START];
     arguments.seglen = end - beg;
     arguments.segstart = &memory[beg];
@@ -408,8 +409,9 @@ private:
     segments::keyboard_reserved = true;
 
     libcallc::arg_t arg{};
+    auto wrapped = regs.wrap();
     arg.keyboardstart = &memory[KEYBOARD_SEGMENT_START];
-    arg.regspointer   = &regs.wrap();
+    arg.regspointer   = &wrapped;
     arg.segstart      = &memory[beg];
     arg.seglen        = end - beg;
 
