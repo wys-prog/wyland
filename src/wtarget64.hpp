@@ -46,8 +46,12 @@ private:
   uint8_t  children = 0;
   std::mutex mtx;
   std::condition_variable cv;
+
+  /* Deprecated ! */
   std::unordered_map<uint64_t, libcallc::DynamicLibrary> libs;
   std::unordered_map<uint64_t, libcallc::DynamicLibrary::FunctionType> funcs;
+
+  
 
   uint8_t read() {
     if (ip + 1 >= end) throw std::out_of_range("The 'end' flag is reached.\n"

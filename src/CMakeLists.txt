@@ -1,5 +1,17 @@
 cmake_minimum_required(VERSION 3.10)
 
+# Set policy CMP0167 to NEW to handle the removal of FindBoost module
+if(POLICY CMP0167)
+    cmake_policy(SET CMP0167 NEW)
+endif()
+
+# Use BoostConfig.cmake instead of FindBoost
+set(BOOST_ROOT /opt/homebrew/Cellar/boost/1.87.0_1)
+set(BOOST_INCLUDEDIR /opt/homebrew/Cellar/boost/1.87.0_1/include)
+set(BOOST_LIBRARYDIR /opt/homebrew/Cellar/boost/1.87.0_1/lib)
+
+find_package(Boost REQUIRED CONFIG)
+
 # Set the project name and version
 project(WylandProject VERSION 1.0)
 

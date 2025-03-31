@@ -3,6 +3,7 @@
 /android/
 *.DS_Store
 wyland-runtime/
+wyland-godot/
 compiler/
 
 # Ignore build directories

@@ -3,6 +3,8 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <cctype>
+#include <algorithm>
 #include <cstdint>
 
 namespace wylma {
@@ -65,6 +67,26 @@ namespace wylma {
 
     std::istringstream to_string(const std::u8string &bytestring) {
       return std::istringstream((char*)bytestring.c_str());
+    }
+
+    std::string trim(const std::string &string) {
+      size_t start = string.find_first_not_of("\n\t\r\f\v");
+      size_t end = string.find_last_not_of("\n\t\r\f\v");
+      return (start == std::string::npos) ? "" : string.substr(start, end - start + 1);
+    }
+
+    std::vector<std::string> split(const std::string &string, const std::string &with = ",", bool trim_rslt = true) {
+      std::vector<std::string> result{};
+
+      size_t start = 0, end;
+      while ((end = string.find(with, start)) != std::string::npos) {
+        std::string element = string.substr(start, end - start);
+        if (trim_rslt) element = trim(element);
+
+        result.push_back(element);
+      }
+
+      return result;
     }
   }
 }

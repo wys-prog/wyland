@@ -71,6 +71,60 @@ bool load_file(std::fstream &file, const wheader_t &header) {
   return true;
 }
 
+std::vector<libcallc::DynamicLibrary::FunctionType> load_libs(std::fstream &file, const wheader_t &header) {
+  std::vector<libcallc::DynamicLibrary::FunctionType> libraries{};
+
+  file.seekg(header.lib);
+  if (!file.good()) {
+    std::cerr << "[e]: failed to seek to `lib` position in disk file." << std::endl;
+    std::cerr << "[w]: process will continue, without libraries. Program can crash without them." << std::endl;
+    return libraries;
+  }
+
+  std::cout << "[i]: loading libraries..." << std::endl;
+
+  while (!file.eof()) {
+    char buff[1]{0};
+    file.read(buff, sizeof(buff));
+    std::string fullname = "" + buff[0];
+
+    while (buff[0] && !(file.eof())) {
+      file.read(buff, sizeof(buff));
+      fullname += buff[0];
+    }
+    
+    size_t libend = fullname.find(':');
+    if (libend == std::string::npos) {
+      std::cerr << "[e]: unable to resolve label `" << fullname << "`, bad format." << std::endl;
+      continue;
+    }
+
+    std::string libname = fullname.substr(0, libend) + LIB_EXT;
+    std::string funcsname = fullname.substr(libend + 1);
+    
+    if (!std::filesystem::exists(libname)) {
+      std::cerr << "[e]: library `" << libname << "`: no such file." << std::endl;
+      continue;
+    }
+
+    libname = std::filesystem::absolute(libname);
+    std::cout << "[i]: " << "loading `" << funname << "` from `" << libname << "`" << std::endl;
+    libcallc::DynamicLibrary lib(libname);
+    auto funcs = split(funcsname, ",", true);
+    for (const auto&func:funcs) {
+      try {
+        libraries.push_back(lib.loadFunction(func.c_str()));
+        std::cout << "[i] loaded function `" << func << "` from `" << libname << "`" << std::endl;
+      } catch (const std::runtime_error &e) {
+        std::cerr << "[e]: " << e.what() << std::endl;
+        continue;
+      }
+    }
+  }
+
+  return libraries;
+}
+
 void run_core(core_base *base) {
   if (base == nullptr) {
     std::cerr << "[e]: running with <*base> as invalid pointer." << std::endl;
