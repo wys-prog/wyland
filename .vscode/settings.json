@@ -110,7 +110,10 @@
     "thread": "cpp",
     "valarray": "cpp",
     "__config": "cpp",
-    "filesystem": "cpp"
+    "filesystem": "cpp",
+    "*.ipp": "cpp",
+    "rope": "cpp",
+    "slist": "cpp"
   },
   "terminal.integrated.profiles.osx": {
     "zsh (workspace)": {

@@ -111,8 +111,9 @@ private:
 public:
   void init(uint64_t _memory_segment_begin, 
             uint64_t _memory_segment_end, 
-            bool _is_system = false, 
-            uint64_t _name = '?') override {
+            bool _is_system, 
+            uint64_t _name, 
+            linkedfn_array table) override {
   
     beg = _memory_segment_begin;
     end = _memory_segment_end;

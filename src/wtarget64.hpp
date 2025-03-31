@@ -15,6 +15,8 @@
 #include <mutex>
 #include <new>
 
+#include <boost/container/flat_map.hpp>
+
 #include "wyland-runtime/keys.h"
 #include "wyland-runtime/wylrt.h"
 #include "wyland-runtime/wylrt.hpp"
@@ -42,7 +44,7 @@ private:
   bool     halted = false;
   int      flags  = 0;
   bool     is_system = false;
-  uint64_t thread_id = 'U' + 'n' + 'd' + 'e' + 'f' + 'T';
+  uint64_t thread_id = '?' * '?';
   uint8_t  children = 0;
   std::mutex mtx;
   std::condition_variable cv;
@@ -51,6 +53,7 @@ private:
   std::unordered_map<uint64_t, libcallc::DynamicLibrary> libs;
   std::unordered_map<uint64_t, libcallc::DynamicLibrary::FunctionType> funcs;
 
+  boost::container::flat_map<uint32_t, libcallc::DynamicLibrary::FunctionType> linked_functions;
   
 
   uint8_t read() {
@@ -263,7 +266,23 @@ private:
     );
   }
 
-  setfunc_t set[25];
+  void iclfn() { /* New in std:wy2.4 ! */
+    uint32_t id = read<uint32_t>();
+    libcallc::arg_t arguments;
+    arguments.regspointer = &regs.wrap();
+    arguments.keyboardstart = &memory[KEYBOARD_SEGMENT_START];
+    arguments.seglen = end - beg;
+    arguments.segstart = &memory[beg];
+
+    auto it = linked_functions.find(id);
+    if (it != linked_functions.end()) {
+      it->second(&arguments);
+    } else {
+      throw runtime::wyland_invalid_pointer_exception("linked function not found.", "invalid pointer", __func__, ip, thread_id, NULL, NULL, end - beg);
+    }
+  }
+
+  setfunc_t set[26];
 
   void swritec() {
     std::putchar(static_cast<char>(regs.get(0)));
@@ -390,7 +409,7 @@ private:
 
     libcallc::arg_t arg{};
     arg.keyboardstart = &memory[KEYBOARD_SEGMENT_START];
-    arg.regspointer   = &regs;
+    arg.regspointer   = &regs.wrap();
     arg.segstart      = &memory[beg];
     arg.seglen        = end - beg;
 
@@ -413,7 +432,8 @@ private:
       
     corewtarg64* c = new corewtarg64();
     manager::create_region(beg, end);
-    c->init(beg, end, false, end+1);
+
+    c->init(beg, end, false, end+1, linked_functions);
 
     std::thread thread([this, c]() mutable {
       {
@@ -480,8 +500,9 @@ private:
 public:
   void init(uint64_t _memory_segment_begin, 
             uint64_t _memory_segment_end, 
-            bool _is_system = false, 
-            uint64_t _name = '?') override {
+            bool _is_system, 
+            uint64_t _name, 
+            linkedfn_array table) override {
     beg = _memory_segment_begin;
     end = _memory_segment_end;
     ip  = beg;
@@ -513,6 +534,7 @@ public:
     set[set_wtarg64::sal] = &corewtarg64::isal;
     set[set_wtarg64::sar] = &corewtarg64::isar;
     set[set_wtarg64::wthrow] = &corewtarg64::iwthrow;
+    set[set_wtarg64::clfn] = &corewtarg64::iclfn;
   }
 
   void run() override {

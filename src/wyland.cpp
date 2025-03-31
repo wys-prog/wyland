@@ -15,6 +15,7 @@
 #include <new>
 
 #include <boost/stacktrace.hpp>
+#include <boost/container/flat_map.hpp>
 
 /* Runtime */
 #include "wyland-runtime/wylrt.h"
@@ -139,6 +140,8 @@ taskHandle run = [](std::vector<std::string> &args) {
   
       exit(-1);
     }
+
+    auto libs = load_libs(disk, header);
   
     delete block;
   
@@ -155,7 +158,7 @@ taskHandle run = [](std::vector<std::string> &args) {
     }
 
     std::cout << "[i]: initializing object 0x" << std::hex << reinterpret_cast<uintptr_t>(core) << std::endl;
-    core->init(SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START+SYSTEM_SEGMENT_SIZE, true, 0);
+    core->init(SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START+SYSTEM_SEGMENT_SIZE, true, 0, libs);
     run_core(core);
   
     delete core;
@@ -198,7 +201,8 @@ taskHandle run_raw = [](std::vector<std::string> &args) {
     }
 
     std::cout << "[i]: initializing object 0x" << std::hex << reinterpret_cast<uintptr_t>(core) << std::endl;
-    core->init(SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START+SYSTEM_SEGMENT_SIZE, true, 0);
+    auto libs = wlinkfns();
+    core->init(SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START+SYSTEM_SEGMENT_SIZE, true, 0, libs);
     run_core(core);
 
     delete core;

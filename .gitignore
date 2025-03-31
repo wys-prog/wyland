@@ -6,6 +6,9 @@ wyland-runtime/
 wyland-godot/
 compiler/
 
+# This is only for my fucking editor...
+boost/
+
 # Ignore build directories
 /build/
 /bin/

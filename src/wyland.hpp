@@ -15,7 +15,8 @@
 #include <mutex>
 #include <new>
 
-#include <boost/stacktrace.hpp>
+#include "boost/stacktrace.hpp"
+#include "boost/container/flat_map.hpp"
 
 #include "regs.hpp"
 #include "wyland-runtime/wylrt.h"
@@ -71,14 +72,14 @@ bool load_file(std::fstream &file, const wheader_t &header) {
   return true;
 }
 
-std::vector<libcallc::DynamicLibrary::FunctionType> load_libs(std::fstream &file, const wheader_t &header) {
-  std::vector<libcallc::DynamicLibrary::FunctionType> libraries{};
+boost::container::flat_map<uint32_t, libcallc::DynamicLibrary::FunctionType> load_libs(std::fstream &file, const wheader_t &header) {
+  std::vector<std::pair<uint32_t, libcallc::DynamicLibrary::FunctionType>> functions{};
 
   file.seekg(header.lib);
   if (!file.good()) {
     std::cerr << "[e]: failed to seek to `lib` position in disk file." << std::endl;
     std::cerr << "[w]: process will continue, without libraries. Program can crash without them." << std::endl;
-    return libraries;
+    return {};
   }
 
   std::cout << "[i]: loading libraries..." << std::endl;
@@ -86,7 +87,8 @@ std::vector<libcallc::DynamicLibrary::FunctionType> load_libs(std::fstream &file
   while (!file.eof()) {
     char buff[1]{0};
     file.read(buff, sizeof(buff));
-    std::string fullname = "" + buff[0];
+    std::string fullname = "";
+    fullname.push_back(buff[0]);
 
     while (buff[0] && !(file.eof())) {
       file.read(buff, sizeof(buff));
@@ -108,21 +110,38 @@ std::vector<libcallc::DynamicLibrary::FunctionType> load_libs(std::fstream &file
     }
 
     libname = std::filesystem::absolute(libname);
-    std::cout << "[i]: " << "loading `" << funname << "` from `" << libname << "`" << std::endl;
+    std::cout << "[i]: " << "loading `" << funcsname << "` from `" << libname << "`" << std::endl;
     libcallc::DynamicLibrary lib(libname);
     auto funcs = split(funcsname, ",", true);
     for (const auto&func:funcs) {
       try {
-        libraries.push_back(lib.loadFunction(func.c_str()));
+        auto parts = split(func, ":");
+        if (parts.size() > 2) throw std::invalid_argument("invalid format. Function format must be <x:str>, where x is the ID (an integer) and str the name of the function.");
+        functions.push_back({std::stoll(parts[0]), lib.loadFunction(parts[1].c_str())});
         std::cout << "[i] loaded function `" << func << "` from `" << libname << "`" << std::endl;
       } catch (const std::runtime_error &e) {
+        std::cerr << "[e]: " << e.what() << std::endl;
+        continue;
+      } catch (const std::invalid_argument &e) {
+        std::cerr << "[e]: " << e.what() << std::endl;
+        continue;
+      } catch (const std::out_of_range &e) {
+        std::cerr << "[e]: " << e.what() << std::endl;
+        continue;
+      } catch (const std::exception &e) {
         std::cerr << "[e]: " << e.what() << std::endl;
         continue;
       }
     }
   }
 
-  return libraries;
+  std::sort(functions.begin(), functions.end());
+
+  boost::container::flat_map<uint32_t, libcallc::DynamicLibrary::FunctionType> fn_map(
+    functions.begin(), functions.end()
+  );
+
+  return fn_map;
 }
 
 void run_core(core_base *base) {

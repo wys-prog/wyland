@@ -55,6 +55,7 @@ enum set_wtarg64 {
   sal, 
   sar, 
   wthrow, 
+  clfn, // Call Linked Function, std:wy2.4
 };
 
 enum set_wtargmarch {

@@ -355,7 +355,7 @@ private:
 
     libcallc::arg_t arg{};
     arg.keyboardstart = &memory[KEYBOARD_SEGMENT_START];
-    arg.regspointer   = &regs;
+    arg.regspointer   = &regs.wrap();
     arg.segstart      = &memory[beg];
     arg.seglen        = end - beg;
 
@@ -378,7 +378,9 @@ private:
       
     corewtarg32* c = new corewtarg32();
     manager::create_region(beg, end);
-    c->init(beg, end, false, end+1);
+    // TODO !! (linked funcs)
+    wlinkfns funcs{};
+    c->init(beg, end, false, beg+1, funcs);
 
     std::thread thread([this, c]() mutable {
       {
@@ -447,8 +449,9 @@ private:
 public:
   void init(uint64_t _memory_segment_begin, 
             uint64_t _memory_segment_end, 
-            bool _is_system = false, 
-            uint64_t _name = '?') override {
+            bool _is_system, 
+            uint64_t _name, 
+            linkedfn_array table) override {
     beg = _memory_segment_begin;
     end = _memory_segment_end;
     ip  = beg;

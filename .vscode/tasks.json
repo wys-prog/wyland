@@ -12,7 +12,8 @@
         "-std=c++23",
         "-Wall",
         "-Wextra",
-        "-I /opt/homebrew/Cellar/boost/1.87.0_1/include/boost"
+        //"-I/opt/homebrew/Cellar/boost/1.87.0_1/include/", 
+        "-D_GNU_SOURCE",
         //"-march=native", // Optimize for the host machine's CPU
         //"-funroll-loops", // Unroll loops for better performance
         //"-O3",

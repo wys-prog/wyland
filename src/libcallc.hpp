@@ -23,10 +23,10 @@ namespace wylma {
 
     namespace libcallc {
       struct arg_t {
-        uint8_t    *segstart;
-        uint32_t    seglen; /* Use 32bits since 512MB is under 32 bits's max. */
-        uint8_t    *keyboardstart;
-        reg_t      *regspointer;
+        wyland_uchar     *segstart;
+        wyland_uint       seglen; /* Use 32bits since 512MB is under 32 bits's max. */
+        wyland_uchar     *keyboardstart;
+        wyland_registers *regspointer;
       };
       
       class DynamicLibrary {
@@ -89,5 +89,7 @@ namespace wylma {
         void* handle = nullptr;
       };
     }
+
+    typedef boost::container::flat_map<uint32_t, libcallc::DynamicLibrary::FunctionType> linkedfn_array;
   }
-  }
+}
