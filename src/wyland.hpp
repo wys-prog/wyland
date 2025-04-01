@@ -35,7 +35,8 @@
 WYLAND_BEGIN
 
 namespace cache {
-  boost::container::flat_map<uint32_t, libcallc::DynamicLibrary::FunctionType> linked_funcs;
+  boost::container::flat_map<uint32_t, libcallc::DynamicLibrary::FunctionType> linked_funcs{};
+  std::vector<libcallc::DynamicLibrary> libraries;
 }
 
 core_base *create_core_ptr(__wtarget target) {
@@ -99,10 +100,7 @@ void load_libs(std::fstream &file, const wheader_t &header) {
     }
     
     size_t libend = fullname.find('/');
-    if (libend == std::string::npos && !fullname.empty()) {
-      std::cerr << "[e]: unable to resolve label `" << fullname << "`, bad format." << std::endl;
-      continue;
-    }
+    if (libend == std::string::npos) continue;
 
     std::string libname = fullname.substr(0, libend) + LIB_EXT;
     std::string funcsname = fullname.substr(libend + 1);
@@ -114,16 +112,16 @@ void load_libs(std::fstream &file, const wheader_t &header) {
 
     libname = std::filesystem::absolute(libname);
     std::cout << "[i]: " << "loading `" << funcsname << "` from `" << libname << "`" << std::endl;
-    libcallc::DynamicLibrary lib(libname);
+    cache::libraries.push_back(libcallc::DynamicLibrary());
+    cache::libraries[cache::libraries.size()].loadLibrary(libname.c_str());
     auto funcs = split(funcsname, ',');
 
     for (const auto&func:funcs) {
-      std::cout << "[i]: processing `" << func << "`..." << std::endl;
       try {
         auto parts = split(func, ':');
         if (parts.size() > 2) throw std::invalid_argument("invalid format. Function format must be <x:str>, where x is the ID (an integer) and str the name of the function.");
         auto id = std::stoll(parts[0]);
-        cache::linked_funcs.insert({id, lib.loadFunction(parts[1].c_str())});
+        cache::linked_funcs.insert({id, cache::libraries[cache::libraries.size()].loadFunction(parts[1].c_str())});
         std::cout << "[i]: loaded function `" << func << "` from `" << libname << "`" << std::endl;
       } catch (const std::runtime_error &e) {
         std::cerr << "[e]: " << e.what() << std::endl;
@@ -208,6 +206,7 @@ void run_core(core_base *base) {
 
 void wyland_exit() {
   cache::linked_funcs.clear();
+  cache::libraries.clear();
 }
 
 WYLAND_END

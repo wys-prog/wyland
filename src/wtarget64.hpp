@@ -55,7 +55,6 @@ private:
 
   boost::container::flat_map<uint32_t, libcallc::DynamicLibrary::FunctionType> *linked_functions;
   
-
   uint8_t read() {
     if (ip + 1 >= end) throw std::out_of_range("The 'end' flag is reached.\n"
       "Thread: " + std::to_string(thread_id));
@@ -274,7 +273,7 @@ private:
     arguments.keyboardstart = &memory[KEYBOARD_SEGMENT_START];
     arguments.seglen = end - beg;
     arguments.segstart = &memory[beg];
-    
+
     if (linked_functions->find(id) != linked_functions->end()) {
       linked_functions->at(id)(&arguments);
     } else {
@@ -512,6 +511,12 @@ public:
     ip  = beg;
     is_system = _is_system;
     thread_id = _name;
+
+    if (table == nullptr) {
+      throw std::runtime_error("linked_functions table is null.");
+    }
+
+    linked_functions = table;
 
     set[set_wtarg64::nop] = &corewtarg64::nop;
     set[set_wtarg64::lea] = &corewtarg64::ilea; 

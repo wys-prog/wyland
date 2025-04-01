@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <string>
 #include <cstdint>
+#include <sstream>
 
 #ifdef _WIN32
   #include <windows.h>
@@ -38,35 +39,52 @@ namespace wylma {
           unloadLibrary();
         }
         
-        FunctionType loadFunction(const char* functionName) {
-          if (!handle) {
-            throw std::runtime_error("Library is not loaded.");
-          }
+
+        void loadLibrary(const char* libraryPath) {
+          std::stringstream errorMsg;
           
+          #ifdef _WIN32
+          handle = LoadLibraryA(libraryPath);
+          if (!handle) {
+            errorMsg << "Failed to load library: " << libraryPath 
+                    << " (Error code: " << GetLastError() << ")";
+            throw std::runtime_error(errorMsg.str());
+          }
+          #else
+          handle = dlopen(libraryPath, RTLD_LAZY);
+          if (!handle) {
+            errorMsg << "Failed to load library: " << libraryPath 
+                    << " (Error: " << dlerror() << ")";
+            throw std::runtime_error(errorMsg.str());
+          }
+          #endif
+        }
+
+        FunctionType loadFunction(const char* functionName) {
+          std::stringstream errorMsg;
+          
+          if (!handle) {
+            errorMsg << "Library is not loaded.";
+            throw std::runtime_error(errorMsg.str());
+          }
+
           #ifdef _WIN32
           FunctionType func = (FunctionType)(GetProcAddress(static_cast<HMODULE>(handle), functionName));
           #else
           FunctionType func = reinterpret_cast<FunctionType>(dlsym(handle, functionName));
           #endif
-          
+
           if (!func) {
-            throw std::runtime_error("Failed to load function: " + std::string(functionName));
+            errorMsg << "Failed to load function: " << functionName;
+            #ifndef _WIN32
+            errorMsg << " (Error: " << dlerror() << ")";
+            #endif
+            throw std::runtime_error(errorMsg.str());
           }
-          
+
           return func;
         }
-        
-        void loadLibrary(const char* libraryPath) {
-          #ifdef _WIN32
-          handle = LoadLibraryA(libraryPath);
-          #else
-          handle = dlopen(libraryPath, RTLD_LAZY);
-          #endif
-          
-          if (!handle) {
-            throw std::runtime_error("Failed to load library: " + std::string(libraryPath));
-          }
-        }
+
         
         void unloadLibrary() {
           if (handle) {
