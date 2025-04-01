@@ -53,7 +53,7 @@ private:
   std::unordered_map<uint64_t, libcallc::DynamicLibrary> libs;
   std::unordered_map<uint64_t, libcallc::DynamicLibrary::FunctionType> funcs;
 
-  boost::container::flat_map<uint32_t, libcallc::DynamicLibrary::FunctionType> linked_functions;
+  boost::container::flat_map<uint32_t, libcallc::DynamicLibrary::FunctionType> *linked_functions;
   
 
   uint8_t read() {
@@ -268,18 +268,20 @@ private:
 
   void iclfn() { /* New in std:wy2.4 ! */
     uint32_t id = read<uint32_t>();
-    libcallc::arg_t arguments;
+    arg_t arguments;
     auto wrapped = regs.wrap();
     arguments.regspointer = &wrapped;
     arguments.keyboardstart = &memory[KEYBOARD_SEGMENT_START];
     arguments.seglen = end - beg;
     arguments.segstart = &memory[beg];
-
-    auto it = linked_functions.find(id);
-    if (it != linked_functions.end()) {
-      it->second(&arguments);
+    
+    if (linked_functions->find(id) != linked_functions->end()) {
+      linked_functions->at(id)(&arguments);
     } else {
-      throw runtime::wyland_invalid_pointer_exception("linked function not found.", "invalid pointer", __func__, ip, thread_id, NULL, NULL, end - beg);
+      std::stringstream error;
+      error << "linked function not found.\n"
+               "\t\tcalling function: " << id << " but not found"; 
+      throw runtime::wyland_invalid_pointer_exception(error.str().c_str(), "invalid pointer", __func__, ip, thread_id, NULL, NULL, end - beg);
     }
   }
 
@@ -408,7 +410,7 @@ private:
     while (segments::keyboard_reserved) ;
     segments::keyboard_reserved = true;
 
-    libcallc::arg_t arg{};
+    arg_t arg{};
     auto wrapped = regs.wrap();
     arg.keyboardstart = &memory[KEYBOARD_SEGMENT_START];
     arg.regspointer   = &wrapped;
@@ -504,7 +506,7 @@ public:
             uint64_t _memory_segment_end, 
             bool _is_system, 
             uint64_t _name, 
-            linkedfn_array table) override {
+            linkedfn_array *table) override {
     beg = _memory_segment_begin;
     end = _memory_segment_end;
     ip  = beg;

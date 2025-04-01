@@ -25,6 +25,7 @@ instruction_set = {
     'sal': 22,
     'sar': 23,
     'wthrow': 24,
+    'clfn': 25,
 }
 
 

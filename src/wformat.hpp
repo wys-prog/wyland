@@ -75,15 +75,13 @@ namespace wylma {
       return (start == std::string::npos) ? "" : string.substr(start, end - start + 1);
     }
 
-    std::vector<std::string> split(const std::string &string, const std::string &with = ",", bool trim_rslt = true) {
+    std::vector<std::string> split(const std::string &string, char del = ',') {
       std::vector<std::string> result{};
+      std::istringstream iss(string);
 
-      size_t start = 0, end;
-      while ((end = string.find(with, start)) != std::string::npos) {
-        std::string element = string.substr(start, end - start);
-        if (trim_rslt) element = trim(element);
-
-        result.push_back(element);
+      std::string token;
+      while (std::getline(iss, token, del)) {
+        if (!token.empty()) result.push_back(token);
       }
 
       return result;

@@ -18,24 +18,18 @@
 #endif
 
 #include "regs.hpp"
+#include "wyland-runtime/wylrt.h"
+
 namespace wylma {
   namespace wyland {
 
     namespace libcallc {
-      struct arg_t {
-        wyland_uchar     *segstart;
-        wyland_uint       seglen; /* Use 32bits since 512MB is under 32 bits's max. */
-        wyland_uchar     *keyboardstart;
-        wyland_registers *regspointer;
-      };
-      
       class DynamicLibrary {
         public:
         using FunctionType = void(*)(arg_t*);
         
         explicit DynamicLibrary(const std::string& libName) {
-          std::string fullPath = libName + LIB_EXT;
-          loadLibrary(fullPath.c_str());
+          loadLibrary(libName.c_str());
         }
         
         explicit DynamicLibrary() = default;

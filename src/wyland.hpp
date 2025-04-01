@@ -34,6 +34,10 @@
 
 WYLAND_BEGIN
 
+namespace cache {
+  boost::container::flat_map<uint32_t, libcallc::DynamicLibrary::FunctionType> linked_funcs;
+}
+
 core_base *create_core_ptr(__wtarget target) {
   if (target == wtarg64) {
     auto ptr = new corewtarg64;
@@ -55,9 +59,10 @@ core_base *create_core_ptr(__wtarget target) {
 }
 
 bool load_file(std::fstream &file, const wheader_t &header) {
+  file.clear();
   file.seekg(header.code);
   if (!file.good()) {
-    std::cerr << "[e]: failed to seek to code position in disk file." << std::endl;
+    std::cerr << "[e]: failed to seek to code position in disk file: " << std::hex << header.code << std::endl;
     return false;
   }
 
@@ -72,14 +77,12 @@ bool load_file(std::fstream &file, const wheader_t &header) {
   return true;
 }
 
-boost::container::flat_map<uint32_t, libcallc::DynamicLibrary::FunctionType> load_libs(std::fstream &file, const wheader_t &header) {
-  std::vector<std::pair<uint32_t, libcallc::DynamicLibrary::FunctionType>> functions{};
-
+void load_libs(std::fstream &file, const wheader_t &header) {
   file.seekg(header.lib);
   if (!file.good()) {
     std::cerr << "[e]: failed to seek to `lib` position in disk file." << std::endl;
     std::cerr << "[w]: process will continue, without libraries. Program can crash without them." << std::endl;
-    return {};
+    return;
   }
 
   std::cout << "[i]: loading libraries..." << std::endl;
@@ -95,8 +98,8 @@ boost::container::flat_map<uint32_t, libcallc::DynamicLibrary::FunctionType> loa
       fullname += buff[0];
     }
     
-    size_t libend = fullname.find(':');
-    if (libend == std::string::npos) {
+    size_t libend = fullname.find('/');
+    if (libend == std::string::npos && !fullname.empty()) {
       std::cerr << "[e]: unable to resolve label `" << fullname << "`, bad format." << std::endl;
       continue;
     }
@@ -112,13 +115,16 @@ boost::container::flat_map<uint32_t, libcallc::DynamicLibrary::FunctionType> loa
     libname = std::filesystem::absolute(libname);
     std::cout << "[i]: " << "loading `" << funcsname << "` from `" << libname << "`" << std::endl;
     libcallc::DynamicLibrary lib(libname);
-    auto funcs = split(funcsname, ",", true);
+    auto funcs = split(funcsname, ',');
+
     for (const auto&func:funcs) {
+      std::cout << "[i]: processing `" << func << "`..." << std::endl;
       try {
-        auto parts = split(func, ":");
+        auto parts = split(func, ':');
         if (parts.size() > 2) throw std::invalid_argument("invalid format. Function format must be <x:str>, where x is the ID (an integer) and str the name of the function.");
-        functions.push_back({std::stoll(parts[0]), lib.loadFunction(parts[1].c_str())});
-        std::cout << "[i] loaded function `" << func << "` from `" << libname << "`" << std::endl;
+        auto id = std::stoll(parts[0]);
+        cache::linked_funcs.insert({id, lib.loadFunction(parts[1].c_str())});
+        std::cout << "[i]: loaded function `" << func << "` from `" << libname << "`" << std::endl;
       } catch (const std::runtime_error &e) {
         std::cerr << "[e]: " << e.what() << std::endl;
         continue;
@@ -135,13 +141,13 @@ boost::container::flat_map<uint32_t, libcallc::DynamicLibrary::FunctionType> loa
     }
   }
 
-  std::sort(functions.begin(), functions.end());
-
+  std::sort(cache::linked_funcs.begin(), cache::linked_funcs.end());
+  
   boost::container::flat_map<uint32_t, libcallc::DynamicLibrary::FunctionType> fn_map(
-    functions.begin(), functions.end()
+    cache::linked_funcs.begin(), cache::linked_funcs.end()
   );
 
-  return fn_map;
+  std::cout << "[i]: " << std::dec << fn_map.size() << " functions loaded." << std::endl;
 }
 
 void run_core(core_base *base) {
@@ -198,6 +204,10 @@ void run_core(core_base *base) {
               << "\n\tstacktrace:\n" << boost::stacktrace::stacktrace()
               << std::endl;
   }
+}
+
+void wyland_exit() {
+  cache::linked_funcs.clear();
 }
 
 WYLAND_END

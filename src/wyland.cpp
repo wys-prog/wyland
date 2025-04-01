@@ -141,7 +141,7 @@ taskHandle run = [](std::vector<std::string> &args) {
       exit(-1);
     }
 
-    auto libs = load_libs(disk, header);
+    load_libs(disk, header);
   
     delete block;
   
@@ -158,10 +158,12 @@ taskHandle run = [](std::vector<std::string> &args) {
     }
 
     std::cout << "[i]: initializing object 0x" << std::hex << reinterpret_cast<uintptr_t>(core) << std::endl;
-    core->init(SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START+SYSTEM_SEGMENT_SIZE, true, 0, libs);
+    core->init(SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START+SYSTEM_SEGMENT_SIZE, true, 0, &cache::linked_funcs);
     run_core(core);
   
     delete core;
+
+    wyland_exit();
   }
 };
 
@@ -202,7 +204,7 @@ taskHandle run_raw = [](std::vector<std::string> &args) {
 
     std::cout << "[i]: initializing object 0x" << std::hex << reinterpret_cast<uintptr_t>(core) << std::endl;
     auto libs = wlinkfns();
-    core->init(SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START+SYSTEM_SEGMENT_SIZE, true, 0, libs);
+    core->init(SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START+SYSTEM_SEGMENT_SIZE, true, 0, &libs);
     run_core(core);
 
     delete core;
@@ -315,6 +317,7 @@ std::unordered_map<std::string, taskHandle> handles {
   {"--info", infos}, 
   {"--i", infos},
   {"-check", check},
+  {"-look", check},
   {"-target", set_target},
   {"-run", run},
   {"-run-raw", run_raw},
