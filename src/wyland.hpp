@@ -196,6 +196,13 @@ void run_core(core_base *base) {
               << "\n\twhat(): " << e.fmterr("\t")
               << "\n\tstacktrace:\n" << boost::stacktrace::stacktrace()
               << std::endl;
+  } catch (const wylrterror &e) {
+    runtime::wyland_runtime_error error(e);
+    std::cerr << "[e]: wyland (C) error caught at address 0x" 
+              << std::hex << reinterpret_cast<uintptr_t>(base) 
+              << "\n\twhat(): " << error.fmterr("\t")
+              << "\n\tstacktrace:\n" << boost::stacktrace::stacktrace()
+              << std::endl;
   } catch (...) {
     std::cerr << "[e]: unknown exception caught at address 0x" 
               << std::hex << reinterpret_cast<uintptr_t>(base) 
