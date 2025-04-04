@@ -10,6 +10,8 @@ debug/
 # This is only for my fucking editor...
 boost/
 src/libs/SDL2
+python/utils/
+python/test/
 
 # Ignore build directories
 /build/
