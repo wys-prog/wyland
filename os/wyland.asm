@@ -7,3 +7,9 @@
 # Finally, add OS's core
 
 #include "wyland.main.asm"
+
+sqjldhqsdkj nqsdkjnds
+sqjldhqsdkj nqsdkjnds
+sqjldhqsdkj nqsdkjnds
+sqjldhqsdkj nqsdkjnds
+sqjldhqsdkj nqsdkjnds
