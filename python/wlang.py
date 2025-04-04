@@ -1,5 +1,6 @@
 import argparse
 import os
+import sys
 
 linking = False
 loader  = True
@@ -69,11 +70,21 @@ symbols = {
 
 def error(what: str, line: str, line_count: int, word: str):
     word = word.strip()
-    emsg = f"Error {what.strip()}\n  {line_count}: {line.strip()}\n  "
-    posw = line.find(word)
+    line_clean = line.rstrip('\n')  # pour éviter les sauts de ligne parasites
+    emsg = f"Error {what.strip()}\n  {line_count}: {line_clean}"
+
+    # Essayer de localiser le mot exact
+    try:
+        posw = line_clean.index(word)
+    except ValueError:
+        posw = -1
+
     if posw != -1:
-        emsg += (' ' * (posw + len(str(line_count)) + 2)) + ('~' * (len(word)))
+        pointer_line = ' ' * (len(str(line_count)) + 2 + posw) + '~' * len(word)
+        emsg += "\n  " + pointer_line
+
     print(emsg)
+
 
 def get_int(word: str, line: str, line_count):
     base = 10
@@ -260,7 +271,8 @@ def assemble_file(input_file, output_file):
                     if i + 1 < len(words):  
                         value = get_int(words[i + 1], line, line_count)
                         i += 1  
-                        if value is not None:  
+                        if value is not None and value >= current_address:
+                            outfile.write(b'\x00' * (value - current_address))
                             current_address = value
                         else:
                             error(f"Invalid 'org' argument", line, line_count, words[i])
@@ -290,35 +302,28 @@ def assemble_file(input_file, output_file):
     return 0
 
 def include_files(input_file, output_file):
-    try:
-        with open(input_file, 'r') as infile, open(output_file, 'w') as outfile:
-            for line in infile:
-                stripped_line = line.strip()
-                if stripped_line.startswith('#include'):
-                    # Extract the file path from the include directive
-                    start = stripped_line.find('"') + 1
-                    end = stripped_line.rfind('"')
-                    if start == 0 or end == -1:
-                        print(f"Error: Malformed include directive: {line.strip()}")
-                        continue
-                    
-                    include_path = stripped_line[start:end]
-                    
-                    # Check if the file exists
-                    if not os.path.exists(include_path):
-                        print(f"Error: Included file not found: {include_path}")
-                        continue
-                    
-                    # Read and write the content of the included file
-                    with open(include_path, 'r') as included_file:
-                        outfile.write(f"# Start of included file: {include_path}\n")
-                        outfile.writelines(included_file.readlines())
-                        outfile.write(f"# End of included file: {include_path}\n")
-                else:
-                    # Write the line as is
-                    outfile.write(line)
-    except Exception as e:
-        print(f"An error occurred: {e}")
+    included = set()
+
+    def process_file(path, out):
+        if path in included:
+            return
+        out.write(f'; --- file: "{path}" ---\n\n')
+        included.add(path)
+        try:
+            with open(path, 'r') as f:
+                for line in f:
+                    stripped = line.strip()
+                    if stripped.startswith('#include "') and stripped.endswith('"'):
+                        include_path = stripped[len('#include "'): -1]
+                        process_file(include_path, out)
+                    elif not line.strip() == '':
+                        out.write(f'\t{line.strip()}\n\t; from "{path}"\n')
+        except FileNotFoundError:
+            out.write(f"; ERROR: File not found: {path}\n")
+
+    with open(output_file, 'w') as out:
+        process_file(input_file, out)
+
 
 
 def main():
@@ -337,18 +342,17 @@ def main():
   print("Resolving includes...")
   
   if args.include:
-      temp_file = "temp.asm"
+      temp_file = "wyland.temp.asm"
       include_files(input_file, temp_file)
       input_file = temp_file
   
-  print("Compiling...")
-  assemble_file(input_file, output_file)
-  
-  if args.include:
-      os.remove(temp_file)
-  
+  print(f"Compiling with origin set to {origin}")
+  if assemble_file(input_file, output_file):
+    print(f'Error generated while compiling file {input_file} to {output_file}.')
+    return -1
+    
   print(f"Done.\nCompiled {input_file} to {output_file}.")
 
   return 0
 
-if __name__ == "__main__": main()
+if __name__ == "__main__": sys.exit(main())

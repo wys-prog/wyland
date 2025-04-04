@@ -36,3 +36,52 @@
   # return register: qmm0
   mov qmm0 qmm1
   ret 
+
+@wyland.max: 0xFE nop
+  # qmm0 __A
+  # qmm1 __B
+  jmp @calc: .here + 9
+  @wyland.max.b:
+    mov qmm0 qmm1
+
+  cmp qmm0 qmm1
+  jle %wyland.max.b
+  ret 
+
+@wyland.strcmp: 0xFE nop # debug symbol (again)
+  # qmm0 -> (char *)str1    = ARG 
+  # qmm1 -> (char *)str2    = ARG 
+  # qmm2 -> (size_t)strlen1 = strlen(str1)
+  # qmm3 -> (size_t)strlen2 = strlen(str2)
+  # qmm4 -> (size_t)pos     = 0
+  # qmm5 -> (size_t)max     = wyland.max(strlen1, strlen2)
+
+  load 8 bmm1 0x01
+
+  # "save" pointers into qmm6 and qmm7
+  mov qmm6 qmm0
+  mov qmm7 qmm1
+
+  # wyland.max(strlen1, strlen2)
+  mov qmm0 qmm2
+  mov qmm1 qmm3
+
+  jmp %wyland.max # call
+
+  mov qmm0 qmm5
+
+  # for loop
+  @wyland.strcmp.loop:
+
+    add qmm2 bmm1 # Increment pointers
+    add qmm3 bmm1 # Increment pointers
+
+    movad bmm0 qmm2
+    movad bmm2 qmm3 # bmm2 since bmm1 is already used for incrementing
+
+    add qmm4 bmm1   # Increment index
+
+    cmp bmm0 bmm2   # str1[i] == str2[i]
+    je wyland.strcmp.loop
+
+    cmp qmm4 qmm5

@@ -64,11 +64,21 @@ symbols = {
 
 def error(what: str, line: str, line_count: int, word: str):
     word = word.strip()
-    emsg = f"Error {what.strip()}\n  {line_count}: {line.strip()}\n  "
-    posw = line.find(word)
+    line_clean = line.rstrip('\n')  # pour éviter les sauts de ligne parasites
+    emsg = f"Error {what.strip()}\n  {line_count}: {line_clean}"
+
+    # Essayer de localiser le mot exact
+    try:
+        posw = line_clean.index(word)
+    except ValueError:
+        posw = -1
+
     if posw != -1:
-        emsg += (' ' * (posw + len(str(line_count)))) + ('~' * len(word))
+        pointer_line = ' ' * (len(str(line_count)) + 2 + posw) + '~' * len(word)
+        emsg += "\n  " + pointer_line
+
     print(emsg)
+
 
 def get_int(word: str, line: str, line_count):
     base = 10
