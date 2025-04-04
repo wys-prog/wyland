@@ -273,6 +273,8 @@ private:
     arguments.keyboardstart = &memory[KEYBOARD_SEGMENT_START];
     arguments.seglen = end - beg;
     arguments.segstart = &memory[beg];
+    arguments.ip = ip;
+    arguments.thread = thread_id;
 
     if (linked_functions->find(id) != linked_functions->end()) {
       linked_functions->at(id)(&arguments);
@@ -415,6 +417,8 @@ private:
     arg.regspointer   = &wrapped;
     arg.segstart      = &memory[beg];
     arg.seglen        = end - beg;
+    arg.ip            = ip;
+    arg.thread        = thread_id;
 
     funcs[funHandle](&arg);
 

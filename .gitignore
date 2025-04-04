@@ -9,6 +9,7 @@ debug/
 
 # This is only for my fucking editor...
 boost/
+src/libs/SDL2
 
 # Ignore build directories
 /build/
