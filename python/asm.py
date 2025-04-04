@@ -159,8 +159,7 @@ def assemble_file(input_file, output_file):
                     if beg != -1 and end != -1:
                         string_content = line[beg + 1:end] 
                         outfile.write(string_content.encode('utf-8')) 
-                        outfile.write(b'\x00')
-                        current_address += len(string_content.encode('utf-8')) + 1
+                        current_address += len(string_content.encode('utf-8'))
                     else:
                         error(f"Malformed string", line.strip(), line_count, line.strip())
                         error_register += 1
@@ -172,8 +171,7 @@ def assemble_file(input_file, output_file):
                     if beg != -1 and end != -1:
                         string_content = line[beg + 1:end] 
                         outfile.write(string_content.encode('ascii')) 
-                        outfile.write(b'\x00')
-                        current_address += len(string_content.encode('ascii')) + 1
+                        current_address += len(string_content.encode('ascii'))
                     else:
                         error(f"Malformed string", line.strip(), line_count, line.strip())
                         error_register += 1

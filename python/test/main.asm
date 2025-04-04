@@ -18,7 +18,7 @@
 
 ; will write our string, with a '\n' at the end.
 @print:
-  nop 0xFE nop
+  0xFE nop
   ; qmm0 -> (char*)str
   ; qmm1 -> (size_t)size
   ; qmm2 -> (size_t)i (our counter)
