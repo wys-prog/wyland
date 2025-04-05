@@ -158,7 +158,11 @@ taskHandle run = [](std::vector<std::string> &args) {
     }
 
     std::cout << "[i]: initializing object 0x" << std::hex << reinterpret_cast<uintptr_t>(core) << std::endl;
-    core->init(SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START+SYSTEM_SEGMENT_SIZE, true, 0, &cache::linked_funcs);
+    core->init(
+      SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START+SYSTEM_SEGMENT_SIZE, 
+      true, 0, &cache::linked_funcs, SYSTEM_SEGMENT_START
+    );
+    
     run_core(core);
   
     delete core;
@@ -204,7 +208,10 @@ taskHandle run_raw = [](std::vector<std::string> &args) {
 
     std::cout << "[i]: initializing object 0x" << std::hex << reinterpret_cast<uintptr_t>(core) << std::endl;
     auto libs = wlinkfns();
-    core->init(SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START+SYSTEM_SEGMENT_SIZE, true, 0, &libs);
+    core->init(
+      SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START+SYSTEM_SEGMENT_SIZE, 
+      true, 0, &cache::linked_funcs, SYSTEM_SEGMENT_START
+    );
     run_core(core);
 
     delete core;

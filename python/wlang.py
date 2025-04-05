@@ -70,10 +70,9 @@ symbols = {
 
 def error(what: str, line: str, line_count: int, word: str):
     word = word.strip()
-    line_clean = line.rstrip('\n')  # pour éviter les sauts de ligne parasites
+    line_clean = line.rstrip('\n') 
     emsg = f"Error {what.strip()}\n  {line_count}: {line_clean}"
 
-    # Essayer de localiser le mot exact
     try:
         posw = line_clean.index(word)
     except ValueError:
@@ -283,6 +282,9 @@ def assemble_file(input_file, output_file):
                     break
                 elif word.lower() == '.wyland_system_org':
                     current_address = 524288000
+                elif word.lower() == 'todo': 
+                    error("todo !!", line, line_count, line)
+                    break
                 else:
                     rawdata, size = encode_value(word, 10)
                     if rawdata:

@@ -73,8 +73,8 @@
   # for loop
   @wyland.strcmp.loop:
 
-    add qmm2 bmm1 # Increment pointers
-    add qmm3 bmm1 # Increment pointers
+    add qmm2 bmm1   # Increment pointers
+    add qmm3 bmm1   # Increment pointers
 
     movad bmm0 qmm2
     movad bmm2 qmm3 # bmm2 since bmm1 is already used for incrementing
@@ -82,6 +82,16 @@
     add qmm4 bmm1   # Increment index
 
     cmp bmm0 bmm2   # str1[i] == str2[i]
-    je wyland.strcmp.loop
+    jne  @calc: .here + 21
 
     cmp qmm4 qmm5
+    jne %wyland.strcmp.loop
+    jmp @calc: .here + 5
+
+    @wyland.strcmp.not_equal:
+      load 8 qmm0 0x01
+      ret
+    
+    # Or, it's equal, so we load 1.
+    load 8 qmm0 0x00
+    ret

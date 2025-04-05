@@ -381,7 +381,7 @@ private:
     manager::create_region(beg, end);
     // TODO !! (linked funcs)
     wlinkfns funcs{};
-    c->init(beg, end, false, beg+1, &funcs);
+    c->init(beg, end, false, beg+1, &funcs, beg);
 
     std::thread thread([this, c]() mutable {
       {
@@ -452,7 +452,8 @@ public:
             uint64_t _memory_segment_end, 
             bool _is_system, 
             uint64_t _name, 
-            linkedfn_array *table) override {
+            linkedfn_array *table, 
+            uint64_t base) override {
     beg = _memory_segment_begin;
     end = _memory_segment_end;
     ip  = beg;

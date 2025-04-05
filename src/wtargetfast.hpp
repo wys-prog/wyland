@@ -113,7 +113,8 @@ public:
             uint64_t _memory_segment_end, 
             bool _is_system, 
             uint64_t _name, 
-            linkedfn_array *table) override {
+            linkedfn_array *table, 
+            uint64_t base) override {
   
     beg = _memory_segment_begin;
     end = _memory_segment_end;

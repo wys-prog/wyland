@@ -40,6 +40,7 @@ private:
   uint64_t end = 0xFFFFFFFFFFFFFFFF;
   uint64_t ip  = 0x0000000000000000;
   uint64_t local_ip = 0x0000000000000000;
+  uint64_t base_address = 0x0000000000000000;
   reg_t    regs;
   bool     halted = false;
   int      flags  = 0;
@@ -176,7 +177,7 @@ private:
   void istore() {
     auto size = read() / 8;
     auto r1 = read();
-    auto org = read<uint64_t>();
+    auto org = base_address + read<uint64_t>();
     auto array = to_bin(regs.get(r1));
     for (uint8_t i = 0; i < size; i++) {
       memory[org+i] = array[i];
@@ -196,7 +197,7 @@ private:
 
   void ilea() {
     auto r1 = read();
-    auto ad = read<uint64_t>();
+    auto ad = base_address + read<uint64_t>();
 
     if (ad >= SYSTEM_SEGMENT_START && !is_system) 
       throw std::runtime_error("Permission denied: Accessing system's segment.\n"
@@ -214,7 +215,7 @@ private:
 
   void iloadat() {
     auto dst = read();
-    auto at = read<uint64_t>(); /* This function will at memory[at]. */
+    auto at = base_address + read<uint64_t>(); /* This function will at memory[at]. */
     
     if (at >= SYSTEM_SEGMENT_START && !is_system) 
     throw std::runtime_error("Permission denied: Accessing system's segment.\n"
@@ -234,7 +235,7 @@ private:
 
   void imovad() {
     auto a = read(), b = read();
-    regs.set(a, memory[regs.get(b)]);
+    regs.set(a, memory[base_address + regs.get(b)]);
   }
 
   void isal() { /* New in std:wy2.3 ! */
@@ -307,7 +308,7 @@ private:
   }
 
   void scsystem() {
-    auto beg = regs.get(48);
+    auto beg = base_address + regs.get(48);
     auto len = regs.get(49);
 
     if (beg + len >= SYSTEM_SEGMENT_START && !is_system) 
@@ -339,7 +340,7 @@ private:
 
     std::string lib = "";
     // The pointer is stored in the 48 register.
-    auto mybeg = regs.get(48);
+    auto mybeg = base_address + regs.get(48);
     auto len = regs.get(49);
 
     if (mybeg < beg || mybeg > end) throw std::out_of_range("syscall call C: pointer out of range: " + std::to_string(mybeg));
@@ -351,7 +352,7 @@ private:
   }
   
   void sldlcfun() {
-    auto mybeg = regs.get(48);
+    auto mybeg = base_address + regs.get(48);
     auto len = regs.get(49);
     auto lib = regs.get(50);
 
@@ -440,7 +441,7 @@ private:
     corewtarg64* c = new corewtarg64();
     manager::create_region(beg, end);
 
-    c->init(beg, end, false, end+1, linked_functions);
+    c->init(beg, end, false, end+1, linked_functions, beg);
 
     std::thread thread([this, c]() mutable {
       {
@@ -509,7 +510,8 @@ public:
             uint64_t _memory_segment_end, 
             bool _is_system, 
             uint64_t _name, 
-            linkedfn_array *table) override {
+            linkedfn_array *table, 
+            uint64_t base) override {
     beg = _memory_segment_begin;
     end = _memory_segment_end;
     ip  = beg;
