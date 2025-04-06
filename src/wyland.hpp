@@ -59,6 +59,22 @@ core_base *create_core_ptr(__wtarget target) {
   return nullptr;
 }
 
+bool allocate_memory(size_t size) {
+  try {
+    memory = new uint8_t[size];
+
+    std::cout << "[i]: memory segment created at: 0x" << std::hex << std::uintptr_t(&memory) << std::endl;
+    std::cout << "[i]: " << std::dec << size << " bytes allocated" << std::hex << std::endl;
+    return true;
+  } catch (const std::bad_alloc &e) {
+    std::cerr << "[e]: unable to allocate memory segment: " << e.what() << std::endl;
+  } catch (const std::exception &e) {
+    std::cerr << "[e]: error while allocating memory segment: " << e.what() << std::endl;
+  } catch (...) { std::cerr << "[e]: unknown exception occured..." << std::endl; }
+
+  return false;
+}
+
 bool load_file(std::fstream &file, const wheader_t &header) {
   file.clear();
   file.seekg(header.code);
@@ -214,6 +230,7 @@ void run_core(core_base *base) {
 void wyland_exit() {
   cache::linked_funcs.clear();
   cache::libraries.clear();
+  delete memory;
 }
 
 WYLAND_END

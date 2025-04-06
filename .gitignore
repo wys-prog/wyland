@@ -31,9 +31,6 @@ python/test/
 *.out
 *.a
 *.lib
-*.so
-*.dll
-*.dylib
 
 # Ignore IDE specific files
 .vscode/

@@ -37,21 +37,23 @@
 #include "wyland.h"
 #include "wyland.hpp"
 
+#include "parser.hpp"
+
 #include "sock2.h"
 
 WYLAND_BEGIN
 
 typedef void (*taskHandle)(std::vector<std::string>&);
 
-
 typedef struct {
   __wtarget   target;
   uint32_t    version;
   bool        auto_targ;
+  uint64_t    memory;
   /* In the future.. */
 } rt_task_t;
 
-rt_task_t task{wtarg64, WYLAND_VERSION_UINT32, false};
+rt_task_t task{.target = wtarg64, .version = WYLAND_VERSION_UINT32, .auto_targ = false, .memory = WYLAND_MEMORY_MINIMUM};
 
 void handle_arguments(const std::vector<std::string> &args, std::vector<std::string> &files) {
   for (size_t i = 0; i < args.size(); i++) {
@@ -59,6 +61,8 @@ void handle_arguments(const std::vector<std::string> &args, std::vector<std::str
     else if (args[i] == "-target") {
       task.target = ofname(args[++i].c_str());
       std::cout << "[i]: target set to: " << task.target << " (" << args[i] << ")" << std::endl;
+    } else if (args[i].starts_with("-memory:")) {
+      task.memory = get_to_alloc(args[i]);
     } else {
       files.push_back(args[i]);
     }
@@ -131,21 +135,23 @@ taskHandle run = [](std::vector<std::string> &args) {
     wblock *block = new wblock;
     disk.read((char*)block->array, sizeof(block->array));
     auto header = wyland_files_make_header(block);
-  
+    
     if (task.auto_targ) task.target = header.target;
-  
+    
+    
     if (!wyland_files_parse(&header, task.target, task.version)) {
       std::cerr << "[e]: " << std::invalid_argument("Invalid header file.").what() << std::endl;
       std::cout << "Extracted header:\n" << wyland_files_header_fmt(&header) << std::endl;
-  
+      
       exit(-1);
     }
-
+    
     load_libs(disk, header);
-  
+    
     delete block;
-  
+    
     core_base *core = create_core_ptr(task.target);
+    allocate_memory(task.memory);
     
     if (!load_file(disk, header)) {
       delete core;
@@ -190,6 +196,8 @@ taskHandle run_raw = [](std::vector<std::string> &args) {
     } else { 
       std::cout << "[i]: Disk opened." << std::endl;
     }
+
+    allocate_memory(task.memory);
 
     size_t i = 0;
     while (!disk.eof() && i < SYSTEM_SEGMENT_SIZE) {

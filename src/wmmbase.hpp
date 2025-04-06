@@ -8,18 +8,17 @@
 #define WYLAND_BEGIN namespace wylma { namespace wyland {
 #define WYLAND_END   } }
 
-#define CODE_SEGMENT_SIZE 400_MB
-#define HARDWARE_SEGMENT_SIZE 100_MB
 #define SYSTEM_SEGMENT_SIZE 12_MB
 
-#define CODE_SEGMENT_START 0
-#define HARDWARE_SEGMENT_START (CODE_SEGMENT_START + CODE_SEGMENT_SIZE)
-#define SYSTEM_SEGMENT_START (HARDWARE_SEGMENT_START + HARDWARE_SEGMENT_SIZE)
+#define SYSTEM_SEGMENT_START 0
+#define HARDWARE_SEGMENT_START (SYSTEM_SEGMENT_START + SYSTEM_SEGMENT_SIZE)
 
 #define KEYBOARD_SEGMENT_START HARDWARE_SEGMENT_START
-#define KEYBOARD_SEGMENT_END   HARDWARE_SEGMENT_START + 2_MB 
+#define KEYBOARD_SEGMENT_END   HARDWARE_SEGMENT_START + 4_MB 
 
-#define SYSCALL_COUNT 11
+#define WYLAND_SYSTEM_INT_BEG 10_MB
+
+#define WYLAND_MEMORY_MINIMUM 16_MB
 
 #define REG_KEY (32)
 #define R_ORG 62
@@ -39,9 +38,17 @@ constexpr std::size_t operator""_GB(unsigned long long size) {
   return size * 1024 * 1024 * 1024;
 }
 
+constexpr std::size_t operator""_KB(unsigned long long size) {
+  return size * 1024;
+}
+
+constexpr std::size_t operator""_B(unsigned long long size) {
+  return size;
+}
+
 WYLAND_BEGIN
 
-uint8_t memory[512_MB]{0};
+uint8_t *memory;
 
 namespace segments {
   static bool keyboard_reserved;

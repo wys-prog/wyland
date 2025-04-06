@@ -86,5 +86,35 @@ namespace wylma {
 
       return result;
     }
+
+    enum string_format_option {
+      to_lower, 
+      to_upper, 
+      /* Maybe in further versions.. */
+    };
+
+    std::string string_convert(const std::string &base, const std::function<int(int)> &callable) {
+      std::string new_base = "";
+      for (const auto &c:base) {
+        new_base.push_back(callable(c));
+      }
+
+      return new_base;
+    }
+
+    std::string format(const std::string &base, string_format_option option) {
+      switch (option) {
+        case to_lower: {
+          auto callable = [](int c) { return std::tolower(c); };
+          return string_convert(base, callable);
+        }
+        case to_upper: {
+          auto callable = [](int c) { return std::toupper(c); };
+          return string_convert(base, callable);
+        }
+        default: 
+          throw std::invalid_argument("format(): Unknown argument" + std::to_string((int)option));
+      }
+    }
   }
 }
