@@ -10,6 +10,7 @@ const __wtarget wtarg64    = 0xA64;
 const __wtarget wtarg32    = 0xA32; /* Not implemented */
 const __wtarget wtargmarch = 0xA + (0x13)*'m'+'a'+'t'+'h' + 2; /* These numbers are just 'random'. */
 const __wtarget wtargfast  = 0xAFA; /* Deprecated, not implemented */
+const __wtarget wtarg64DEBUG = 0xA6D;
 
 const char *nameof(__wtarget tar) {
   switch (tar) {
@@ -17,6 +18,7 @@ const char *nameof(__wtarget tar) {
     case wtarg32: return "wtarg32"; break;
     case wtargmarch: return "wtargmarch"; break;
     case wtargfast: return "wtargfast"; break;
+    case wtarg64DEBUG: return "wtarg64DEBUG"; break;
     default: return "unknown"; break;
   }
 }
@@ -26,6 +28,7 @@ __wtarget ofname(const char *name) {
   else if (strcmp(name, nameof(wtarg32)) == 0) return wtarg32;
   else if (strcmp(name, nameof(wtargmarch)) == 0) return wtargmarch;
   else if (strcmp(name, nameof(wtargfast)) == 0) return wtargfast;
+  else if (strcmp(name, nameof(wtarg64DEBUG)) == 0) return wtarg64DEBUG;
   else return strlen(name); /* This can create errors... BUT WHY SET TO AN UNKNOWN TARGET ? */
 }
 
