@@ -46,7 +46,7 @@ WYLAND_BEGIN
 typedef void (*taskHandle)(std::vector<std::string>&);
 
 typedef struct {
-  __wtarget   target;
+  wtarget   target;
   uint32_t    version;
   bool        auto_targ;
   uint64_t    memory;
@@ -160,7 +160,7 @@ taskHandle run = [](std::vector<std::string> &args) {
   
     if (core == nullptr) {
       std::cerr << "[e]: *core is a bad pointer." << std::endl;
-      exit(-400);
+      wyland_exit(-400);
     }
 
     std::cout << "[i]: initializing object 0x" << std::hex << reinterpret_cast<uintptr_t>(core) << std::endl;
@@ -211,11 +211,11 @@ taskHandle run_raw = [](std::vector<std::string> &args) {
 
     if (core == nullptr) {
       std::cerr << "[e]: *core is a bad pointer." << std::endl;
-      exit(-400);
+      wyland_exit(-400);
     }
 
     std::cout << "[i]: initializing object 0x" << std::hex << reinterpret_cast<uintptr_t>(core) << std::endl;
-    auto libs = wlinkfns();
+
     core->init(
       SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START+SYSTEM_SEGMENT_SIZE, 
       true, 0, &cache::linked_funcs, SYSTEM_SEGMENT_START

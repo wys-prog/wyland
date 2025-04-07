@@ -90,6 +90,7 @@ namespace wylma {
     enum string_format_option {
       to_lower, 
       to_upper, 
+      trim_str, 
       /* Maybe in further versions.. */
     };
 
@@ -111,6 +112,9 @@ namespace wylma {
         case to_upper: {
           auto callable = [](int c) { return std::toupper(c); };
           return string_convert(base, callable);
+        }
+        case trim_str: {
+          return trim(base);
         }
         default: 
           throw std::invalid_argument("format(): Unknown argument" + std::to_string((int)option));

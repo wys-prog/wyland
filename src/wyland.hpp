@@ -39,7 +39,7 @@ namespace cache {
   std::vector<libcallc::DynamicLibrary> libraries;
 }
 
-core_base *create_core_ptr(__wtarget target) {
+core_base *create_core_ptr(wtarget target) {
   if (target == wtarg64) {
     auto ptr = new corewtarg64;
 
@@ -54,7 +54,7 @@ core_base *create_core_ptr(__wtarget target) {
     << "0x" << std::hex << reinterpret_cast<uintptr_t>(ptr) << std::endl;
 
     return ptr;
-  }
+  } 
 
   return nullptr;
 }
@@ -65,6 +65,7 @@ bool allocate_memory(size_t size) {
 
     std::cout << "[i]: memory segment created at: 0x" << std::hex << std::uintptr_t(&memory) << std::endl;
     std::cout << "[i]: " << std::dec << size << " bytes allocated" << std::hex << std::endl;
+    segments::memory_size = size;
     return true;
   } catch (const std::bad_alloc &e) {
     std::cerr << "[e]: unable to allocate memory segment: " << e.what() << std::endl;
@@ -227,10 +228,11 @@ void run_core(core_base *base) {
   }
 }
 
-void wyland_exit() {
+void wyland_exit(int _code = 0) {
   cache::linked_funcs.clear();
   cache::libraries.clear();
   delete memory;
+  exit(_code);
 }
 
 WYLAND_END

@@ -285,7 +285,28 @@ protected:
     }
   }
 
-  setfunc_t set[26];
+  void iemplace() { /* New in std:wy2.4 ! */
+    uint64_t address = regs.get(read());
+    uint8_t with = read();
+
+    if (address <= beg || address >= end) throw std::out_of_range(
+      "Reading out of the local segment.\n"
+      "\tflag 'beg':\t" + std::to_string(beg) + "\n"
+      "\tflag 'end':\t" + std::to_string(end) + "\n"
+      "\tIP (global):\t" + std::to_string(ip) + "\n"
+      "\tthread:\t\t" + std::to_string(thread_id)  + "\n"
+      "\tlocal IP:\t" + std::to_string(local_ip) + "\n"
+      "\tfrom wtarg64::iemplace()"
+    );
+
+    auto array = to_bin(regs.get(with));
+    auto max = reg_t::get_len(with);
+    for (uint8_t i = 0; i < max; i++) {
+      memory[address + i] = array[7 - i];
+    }
+  }
+
+  setfunc_t set[27];
 
 public:
   void init(uint64_t _memory_segment_begin, 
@@ -332,17 +353,18 @@ public:
     set[set_wtarg64::sar] = &corewtarg64::isar;
     set[set_wtarg64::wthrow] = &corewtarg64::iwthrow;
     set[set_wtarg64::clfn] = &corewtarg64::iclfn;
-  }
+    set[set_wtarg64::empl] = &corewtarg64::iemplace;
 
-  void run() override {
     /* Initialize the core, with some "basic" values. */
-    /* First of all, define the 'org' constant. */
+
     regs.set(R_ORG, beg);
     regs.set(R_STACK_BASE, end - STACK_SIZE);
     regs.set(0, 'A');
     regs.set(1, 1);
     regs.set(REG_KEY, 0x00);
+  }
 
+  void run() override {
     while (!halted) {
       if (ip < beg || ip > end) 
       throw std::out_of_range(
@@ -392,87 +414,54 @@ public:
       cv.wait(lock, [this] { return children == 0; });
     }
   }
-};
 
-class corewtarg64_debugger : public corewtarg64 {
-private:
-  bool should_stop_next_cycle = false;
+  uint64_t get_ip() override { return ip; }
 
-public:
-  void start_core() {
-    while (!halted) {
-      regs.set(R_ORG, beg);
-      regs.set(R_STACK_BASE, end - STACK_SIZE);
-      regs.set(0, 'A');
-      regs.set(1, 1);
-      regs.set(REG_KEY, 0x00);
-  
-      while (!halted) {
-        if (ip < beg || ip > end) {
-          std::cerr << std::out_of_range(
-            "Reading out of the local segment.\n"
-            "\tflag 'beg':\t" + std::to_string(beg) + "\n"
-            "\tflag 'end':\t" + std::to_string(end) + "\n"
-            "\tIP (global):\t" + std::to_string(ip) + "\n"
-            "\tthread:\t\t" + std::to_string(thread_id)  + "\n"
-            "\tlocal IP:\t" + std::to_string(local_ip) + "\n"
-            "\tfrom wtarg64::run()"
-          ).what() << std::endl;
-          break;
-        }
-        
-        auto fetched = read();
-        local_ip++;
-  
-        if (fetched == 0xFF) { 
-          std::cout << "[d]: halted !" << std::endl;
-          halted = true; 
-          continue; 
-        }
-        if (fetched == 0xFE) { /* Specific mark for labels. Used for debugging. */
-          std::cout << "[e]: label section at " << std::hex << ip << std::endl;
-          continue; 
-        } 
-        if (fetched == 0xFD) {
-          std::cout << "[d]: debug flag reached at address " << std::hex << ip << std::endl;
-        }
-  
-        wyland_uint key = get_key();
-        if (key)  {
-          regs.set(REG_KEY, key);
-        }
-        
-        if (fetched >= sizeof(set) / sizeof(set[0])) {
-          std::ostringstream oss;
-          oss << "Invalid instruction: " << std::hex << std::uppercase << (int)fetched << "\n"
-          "\tfetched:\t[" << (int)fetched<< "]\n"
-          "\t4 bytes:\t[" <<  
-          format({memory[ip-2],memory[ip-1],memory[ip],memory[ip+1]}, ',') 
-          << "]\n"
-          "\tCore IP:\t" << ip << std::dec << "\n"
-          "\tLocal IP:\t" << local_ip << "\n\tThread:\t" << thread_id;
-          throw std::runtime_error(oss.str());
-        }
-  
-        try {
-          (this->*set[fetched])();
-        } catch (const std::exception &e) {
-          runtime::wyland_runtime_error we(e.what(), "Instruction Invokation Exception", __func__, typeid(e).name(), ip, thread_id, NULL, NULL, end-beg);
-          std::cerr << "C++ exception caught: " << we.fmterr() << std::endl;
-        } catch (const runtime::wyland_runtime_error &e) {
-          std::cerr << "Wyland exception caught: " << e.fmterr() << std::endl;
-        }
+  void run_step() override {
+    if (!halted) {
+
+      if (ip < beg || ip > end) 
+      throw std::out_of_range(
+        "Reading out of the local segment.\n"
+        "\tflag 'beg':\t" + std::to_string(beg) + "\n"
+        "\tflag 'end':\t" + std::to_string(end) + "\n"
+        "\tIP (global):\t" + std::to_string(ip) + "\n"
+        "\tthread:\t\t" + std::to_string(thread_id)  + "\n"
+        "\tlocal IP:\t" + std::to_string(local_ip) + "\n"
+        "\tfrom wtarg64::run()"
+      );
+      
+      auto fetched = read();
+      local_ip++;
+
+      if (fetched == 0xFF) { halted = true; return; }
+      if (fetched == 0xFE) { return; } /* Specific mark for labels. Used for debugging. */
+
+      wyland_uint key = get_key();
+      if (key)  {
+        regs.set(REG_KEY, key);
       }
-  
-      {
-        std::unique_lock<std::mutex> lock(mtx);
-        cv.wait(lock, [this] { return children == 0; });
+      
+      if (fetched >= sizeof(set) / sizeof(set[0])) {
+        std::ostringstream oss;
+        oss << "Invalid instruction: " << std::hex << std::uppercase << (int)fetched << "\n"
+        "\tfetched:\t[" << (int)fetched<< "]\n"
+        "\t4 bytes:\t[" <<  
+        format({memory[ip-2],memory[ip-1],memory[ip],memory[ip+1]}, ',') 
+        << "]\n"
+        "\tCore IP:\t" << ip << std::dec << "\n"
+        "\tLocal IP:\t" << local_ip << "\n\tThread:\t" << thread_id;
+        throw std::runtime_error(oss.str());
       }
+
+      try {
+        (this->*set[fetched])();
+      } catch (const std::exception &e) {
+        throw runtime::wyland_runtime_error(e.what(), "Instruction Invokation Exception", __func__, typeid(e).name(), ip, thread_id, NULL, NULL, end-beg);
+      } catch (const runtime::wyland_runtime_error &e) {
+        throw runtime::wyland_runtime_error(e.what(), e.name(), e.caller(), typeid(e).name(), ip, thread_id, NULL, NULL, end-beg);
+      } 
     }
-  }
-
-  void stop_next_cycle() {
-    should_stop_next_cycle = true;
   }
 };
 

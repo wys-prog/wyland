@@ -56,6 +56,17 @@ namespace wylma {
     
         return reg;
       }
+
+      static uint8_t get_len(uint8_t of) {
+        if (of < 16)      return 1;
+        else if (of < 32) return 2; 
+        else if (of < 48) return 4;
+        else if (of < 80) return 8;
+        else {
+          std::string buff = "Unexpected register index: " + std::to_string(of);
+          throw runtime::wyland_out_of_range(buff.c_str(), "out of range", "reg_t::set(...)", 0, 0, nullptr, nullptr, 0);
+        }
+      }
     };
   }
 }

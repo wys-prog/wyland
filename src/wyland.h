@@ -17,9 +17,9 @@
 # define COMPILER_NAME ""
 #endif
 
-#define WYLAND_NAME    "Wyland wy:2.4"
-#define WYLAND_VERSION "1.2.4"
-#define WYLAND_BUILD   "Wyland Build 1.2 - Tokyo - " COMPILER_NAME
+#define WYLAND_NAME    "Wyland wy:2.5"
+#define WYLAND_VERSION "1.3.4"
+#define WYLAND_BUILD   "Wyland Build 1.2 - Sequoia - " COMPILER_NAME
 #define WYLAND_VERSION_UINT32 1
 
 #define WYLAND_SUPPORT_WTARG64 1

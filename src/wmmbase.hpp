@@ -54,6 +54,7 @@ uint8_t *memory;
 
 namespace segments {
   static bool keyboard_reserved;
+  static uint64_t memory_size = WYLAND_MEMORY_MINIMUM;
 }
 
 namespace manager {

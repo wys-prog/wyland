@@ -4,31 +4,31 @@
 #include <stdint.h>
 #include <string.h>
 
-typedef int16_t __wtarget;
+typedef int16_t wtarget;
 
-const __wtarget wtarg64    = 0xA64;
-const __wtarget wtarg32    = 0xA32; /* Not implemented */
-const __wtarget wtargmarch = 0xA + (0x13)*'m'+'a'+'t'+'h' + 2; /* These numbers are just 'random'. */
-const __wtarget wtargfast  = 0xAFA; /* Deprecated, not implemented */
-const __wtarget wtarg64DEBUG = 0xA6D;
+const wtarget wtarg64    = 0xA64;
+const wtarget wtarg32    = 0xA32; /* Not implemented */
+const wtarget wtargmarch = 0xA + (0x13)*'m'+'a'+'t'+'h' + 2; /* These numbers are just 'random'. */
+const wtarget wtargfast  = 0xAFA; /* Deprecated, not implemented */
+const wtarget wdebugger  = 0xA6D;
 
-const char *nameof(__wtarget tar) {
+const char *nameof(wtarget tar) {
   switch (tar) {
     case wtarg64: return "wtarg64"; break;
     case wtarg32: return "wtarg32"; break;
     case wtargmarch: return "wtargmarch"; break;
     case wtargfast: return "wtargfast"; break;
-    case wtarg64DEBUG: return "wtarg64DEBUG"; break;
+    case wdebugger: return "wdebugger"; break;
     default: return "unknown"; break;
   }
 }
 
-__wtarget ofname(const char *name) {
+wtarget ofname(const char *name) {
   if (strcmp(name, nameof(wtarg64)) == 0) return wtarg64;
   else if (strcmp(name, nameof(wtarg32)) == 0) return wtarg32;
   else if (strcmp(name, nameof(wtargmarch)) == 0) return wtargmarch;
   else if (strcmp(name, nameof(wtargfast)) == 0) return wtargfast;
-  else if (strcmp(name, nameof(wtarg64DEBUG)) == 0) return wtarg64DEBUG;
+  else if (strcmp(name, nameof(wdebugger)) == 0) return wdebugger;
   else return strlen(name); /* This can create errors... BUT WHY SET TO AN UNKNOWN TARGET ? */
 }
 
@@ -59,6 +59,7 @@ enum set_wtarg64 {
   sar, 
   wthrow, 
   clfn, // Call Linked Function, std:wy2.4
+  empl,
 };
 
 enum set_wtargmarch {
