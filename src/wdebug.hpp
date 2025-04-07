@@ -40,7 +40,7 @@ WYLAND_BEGIN
 #endif // WIN ?
 
 
-class wtargdebugger : core_base {
+class wtargdebugger : public core_base {
 private:
   core_base      *core;
   uint64_t        memory_segment_begin;

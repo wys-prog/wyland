@@ -25,6 +25,7 @@
 #include "targets.h"
 #include "wtarget64.hpp"
 #include "wtarget32.hpp"
+#include "wdebug.hpp"
 #include "wformat.hpp"
 #include "wmmbase.hpp"
 #include "wtypes.h"
@@ -54,7 +55,14 @@ core_base *create_core_ptr(wtarget target) {
     << "0x" << std::hex << reinterpret_cast<uintptr_t>(ptr) << std::endl;
 
     return ptr;
-  } 
+  } else if (target == wdebugger) {
+    auto ptr = new wtargdebugger;
+
+    std::cout << "[i]: object " << typeid(*ptr).name() << " created at " 
+    << "0x" << std::hex << reinterpret_cast<uintptr_t>(ptr) << std::endl;
+
+    return ptr;
+  }
 
   return nullptr;
 }
