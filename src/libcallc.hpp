@@ -21,6 +21,18 @@
 #include "regs.hpp"
 #include "wyland-runtime/wylrt.h"
 
+#ifdef _WIN32
+#define DynamicLibraryLoad(x) LoadLibraryA(x)
+#define DynamicLibraryError() GetLastError()
+#define DynamicLibraryFunc(h, n) GetProcAddress(static_cast<HMODULE>(h), n)
+#define DynamicLibraryFree(h) FreeLibrary(static_cast<HMODULE>(h))
+#else 
+#define DynamicLibraryLoad(x) dlopen(x, RTLD_LAZY)
+#define DynamicLibraryError() dlerror()
+#define DynamicLibraryFunc(h, n) dlsym(h, n) 
+#define DynamicLibraryFree(h) dlclose(h);
+#endif // WIN ?
+
 namespace wylma {
   namespace wyland {
 
