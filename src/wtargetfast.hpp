@@ -18,6 +18,7 @@
 
 #include "regs.hpp"
 #include "wyland-runtime/wylrt.h"
+#include "interfaces/interface.hpp"
 #include "libcallc.hpp"
 #include "targets.h"
 #include "wmmbase.hpp"
@@ -27,16 +28,11 @@
 
 WYLAND_BEGIN
 
+#define NAME std::string(typeid(this).name() + "::"s + __func__).c_str()
+
+using namespace std::string_literals;
 class corewtargfast : public core_base {
 public:
-  typedef struct {
-    uint16_t op;
-    uint8_t  param1;
-    uint8_t  param2;
-    uint8_t  param3;
-    uint64_t imm;
-  } wtfins; /* Wyland Target Fast - Instruction*/
-
   using syscall_t = void(corewtargfast::*)();
   using setfunc_t = void(corewtargfast::*)();
 
@@ -48,65 +44,182 @@ private:
 
   uint64_t regs[128]{0};
   
-  std::stack<wtfins> pipeline;
-  std::mutex         mpipe;
-
   bool     halted = false;
   int      flags  = 0;
   bool     is_system = false;
   uint64_t thread_id = 'U' + 'n' + 'd' + 'e' + 'f' + 'T';
-  uint8_t  children = 0;
-  std::mutex mtx;
-  std::condition_variable cv;
-  std::unordered_map<uint64_t, libcallc::DynamicLibrary> libs;
-  std::unordered_map<uint64_t, libcallc::DynamicLibrary::FunctionType> funcs;
 
-  void jump_if(const wtfins &wtf) {
-    switch (wtf.param3) {
-      case 0x00: 
-        if (regs[wtf.param1] == regs[wtf.param2]) 
-          ip = wtf.imm;
-        break;
-      case 0x01: 
-        if (regs[wtf.param1] > regs[wtf.param2]) 
-          ip = wtf.imm;
-        break;
-      case 0x02: 
-        if (regs[wtf.param1] < regs[wtf.param2]) 
-          ip = wtf.imm;
-        break;
-      
-      default: 
-        throw std::invalid_argument("jump_if(): No such parameter for %param3: " + std::to_string((int)wtf.param3));
-        break;
+  void validate_register_index(int reg) const {
+    if (reg < 0 || reg >= static_cast<int>(sizeof(regs) / sizeof(regs[0]))) {
+      throw std::out_of_range("Invalid register index: " + std::to_string(reg));
     }
   }
 
-  void jump(const wtfins &wtf) {
-    ip = wtf.imm;
+  void add(int r1, int r2) {
+    try {
+      validate_register_index(r1);
+      validate_register_index(r2);
+      regs[r1] += regs[r2];
+    } catch (const std::exception &e) {
+      std::cerr << "[e]: Error in " << NAME << "(): " << e.what() << std::endl;
+      throw;
+    }
   }
 
-  void add(const wtfins &wtf) {
-    regs[wtf.param3] = regs[wtf.param1] + regs[wtf.param2];
+  void sub(int r1, int r2) {
+    try {
+      validate_register_index(r1);
+      validate_register_index(r2);
+      regs[r1] -= regs[r2];
+    } catch (const std::exception &e) {
+      std::cerr << "[e]: Error in " << NAME << "(): " << e.what() << std::endl;
+      throw;
+    }
   }
 
-  void sub(const wtfins &wtf) {
-    regs[wtf.param3] = regs[wtf.param1] - regs[wtf.param2];
+  void mul(int r1, int r2) {
+    try {
+      validate_register_index(r1);
+      validate_register_index(r2);
+      regs[r1] *= regs[r2];
+    } catch (const std::exception &e) {
+      std::cerr << "[e]: Error in " << NAME << "(): " << e.what() << std::endl;
+      throw;
+    }
   }
 
-  void mul(const wtfins &wtf) {
-    regs[wtf.param3] = regs[wtf.param1] * regs[wtf.param2];
+  void div(int r1, int r2) {
+    try {
+      validate_register_index(r1);
+      validate_register_index(r2);
+      if (regs[r2] == 0) {
+        throw std::runtime_error("Division by zero");
+      }
+      regs[r1] /= regs[r2];
+    } catch (const std::exception &e) {
+      std::cerr << "[e]: Error in " << NAME << "(): " << e.what() << std::endl;
+      throw;
+    }
   }
 
-  void div(const wtfins &wtf) {
-    regs[wtf.param3] = regs[wtf.param1] / regs[wtf.param2];
+  void mod(int r1, int r2) {
+    try {
+      validate_register_index(r1);
+      validate_register_index(r2);
+      if (regs[r2] == 0) {
+        throw std::runtime_error("Modulo by zero");
+      }
+      regs[r1] %= regs[r2];
+    } catch (const std::exception &e) {
+      std::cerr << "[e]: Error in " << NAME << "(): " << e.what() << std::endl;
+      throw;
+    }
   }
 
-  void mod(const wtfins &wtf) {
-    regs[wtf.param3] = regs[wtf.param1] % regs[wtf.param2];
+  void mov(int r1, uint64_t value) {
+    try {
+      validate_register_index(r1);
+      regs[r1] = value;
+    } catch (const std::exception &e) {
+      std::cerr << "[e]: Error in " << NAME << "(): " << e.what() << std::endl;
+      throw;
+    }
   }
 
+  void cmp(int r1, int r2) {
+    try {
+      validate_register_index(r1);
+      validate_register_index(r2);
+      if (regs[r1] == regs[r2]) {
+        flags = 0; // Equal
+      } else if (regs[r1] > regs[r2]) {
+        flags = 1; // Greater
+      } else {
+        flags = -1; // Lesser
+      }
+    } catch (const std::exception &e) {
+      std::cerr << "[e]: Error in " << NAME << "(): " << e.what() << std::endl;
+      throw;
+    }
+  }
 
+  void jmp(uint64_t address) {
+    try {
+      if (address < beg || address >= end) {
+        throw std::out_of_range("Jump address out of bounds: " + std::to_string(address));
+      }
+      ip = address;
+    } catch (const std::exception &e) {
+      std::cerr << "[e]: Error in " << NAME << "(): " << e.what() << std::endl;
+      throw;
+    }
+  }
+
+  void je(uint64_t address) {
+    try {
+      if (flags == 0) {
+        jmp(address);
+      }
+    } catch (const std::exception &e) {
+      std::cerr << "[e]: Error in " << NAME << "(): " << e.what() << std::endl;
+      throw;
+    }
+  }
+
+  void jne(uint64_t address) {
+    try {
+      if (flags != 0) {
+        jmp(address);
+      }
+    } catch (const std::exception &e) {
+      std::cerr << "[e]: Error in " << NAME << "(): " << e.what() << std::endl;
+      throw;
+    }
+  }
+
+  void jg(uint64_t address) {
+    try {
+      if (flags == 1) {
+        jmp(address);
+      }
+    } catch (const std::exception &e) {
+      std::cerr << "[e]: Error in " << NAME << "(): " << e.what() << std::endl;
+      throw;
+    }
+  }
+
+  void jl(uint64_t address) {
+    try {
+      if (flags == -1) {
+        jmp(address);
+      }
+    } catch (const std::exception &e) {
+      std::cerr << "[e]: Error in " << NAME << "(): " << e.what() << std::endl;
+      throw;
+    }
+  }
+
+  void jge(uint64_t address) {
+    try {
+      if (flags == 1 || flags == 0) {
+        jmp(address);
+      }
+    } catch (const std::exception &e) {
+      std::cerr << "[e]: Error in " << NAME << "(): " << e.what() << std::endl;
+      throw;
+    }
+  }
+
+  void jle(uint64_t address) {
+    try {
+      if (flags == -1 || flags == 0) {
+        jmp(address);
+      }
+    } catch (const std::exception &e) {
+      std::cerr << "[e]: Error in " << NAME << "(): " << e.what() << std::endl;
+      throw;
+    }
+  }
 
 public:
   void init(uint64_t _memory_segment_begin, 
@@ -114,7 +227,7 @@ public:
             bool _is_system, 
             uint64_t _name, 
             linkedfn_array *table, 
-            uint64_t base) override {
+            uint64_t base, IWylandGraphicsModule * = nullptr) override {
   
     beg = _memory_segment_begin;
     end = _memory_segment_end;

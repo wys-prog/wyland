@@ -25,7 +25,6 @@
 #include "targets.h"
 #include "wtarget64.hpp"
 #include "wtarget32.hpp"
-#include "wdebug.hpp"
 #include "wformat.hpp"
 #include "wmmbase.hpp"
 #include "wtypes.h"
@@ -40,6 +39,14 @@ namespace cache {
   std::vector<libcallc::DynamicLibrary> libraries;
 }
 
+void wyland_exit(int _code = 0) {
+  std::cout << "[i]: exiting with exit code: " << std::dec << _code << std::endl;
+  cache::linked_funcs.clear();
+  cache::libraries.clear();
+  delete memory;
+  exit(_code);
+}
+
 core_base *create_core_ptr(wtarget target) {
   if (target == wtarg64) {
     auto ptr = new corewtarg64;
@@ -50,13 +57,6 @@ core_base *create_core_ptr(wtarget target) {
     return ptr;
   } else if (target == wtarg32) {
     auto ptr = new corewtarg32;
-
-    std::cout << "[i]: object " << typeid(*ptr).name() << " created at " 
-    << "0x" << std::hex << reinterpret_cast<uintptr_t>(ptr) << std::endl;
-
-    return ptr;
-  } else if (target == wdebugger) {
-    auto ptr = new wtargdebugger;
 
     std::cout << "[i]: object " << typeid(*ptr).name() << " created at " 
     << "0x" << std::hex << reinterpret_cast<uintptr_t>(ptr) << std::endl;
@@ -183,6 +183,10 @@ void run_core(core_base *base) {
   
   try {
     base->run();
+    delete memory;
+    cache::linked_funcs.clear();
+    cache::libraries.clear();
+    return ;
   } catch (const std::invalid_argument& e) {
     std::cerr << "[e]: invalid argument exception caught at address 0x" 
               << std::hex << reinterpret_cast<uintptr_t>(base) 
@@ -234,13 +238,8 @@ void run_core(core_base *base) {
               << "\n\tstacktrace:\n" << boost::stacktrace::stacktrace()
               << std::endl;
   }
-}
 
-void wyland_exit(int _code = 0) {
-  cache::linked_funcs.clear();
-  cache::libraries.clear();
-  delete memory;
-  exit(_code);
+  wyland_exit(-100);
 }
 
 WYLAND_END

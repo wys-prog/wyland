@@ -29,6 +29,8 @@
 #include "wformat.hpp"
 #include "wtargb.hpp"
 
+#include "interfaces/interface.hpp"
+
 WYLAND_BEGIN
 
 class corewtarg64 : public core_base {
@@ -49,6 +51,7 @@ protected:
   uint8_t  children = 0;
   std::mutex mtx;
   std::condition_variable cv;
+  IWylandGraphicsModule *GraphicsModule;
 
   /* Deprecated ! */
   std::unordered_map<uint64_t, libcallc::DynamicLibrary> libs;
@@ -314,7 +317,7 @@ public:
             bool _is_system, 
             uint64_t _name, 
             linkedfn_array *table, 
-            uint64_t base) override {
+            uint64_t base, IWylandGraphicsModule *_GraphicsModule) override {
     beg = _memory_segment_begin;
     end = _memory_segment_end;
     ip  = beg;
@@ -324,6 +327,10 @@ public:
     if (table == nullptr) {
       throw std::runtime_error("linked_functions table is null.");
     }
+
+    if (_GraphicsModule == nullptr) {
+      GraphicsModule = new IWylandGraphicsModule();
+    } else GraphicsModule = _GraphicsModule;
 
     linked_functions = table;
 
@@ -362,6 +369,15 @@ public:
     regs.set(0, 'A');
     regs.set(1, 1);
     regs.set(REG_KEY, 0x00);
+
+    if (is_system) {
+      if (!GraphicsModule->init(800, 600, "Wyland")) {
+        std::cerr << "[e]: unable to initialize <GraphicsModule*>" << std::endl;
+        throw GraphicsModuleException(
+          "Unable to initialize <GraphicsModule*>", __func__ 
+        );
+      } else std::cout << "[i]: GraphicsModule initialized: " << GraphicsModule->name() << std::endl;
+    }
   }
 
   void run() override {
@@ -402,12 +418,17 @@ public:
 
       try {
         (this->*set[fetched])();
+        GraphicsModule->process({});
+        GraphicsModule->render();
+        if (GraphicsModule->should_close()) halted = true;
       } catch (const std::exception &e) {
         throw runtime::wyland_runtime_error(e.what(), "Instruction Invokation Exception", __func__, typeid(e).name(), ip, thread_id, NULL, NULL, end-beg);
       } catch (const runtime::wyland_runtime_error &e) {
         throw runtime::wyland_runtime_error(e.what(), e.name(), e.caller(), typeid(e).name(), ip, thread_id, NULL, NULL, end-beg);
       }
     }
+
+    GraphicsModule->shutdown();
 
     {
       std::unique_lock<std::mutex> lock(mtx);

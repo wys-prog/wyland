@@ -17,10 +17,12 @@ python/test/
 /build/
 /bin/
 /obj/
-/CMakeFiles/
-/CMakeCache.txt
-/cmake_install.cmake
-/Makefile
+src/CMakeFiles/
+src/CMakeCache.txt
+src/cmake_install.cmake
+src/Makefile
+src/bin
+
 
 # Ignore other temporary files
 *.o

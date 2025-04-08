@@ -64,3 +64,30 @@ set_target_properties(WylandExecutable PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build/obj/${CMAKE_SYSTEM_NAME}
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/${CMAKE_SYSTEM_NAME}
 )
+
+set(DATA_DIR "${CMAKE_SOURCE_DIR}/data")
+file(MAKE_DIRECTORY ${DATA_DIR})  
+
+set(BUILD_ID_FILE "${DATA_DIR}/build_id.txt")
+set(VERSION_HEADER "${DATA_DIR}/wyland_version.h")
+set(SCRIPT "${CMAKE_SOURCE_DIR}/scripts/increment_build.py")
+
+#add_custom_command(
+#    OUTPUT ${VERSION_HEADER}
+#    #COMMAND ${CMAKE_COMMAND} -E echo ">> Creating something idk..."
+#    COMMAND python3 ${SCRIPT} ${BUILD_ID_FILE} ${VERSION_HEADER}
+#    DEPENDS ${SCRIPT}
+#    COMMENT "Incrementing build version"
+#)
+
+add_custom_target(run_version_script ALL
+    COMMAND python3 ${SCRIPT} ${BUILD_ID_FILE} ${VERSION_HEADER}
+    COMMENT "Always running version increment script"
+    BYPRODUCTS ${VERSION_HEADER}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+)
+
+
+add_custom_target(generate_version_header DEPENDS ${VERSION_HEADER})
+add_dependencies(WylandExecutable generate_version_header)
+target_include_directories(WylandExecutable PRIVATE ${DATA_DIR})

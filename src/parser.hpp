@@ -9,14 +9,14 @@
 
 WYLAND_BEGIN
 
-size_t get_to_alloc(const std::string &arg) {
+float get_to_alloc(const std::string &arg) {
   size_t mem_pos = arg.find("-memory:");
   if (mem_pos == std::string::npos) return WYLAND_MEMORY_MINIMUM;
 
   std::string size_part = arg.substr(mem_pos + 8); 
 
   size_t i = 0;
-  while (i < size_part.size() && std::isdigit(size_part[i])) i++;
+  while (i < size_part.size() && (std::isdigit(size_part[i]) || size_part[i] == '.' || size_part[i] == ',')) i++;
 
   if (i == 0) return WYLAND_MEMORY_MINIMUM; 
 
@@ -26,7 +26,7 @@ size_t get_to_alloc(const std::string &arg) {
   for (auto &c : unit_str) c = std::tolower(c);
 
   try {
-    uint64_t value = std::stoull(num_str);
+    float value = std::stof(num_str);
 
     if (unit_str == "gb") return value * 1024 * 1024 * 1024;
     if (unit_str == "mb") return value * 1024 * 1024;

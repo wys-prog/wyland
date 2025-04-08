@@ -17,6 +17,8 @@
 #include <boost/stacktrace.hpp>
 #include <boost/container/flat_map.hpp>
 
+#include "data/wyland_version.h"
+
 /* Runtime */
 #include "wyland-runtime/wylrt.h"
 #include "wyland-runtime/wylrt.hpp"
@@ -46,7 +48,7 @@ WYLAND_BEGIN
 typedef void (*taskHandle)(std::vector<std::string>&);
 
 typedef struct {
-  wtarget   target;
+  wtarget     target;
   uint32_t    version;
   bool        auto_targ;
   uint64_t    memory;
@@ -78,7 +80,7 @@ taskHandle version = [](std::vector<std::string>&) {
 };
 
 taskHandle build = [](std::vector<std::string>&) {
-  std::cout << WYLAND_BUILD << std::endl;
+  std::cout << WYLAND_MAJOR_BUILD << std::endl;
 };
 
 taskHandle target = [](std::vector<std::string>&) {
@@ -95,7 +97,7 @@ taskHandle target_info = [](std::vector<std::string>&) {
 taskHandle infos = [](std::vector<std::string>&) {
   std::cout << "name:\t\t" << WYLAND_NAME << "\n"
             << "version:\t" << WYLAND_VERSION "(" << WYLAND_VERSION_UINT32 << ")\n"
-            << "build:\t\t" << WYLAND_BUILD << "\n"
+            << "build:\t\t" << WYLAND_MAJOR_BUILD << "\n"
             << "targets:\t\n" 
               "\t- wtarg64 (" << (wtarg64) << ")\n"
               "\t- wtarg32 (" << (wtarg32) << ")\n"
@@ -107,7 +109,7 @@ taskHandle infos = [](std::vector<std::string>&) {
 taskHandle set_target = [](std::vector<std::string> &args) {
   if (args.size() == 0) {
     std::cerr << "[e]: " << std::invalid_argument("Expected <x> target after -target token.").what() << std::endl;
-    exit(-1);
+    wyland_exit(-1);
   } else if (args.size() > 1) {
     std::cerr << "[w]: Too much arguments (" << args.size() << "). Excepted 1." << std::endl;
   } 
@@ -118,7 +120,7 @@ taskHandle set_target = [](std::vector<std::string> &args) {
 taskHandle run = [](std::vector<std::string> &args) {
   if (args.size() == 0) {
     std::cerr << "[e]: " << std::invalid_argument("Expected <x> disk after -run token.").what() << std::endl;
-    exit(-1);
+    wyland_exit(-1);
   }
 
   std::vector<std::string> files;
@@ -129,7 +131,7 @@ taskHandle run = [](std::vector<std::string> &args) {
 
     if (!disk) {
       std::cerr << "[e]: Unable to open disk file: " << file << std::endl;
-      exit(-1);
+      wyland_exit(-1);
     }
   
     wblock *block = new wblock;
@@ -143,7 +145,7 @@ taskHandle run = [](std::vector<std::string> &args) {
       std::cerr << "[e]: " << std::invalid_argument("Invalid header file.").what() << std::endl;
       std::cout << "Extracted header:\n" << wyland_files_header_fmt(&header) << std::endl;
       
-      exit(-1);
+      wyland_exit(-1);
     }
     
     load_libs(disk, header);
@@ -155,7 +157,7 @@ taskHandle run = [](std::vector<std::string> &args) {
     
     if (!load_file(disk, header)) {
       delete core;
-      exit(-1);
+      wyland_exit(-1);
     }
   
     if (core == nullptr) {
@@ -181,7 +183,7 @@ taskHandle run_raw = [](std::vector<std::string> &args) {
   std::cerr << "[w]: Running -run-raw mode." << std::endl;
   if (args.size() == 0) {
     std::cerr << "[e]: " << std::invalid_argument("Expected <x> target after -target token.").what() << std::endl;
-    exit(-1);
+    wyland_exit(-1);
   }
 
   std::vector<std::string> files;
@@ -192,7 +194,7 @@ taskHandle run_raw = [](std::vector<std::string> &args) {
 
     if (!disk) {
       std::cerr << "[e]: Unable to open disk file: " << file << std::endl;
-      exit(-1);
+      wyland_exit(-1);
     } else { 
       std::cout << "[i]: Disk opened." << std::endl;
     }
@@ -265,14 +267,14 @@ taskHandle check = [](std::vector<std::string> &args) {
 taskHandle make_disk = [](std::vector<std::string> &args) {
   if (args.size() == 0) {
     std::cerr << "[e]: " << std::invalid_argument("Excepted disk name.").what() << std::endl;
-    exit(-1);
+    wyland_exit(-1);
   }
 
   std::ofstream disk(args[0]);
   
   if (!disk) {
     std::cerr << "[e]: Unable to create file " << args[0] << std::endl;
-    exit(-1);
+    wyland_exit(-1);
   }
 
   wheader_t header = wyland_files_basic_header();
@@ -302,7 +304,7 @@ taskHandle make_disk = [](std::vector<std::string> &args) {
     std::ifstream file(args[i]);
     if (!file) {
       std::cerr << "[e]: Unable to create file " << args[i] << std::endl;
-      exit(-1);
+      wyland_exit(-1);
     }
 
     while (!file.eof()) {

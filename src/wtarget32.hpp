@@ -24,6 +24,8 @@
 #include "wformat.hpp"
 #include "wtargb.hpp"
 
+#include "interfaces/interface.hpp"
+
 WYLAND_BEGIN
 
 class corewtarg32 : public core_base {
@@ -232,7 +234,7 @@ public:
             bool _is_system, 
             uint64_t _name, 
             linkedfn_array *table, 
-            uint64_t base) override {
+            uint64_t base, IWylandGraphicsModule* = nullptr) override {
     beg = _memory_segment_begin;
     end = _memory_segment_end;
     ip  = beg;
