@@ -22,6 +22,7 @@ src/CMakeCache.txt
 src/cmake_install.cmake
 src/Makefile
 src/bin
+src/interfaces/SDL2
 
 
 # Ignore other temporary files

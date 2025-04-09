@@ -31,6 +31,8 @@
 
 #include "interfaces/interface.hpp"
 
+#include "mmiodeque.hpp"
+
 WYLAND_BEGIN
 
 class corewtarg64 : public core_base {
@@ -53,6 +55,7 @@ protected:
   std::condition_variable cv;
   IWylandGraphicsModule *GraphicsModule;
   wpacked_frame frame_buffer;
+
 
   /* Deprecated ! */
   std::unordered_map<uint64_t, libcallc::DynamicLibrary> libs;
@@ -310,21 +313,8 @@ protected:
     }
   }
 
-  void imovframebuff() { /* New in std:wy2.5 ! */
-    uint8_t mode = read(); /* 1 -> from register, 0 -> from frame-buffer */
-    switch (mode) {
-      case 0: {
-        auto r1 = read();
-        auto frame_pos = read<uint64_t>();
-        frame_buffer.pixels[frame_pos];
-        /* TODO: a function pointer, that can be called from the GraphicsModule interface.
-          that fucking function (and maybe code something better) */
-      } break;
-      case 1: {
-
-      } break;
-      default: throw std::invalid_argument(typeid(this).name() + "::"s + __func__ + "(): invalid argument."s); break;
-    }
+  void ipushmmio() { /* New in std:wy2.5 ! */
+    
   }
 
   setfunc_t set[28];

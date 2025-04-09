@@ -14,12 +14,13 @@
 #include "../wyland-runtime/wfloats.h"
 
 #include "../wmmbase.hpp"
+#include "../wmmio.hpp"
 
 #include "winface.h"
 
 WYLAND_BEGIN
 
-class IWylandGraphicsModule {
+class IWylandGraphicsModule : public WylandMMIOModule {
 public:
   virtual ~IWylandGraphicsModule() {}
   virtual wbool init(wint width, wint height, const std::string &title) { return wyland_true; }
