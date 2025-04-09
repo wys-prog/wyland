@@ -52,6 +52,7 @@ protected:
   std::mutex mtx;
   std::condition_variable cv;
   IWylandGraphicsModule *GraphicsModule;
+  wpacked_frame frame_buffer;
 
   /* Deprecated ! */
   std::unordered_map<uint64_t, libcallc::DynamicLibrary> libs;
@@ -309,7 +310,24 @@ protected:
     }
   }
 
-  setfunc_t set[27];
+  void imovframebuff() { /* New in std:wy2.5 ! */
+    uint8_t mode = read(); /* 1 -> from register, 0 -> from frame-buffer */
+    switch (mode) {
+      case 0: {
+        auto r1 = read();
+        auto frame_pos = read<uint64_t>();
+        frame_buffer.pixels[frame_pos];
+        /* TODO: a function pointer, that can be called from the GraphicsModule interface.
+          that fucking function (and maybe code something better) */
+      } break;
+      case 1: {
+
+      } break;
+      default: throw std::invalid_argument(typeid(this).name() + "::"s + __func__ + "(): invalid argument."s); break;
+    }
+  }
+
+  setfunc_t set[28];
 
 public:
   void init(uint64_t _memory_segment_begin, 
@@ -381,6 +399,7 @@ public:
   }
 
   void run() override {
+    auto last = std::chrono::high_resolution_clock::now();
     while (!halted) {
       if (ip < beg || ip > end) 
       throw std::out_of_range(
@@ -418,8 +437,11 @@ public:
 
       try {
         (this->*set[fetched])();
-        GraphicsModule->process({});
+        auto now = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<float> delta = now - last;
+        GraphicsModule->process(float_to_wfloat(delta.count()), &frame_buffer);
         GraphicsModule->render();
+        last = now;
         if (GraphicsModule->should_close()) halted = true;
       } catch (const std::exception &e) {
         throw runtime::wyland_runtime_error(e.what(), "Instruction Invokation Exception", __func__, typeid(e).name(), ip, thread_id, NULL, NULL, end-beg);

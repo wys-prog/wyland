@@ -50,7 +50,7 @@ wheader_t wyland_files_make_header(const wblock *block) {
 const char *wyland_files_header_fmt(const wheader_t *header) {
   static char buffer[256];
   snprintf(buffer, sizeof(buffer),
-           "Certificate: %c%c%c\n"
+           "Certificate:\t%c%c%c\n"
            "Target:\t\t%u (%s)\n"
            "Version:\t%u\n"
            "Code Address:\t0x%016llX\n"

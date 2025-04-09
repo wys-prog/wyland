@@ -30,6 +30,7 @@
 #include "wtypes.h"
 #include "wfiles.h"
 #include "wtargb.hpp"
+#include "interfaces/exInterface.hpp"
 #include "wyland.h"
 
 WYLAND_BEGIN
@@ -37,13 +38,21 @@ WYLAND_BEGIN
 namespace cache {
   boost::container::flat_map<uint32_t, libcallc::DynamicLibrary::FunctionType> linked_funcs{};
   std::vector<libcallc::DynamicLibrary> libraries;
+  IWylandGraphicsModule *GraphicsModulePtr;
+}
+
+void clear_ressources() {
+  cache::linked_funcs.clear();
+  cache::libraries.clear();
+  delete memory;
+  delete cache::GraphicsModulePtr;
+  memory = nullptr;
+  cache::GraphicsModulePtr = nullptr;
 }
 
 void wyland_exit(int _code = 0) {
   std::cout << "[i]: exiting with exit code: " << std::dec << _code << std::endl;
-  cache::linked_funcs.clear();
-  cache::libraries.clear();
-  delete memory;
+  clear_ressources();
   exit(_code);
 }
 
@@ -111,7 +120,7 @@ void load_libs(std::fstream &file, const wheader_t &header) {
     return;
   }
 
-  std::cout << "[i]: loading libraries..." << std::endl;
+  std::cout << "[i]: loading libraries" << std::endl;
 
   while (!file.eof()) {
     char buff[1]{0};
@@ -173,9 +182,22 @@ void load_libs(std::fstream &file, const wheader_t &header) {
   std::cout << "[i]: " << std::dec << fn_map.size() << " functions loaded." << std::endl;
 }
 
+void loadGraphicsModule(const std::string &path) {
+  std::cout << "[i]: loading GraphicsModule" << std::endl;
+  if (path.empty()) {
+    cache::GraphicsModulePtr = new IWylandGraphicsModule();
+  } else if ( !std::filesystem::exists(path)) {
+    std::cerr << "[e]: " << path << " no such file. Loading default GraphicsModule" << std::endl;
+    cache::GraphicsModulePtr = new IWylandGraphicsModule();
+  } else {
+    cache::GraphicsModulePtr = loadIExternalGraphicsModule(path);
+    std::cout << "[i]: new IExternalGraphicsModule loaded at: " << std::hex << reinterpret_cast<uintptr_t>(cache::GraphicsModulePtr) << std::endl; 
+  }
+}
+
 void run_core(core_base *base) {
   if (base == nullptr) {
-    std::cerr << "[e]: running with <*base> as invalid pointer." << std::endl;
+    std::cerr << "[e]: running with <base*> as invalid pointer." << std::endl;
     exit(-400);
   }
 
@@ -183,9 +205,7 @@ void run_core(core_base *base) {
   
   try {
     base->run();
-    delete memory;
-    cache::linked_funcs.clear();
-    cache::libraries.clear();
+    clear_ressources();
     return ;
   } catch (const std::invalid_argument& e) {
     std::cerr << "[e]: invalid argument exception caught at address 0x" 

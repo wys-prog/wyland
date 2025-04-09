@@ -52,19 +52,31 @@ typedef struct {
   uint32_t    version;
   bool        auto_targ;
   uint64_t    memory;
+  std::string GraphicsModulePath;
   /* In the future.. */
 } rt_task_t;
 
-rt_task_t task{.target = wtarg64, .version = WYLAND_VERSION_UINT32, .auto_targ = false, .memory = WYLAND_MEMORY_MINIMUM};
+rt_task_t task {
+  .target = wtarg64, 
+  .version = WYLAND_VERSION_UINT32, 
+  .auto_targ = false, 
+  .memory = WYLAND_MEMORY_MINIMUM,
+  .GraphicsModulePath = ""
+};
 
-void handle_arguments(const std::vector<std::string> &args, std::vector<std::string> &files) {
+void handle_arguments(std::vector<std::string> args, std::vector<std::string> &files) {
   for (size_t i = 0; i < args.size(); i++) {
+    args[i] = trim(args[i]);
     if (args[i] == "-auto") task.auto_targ = true;
     else if (args[i] == "-target") {
+      if (args.size() <= i + 1) { std::cerr << "[e]: excepted argument after " << args[i] << std::endl; wyland_exit(-1); }
       task.target = ofname(args[++i].c_str());
       std::cout << "[i]: target set to: " << task.target << " (" << args[i] << ")" << std::endl;
     } else if (args[i].starts_with("-memory:")) {
       task.memory = get_to_alloc(args[i]);
+    } else if (args[i] == "-GraphicsModule" || args[i] == "-gm") {
+      if (args.size() <= i + 1) { std::cerr << "[e]: excepted argument after " << args[i] << std::endl; wyland_exit(-1); }
+      task.GraphicsModulePath = args[i + 1];
     } else {
       files.push_back(args[i]);
     }
@@ -80,7 +92,7 @@ taskHandle version = [](std::vector<std::string>&) {
 };
 
 taskHandle build = [](std::vector<std::string>&) {
-  std::cout << WYLAND_MAJOR_BUILD << std::endl;
+  std::cout << WYLAND_BUILD_NAME << std::endl;
 };
 
 taskHandle target = [](std::vector<std::string>&) {
@@ -97,12 +109,12 @@ taskHandle target_info = [](std::vector<std::string>&) {
 taskHandle infos = [](std::vector<std::string>&) {
   std::cout << "name:\t\t" << WYLAND_NAME << "\n"
             << "version:\t" << WYLAND_VERSION "(" << WYLAND_VERSION_UINT32 << ")\n"
-            << "build:\t\t" << WYLAND_MAJOR_BUILD << "\n"
+            << "build:\t\t" << WYLAND_BUILD_NAME << "\n"
             << "targets:\t\n" 
-              "\t- wtarg64 (" << (wtarg64) << ")\n"
-              "\t- wtarg32 (" << (wtarg32) << ")\n"
-              "\t- wtargmarch (" << (wtargmarch) << ")\n"
-              "\t- wtargfast (" << (wtargfast) << ")\n"
+              "\t- wtarg64\t(" << (wtarg64) << ")\n"
+              "\t- wtarg32\t(" << (wtarg32) << ")\n"
+              "\t- wtargmarch\t(" << (wtargmarch) << ")\n"
+              "\t- wtargfast\t(" << (wtargfast) << ")\n"
   << std::endl;
 };
 
@@ -154,6 +166,7 @@ taskHandle run = [](std::vector<std::string> &args) {
     
     core_base *core = create_core_ptr(task.target);
     allocate_memory(task.memory);
+    loadGraphicsModule(task.GraphicsModulePath);
     
     if (!load_file(disk, header)) {
       delete core;
@@ -168,7 +181,7 @@ taskHandle run = [](std::vector<std::string> &args) {
     std::cout << "[i]: initializing object 0x" << std::hex << reinterpret_cast<uintptr_t>(core) << std::endl;
     core->init(
       SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START+SYSTEM_SEGMENT_SIZE, 
-      true, 0, &cache::linked_funcs, SYSTEM_SEGMENT_START
+      true, 0, &cache::linked_funcs, SYSTEM_SEGMENT_START, cache::GraphicsModulePtr
     );
     
     run_core(core);
@@ -200,6 +213,7 @@ taskHandle run_raw = [](std::vector<std::string> &args) {
     }
 
     allocate_memory(task.memory);
+    loadGraphicsModule(task.GraphicsModulePath);
 
     size_t i = 0;
     while (!disk.eof() && i < SYSTEM_SEGMENT_SIZE) {
@@ -220,7 +234,7 @@ taskHandle run_raw = [](std::vector<std::string> &args) {
 
     core->init(
       SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START+SYSTEM_SEGMENT_SIZE, 
-      true, 0, &cache::linked_funcs, SYSTEM_SEGMENT_START
+      true, 0, &cache::linked_funcs, SYSTEM_SEGMENT_START, cache::GraphicsModulePtr
     );
     run_core(core);
 
@@ -354,6 +368,8 @@ int wylandMain(int argc, char *const argv[]) {
     std::cerr << "[e]: Expected a task." << std::endl;
     return -1;
   }
+
+  std::cout << "=== Wyland " << WYLAND_VERSION << " : " << WYLAND_BUILD_NAME " ===" << std::endl;
 
   for (int i = 1; i < argc; i++) {
     std::string arg = argv[i];

@@ -114,7 +114,8 @@
     "*.ipp": "cpp",
     "rope": "cpp",
     "slist": "cpp",
-    "strstream": "cpp"
+    "strstream": "cpp",
+    "version": "cpp"
   },
   "terminal.integrated.profiles.osx": {
     "zsh (workspace)": {
