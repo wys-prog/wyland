@@ -192,9 +192,11 @@ void load_libs(std::fstream &file, const wheader_t &header) {
 void loadGraphicsModule(const std::string &path) {
   if (path.empty()) {
     cache::GraphicsModulePtr = new IWylandGraphicsModule();
-  } else if ( !std::filesystem::exists(path)) {
+  } else if (!std::filesystem::exists(path)) {
     std::cerr << "[e]: " << path << " no such file. Loading default GraphicsModule" << std::endl;
     cache::GraphicsModulePtr = new IWylandGraphicsModule();
+  } else if (path == "SDL" || "sdl") {
+    // TODO
   } else {
     cache::GraphicsModulePtr = loadIExternalGraphicsModule(path);
     std::cout << "[i]: new IExternalGraphicsModule loaded at: " << std::hex << reinterpret_cast<uintptr_t>(cache::GraphicsModulePtr) << std::endl; 
@@ -204,7 +206,7 @@ void loadGraphicsModule(const std::string &path) {
 WylandMMIOModule *loadMMIOModule(const std::string &path) {
   if (path.empty()) {
     return new WylandMMIOModule();
-  } else if ( !std::filesystem::exists(path)) {
+  } else if (!std::filesystem::exists(path)) {
     std::cerr << "[e]: " << path << " no such file. Loading default GraphicsModule" << std::endl;
     return new WylandMMIOModule();
   } else {
@@ -212,6 +214,8 @@ WylandMMIOModule *loadMMIOModule(const std::string &path) {
     std::cout << "[i]: new IExternalGraphicsModule loaded at: " << std::hex << reinterpret_cast<uintptr_t>(cache::GraphicsModulePtr) << std::endl; 
     return ptr;
   }
+
+  return new WylandMMIOModule();
 }
 
 void loadModules(const std::string &pathGraphics, const std::string &m1, const std::string &m2) {

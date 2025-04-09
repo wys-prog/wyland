@@ -345,7 +345,8 @@ public:
             bool _is_system, 
             uint64_t _name, 
             linkedfn_array *table, 
-            uint64_t base, IWylandGraphicsModule *_GraphicsModule) override {
+            uint64_t base, IWylandGraphicsModule *_GraphicsModule, 
+            WylandMMIOModule *m1, WylandMMIOModule *m2) override {
     beg = _memory_segment_begin;
     end = _memory_segment_end;
     ip  = beg;
@@ -359,6 +360,14 @@ public:
     if (_GraphicsModule == nullptr) {
       GraphicsModule = new IWylandGraphicsModule();
     } else GraphicsModule = _GraphicsModule;
+
+    if (m1 == nullptr) {
+      MMIOModule1 = new WylandMMIOModule();
+    } else MMIOModule1 = m1;
+
+    if (m2 == nullptr) {
+      MMIOModule2 = new WylandMMIOModule();
+    } else MMIOModule2 = m2;
 
     linked_functions = table;
 
@@ -407,6 +416,20 @@ public:
           "Unable to initialize <GraphicsModule*>", __func__ 
         );
       } else std::cout << "[i]: GraphicsModule initialized: " << GraphicsModule->name() << std::endl;
+
+      if (!MMIOModule1->init()) {
+        std::cerr << "[e]: unable to initialize <MMIOModule1*>" << std::endl;
+        throw MMIOModuleException(
+          "Unable to initialize <MMIOModule1*>", typeid(this).name() + std::string(__func__)
+        );
+      } else std::cout << "[i]: MMIOModule initialized: " << GraphicsModule->name() << std::endl;
+
+      if (!MMIOModule1->init()) {// (!MMIOModule2->init()) {
+        std::cerr << "[e]: unable to initialize <MMIOModule2*>" << std::endl;
+        throw MMIOModuleException(
+          "Unable to initialize <MMIOModule2*>", typeid(this).name() + std::string(__func__)
+        );
+      } else std::cout << "[i]: MMIOModule initialized: " << GraphicsModule->name() << std::endl;
     }
   }
 

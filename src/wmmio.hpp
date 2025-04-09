@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "wmmbase.hpp"
 #include "wyland-runtime/wylrt.h"
 
@@ -10,7 +12,7 @@ WYLAND_BEGIN
 class WylandMMIOModule {
 private: /* NOTHING ! HAHAHAHAHA */
 public:
-  virtual wbool init() {}
+  virtual wbool init() { return true; }
   virtual void shutdown() {}
   virtual std::string name() { return typeid(this).name(); }
   virtual void send_data(uint64_t) {} /* Only 64 bits/call. */
@@ -31,11 +33,11 @@ public:
   EMMIOFuncArgU64 Esend_data;
   EMMIOFuncSignU64 Ereceive_data;
 
-  wbool init() override {}
-  void shutdown() override {}
+  wbool init() override { return Einit(); }
+  void shutdown() override { Eshutdown(); }
   std::string name() override { return typeid(this).name(); }
-  void send_data(uint64_t) override {} /* Only 64 bits/call. */
-  uint64_t receive_data() override { return -1; }
+  void send_data(uint64_t data) override { Esend_data(data); }
+  uint64_t receive_data() override { return Ereceive_data(); }
 };
 
 WylandMMIOModule *loadIExternalMMIOModule(const std::string &path) {
@@ -65,5 +67,12 @@ WylandMMIOModule *loadIExternalMMIOModule(const std::string &path) {
 
   return module;
 }
+
+class MMIOModuleException : public runtime::wyland_runtime_error {
+public:
+  MMIOModuleException(const std::string &what, const std::string from) 
+    : runtime::wyland_runtime_error(what.c_str(), "MMIO Module Exception", from.c_str(), 
+    typeid(this).name(), -1, 0, NULL, NULL, -1) {}
+};
 
 WYLAND_END

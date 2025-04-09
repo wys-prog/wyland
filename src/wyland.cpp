@@ -191,7 +191,8 @@ taskHandle run = [](std::vector<std::string> &args) {
     std::cout << "[i]: initializing object 0x" << std::hex << reinterpret_cast<uintptr_t>(core) << std::endl;
     core->init(
       SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START+SYSTEM_SEGMENT_SIZE, 
-      true, 0, &cache::linked_funcs, SYSTEM_SEGMENT_START, cache::GraphicsModulePtr
+      true, 0, &cache::linked_funcs, SYSTEM_SEGMENT_START, cache::GraphicsModulePtr, 
+      cache::MMIOModule1Ptr, cache::MMIOModule2Ptr
     );
     
     run_core(core);
@@ -244,7 +245,8 @@ taskHandle run_raw = [](std::vector<std::string> &args) {
 
     core->init(
       SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START+SYSTEM_SEGMENT_SIZE, 
-      true, 0, &cache::linked_funcs, SYSTEM_SEGMENT_START, cache::GraphicsModulePtr
+      true, 0, &cache::linked_funcs, SYSTEM_SEGMENT_START, cache::GraphicsModulePtr, 
+      cache::MMIOModule1Ptr, cache::MMIOModule2Ptr
     );
     run_core(core);
 
