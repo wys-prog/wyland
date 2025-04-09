@@ -25,7 +25,7 @@ public:
   virtual ~IWylandGraphicsModule() {}
   virtual wbool init(wint width, wint height, const std::string &title) { return wyland_true; }
   virtual void shutdown() {}
-  virtual void process(wfloat delta, wpacked_frame *frame) {} // Godot style !
+  virtual void process(wfloat delta) {} // Godot style !
   virtual void render() {}
   virtual wbool should_close() { return wyland_false; }
   virtual std::string name() { return typeid(this).name(); }

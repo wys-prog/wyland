@@ -53,6 +53,8 @@ typedef struct {
   bool        auto_targ;
   uint64_t    memory;
   std::string GraphicsModulePath;
+  std::string Module1Path;
+  std::string Module2Path;
   /* In the future.. */
 } rt_task_t;
 
@@ -61,7 +63,9 @@ rt_task_t task {
   .version = WYLAND_VERSION_UINT32, 
   .auto_targ = false, 
   .memory = WYLAND_MEMORY_MINIMUM,
-  .GraphicsModulePath = ""
+  .GraphicsModulePath = "",
+  .Module1Path = "", 
+  .Module2Path = "",
 };
 
 void handle_arguments(std::vector<std::string> args, std::vector<std::string> &files) {
@@ -76,7 +80,13 @@ void handle_arguments(std::vector<std::string> args, std::vector<std::string> &f
       task.memory = get_to_alloc(args[i]);
     } else if (args[i] == "-GraphicsModule" || args[i] == "-gm") {
       if (args.size() <= i + 1) { std::cerr << "[e]: excepted argument after " << args[i] << std::endl; wyland_exit(-1); }
-      task.GraphicsModulePath = args[i + 1];
+      task.GraphicsModulePath = args[++i];
+    } else if (args[i] == "-module1" || args[i] == "-m1") {
+      if (args.size() <= i + 1) { std::cerr << "[e]: excepted argument after " << args[i] << std::endl; wyland_exit(-1); }
+      task.Module1Path = args[++i];
+    } else if (args[i] == "-module2" || args[i] == "-m2") {
+      if (args.size() <= i + 1) { std::cerr << "[e]: excepted argument after " << args[i] << std::endl; wyland_exit(-1); }
+      task.Module2Path = args[++i];
     } else {
       files.push_back(args[i]);
     }
@@ -166,7 +176,7 @@ taskHandle run = [](std::vector<std::string> &args) {
     
     core_base *core = create_core_ptr(task.target);
     allocate_memory(task.memory);
-    loadGraphicsModule(task.GraphicsModulePath);
+    loadModules(task.GraphicsModulePath, task.Module1Path, task.Module2Path);
     
     if (!load_file(disk, header)) {
       delete core;
@@ -213,7 +223,7 @@ taskHandle run_raw = [](std::vector<std::string> &args) {
     }
 
     allocate_memory(task.memory);
-    loadGraphicsModule(task.GraphicsModulePath);
+    loadModules(task.GraphicsModulePath, task.Module1Path, task.Module2Path);
 
     size_t i = 0;
     while (!disk.eof() && i < SYSTEM_SEGMENT_SIZE) {

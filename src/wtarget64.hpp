@@ -30,8 +30,7 @@
 #include "wtargb.hpp"
 
 #include "interfaces/interface.hpp"
-
-#include "mmiodeque.hpp"
+#include "wmmio.hpp"
 
 WYLAND_BEGIN
 
@@ -54,8 +53,8 @@ protected:
   std::mutex mtx;
   std::condition_variable cv;
   IWylandGraphicsModule *GraphicsModule;
-  wpacked_frame frame_buffer;
-
+  WylandMMIOModule      *MMIOModule1;
+  WylandMMIOModule      *MMIOModule2;
 
   /* Deprecated ! */
   std::unordered_map<uint64_t, libcallc::DynamicLibrary> libs;
@@ -314,10 +313,31 @@ protected:
   }
 
   void ipushmmio() { /* New in std:wy2.5 ! */
-    
+    auto index = read();
+    auto bytes = read<uint64_t>();
+    switch (index) {
+      case 0: GraphicsModule->send_data(bytes); break;
+      case 1: MMIOModule1->send_data(bytes); break;
+      case 2: MMIOModule2->send_data(bytes); break;
+      default: 
+        throw std::runtime_error("somewhere::ipushmmio(): given index is invalid (from 0 to 2 only is valid): " + std::to_string(index));
+        break;
+    }
   }
 
-  setfunc_t set[28];
+  void ipopmmio() { /* New in std:wy2.5 ! */
+    auto index = read();
+    switch (index) {
+      case 0: regs.set(R_POP_MMIO, GraphicsModule->receive_data()); break; /* ... What would you like to recive from.. That ? */
+      case 1: regs.set(R_POP_MMIO, MMIOModule1->receive_data()); break;
+      case 2: regs.set(R_POP_MMIO, MMIOModule2->receive_data()); break;
+      default: 
+        throw std::runtime_error("somewhere::ipushmmio(): given index is invalid (from 0 to 2 only is valid): " + std::to_string(index));
+        break;
+    }
+  }
+
+  setfunc_t set[29];
 
 public:
   void init(uint64_t _memory_segment_begin, 
@@ -369,6 +389,8 @@ public:
     set[set_wtarg64::wthrow] = &corewtarg64::iwthrow;
     set[set_wtarg64::clfn] = &corewtarg64::iclfn;
     set[set_wtarg64::empl] = &corewtarg64::iemplace;
+    set[set_wtarg64::push_mmio] = &corewtarg64::ipushmmio;
+    set[set_wtarg64::pop_mmio] = &corewtarg64::ipopmmio;
 
     /* Initialize the core, with some "basic" values. */
 
@@ -410,7 +432,7 @@ public:
 
       wyland_uint key = get_key();
       if (key)  {
-        regs.set(REG_KEY, key);
+        regs.set(REG_KEY, key); // What are you looking for ?
       }
       
       if (fetched >= sizeof(set) / sizeof(set[0])) {
@@ -429,7 +451,7 @@ public:
         (this->*set[fetched])();
         auto now = std::chrono::high_resolution_clock::now();
         std::chrono::duration<float> delta = now - last;
-        GraphicsModule->process(float_to_wfloat(delta.count()), &frame_buffer);
+        GraphicsModule->process(float_to_wfloat(delta.count()));
         GraphicsModule->render();
         last = now;
         if (GraphicsModule->should_close()) halted = true;

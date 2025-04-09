@@ -27,7 +27,6 @@ typedef void (*IEGMFuncProcess)(wfloat);
 typedef wbool (*IEGMFuncSignBool)(void);
 typedef wbool (*IEGMFuncInit)(wint, wint, const char*);
 typedef const char *(*IEGMFuncName)();
-typedef void (*IEGMFuncSetFlags)(wuchar*, wulong);
 
 
 class IExternalGraphicsModule : public IWylandGraphicsModule {
@@ -38,10 +37,8 @@ public:
   IEGMFuncSignBool Eshould_close;
   IEGMFuncProcess  Eprocess;
   IEGMFuncName     Ename;
-  IEGMFuncSetFlags Eset;
   
   wbool init(wint width, wint height, const std::string &title) override {
-    Eset(memory_begin, memory_size);
     return Einit(width, height, title.c_str());
   }
   
@@ -65,12 +62,12 @@ IExternalGraphicsModule *loadIExternalGraphicsModule(const std::string &path) {
   module->Eshould_close = reinterpret_cast<IEGMFuncSignBool>(DynamicLibraryFunc(handle, "Eshould_close"));
   module->Eprocess = reinterpret_cast<IEGMFuncProcess>(DynamicLibraryFunc(handle, "Eprocess"));
   module->Ename = reinterpret_cast<IEGMFuncName>(DynamicLibraryFunc(handle, "Ename"));
-  module->Eset = reinterpret_cast<IEGMFuncSetFlags>(DynamicLibraryFunc(handle, "Eset"));
 
   if (!module->Eshutdown || !module->Erender || !module->Einit || 
-      !module->Eshould_close || !module->Eprocess || !module->Ename || !module->Eset) {
+      !module->Eshould_close || !module->Eprocess || !module->Ename) {
     std::cerr << "Failed to load one or more symbols from: " << path << "what(): " << DynamicLibraryError() << std::endl;
     delete module;
+    DynamicLibraryFree(handle);
     return nullptr;
   }
 

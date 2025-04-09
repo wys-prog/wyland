@@ -10,6 +10,8 @@
 
 #include "sock2.h"
 
+/* Why did i started to code this fucking project ? */
+
 typedef struct {
   uint8_t  certificat[3];
   uint16_t target;

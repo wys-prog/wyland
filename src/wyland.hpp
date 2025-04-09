@@ -31,14 +31,17 @@
 #include "wfiles.h"
 #include "wtargb.hpp"
 #include "interfaces/exInterface.hpp"
+#include "wmmio.hpp"
 #include "wyland.h"
 
 WYLAND_BEGIN
 
 namespace cache {
   boost::container::flat_map<uint32_t, libcallc::DynamicLibrary::FunctionType> linked_funcs{};
-  std::vector<libcallc::DynamicLibrary> libraries;
-  IWylandGraphicsModule *GraphicsModulePtr;
+  std::vector<libcallc::DynamicLibrary> libraries{};
+  IWylandGraphicsModule *GraphicsModulePtr = nullptr;
+  WylandMMIOModule      *MMIOModule1Ptr = nullptr;
+  WylandMMIOModule      *MMIOModule2Ptr = nullptr;
 }
 
 void clear_ressources() {
@@ -46,8 +49,12 @@ void clear_ressources() {
   cache::libraries.clear();
   delete memory;
   delete cache::GraphicsModulePtr;
+  delete cache::MMIOModule1Ptr;
+  delete cache::MMIOModule2Ptr;
   memory = nullptr;
   cache::GraphicsModulePtr = nullptr;
+  cache::MMIOModule1Ptr = nullptr;
+  cache::MMIOModule2Ptr = nullptr;
 }
 
 void wyland_exit(int _code = 0) {
@@ -183,7 +190,6 @@ void load_libs(std::fstream &file, const wheader_t &header) {
 }
 
 void loadGraphicsModule(const std::string &path) {
-  std::cout << "[i]: loading GraphicsModule" << std::endl;
   if (path.empty()) {
     cache::GraphicsModulePtr = new IWylandGraphicsModule();
   } else if ( !std::filesystem::exists(path)) {
@@ -193,6 +199,25 @@ void loadGraphicsModule(const std::string &path) {
     cache::GraphicsModulePtr = loadIExternalGraphicsModule(path);
     std::cout << "[i]: new IExternalGraphicsModule loaded at: " << std::hex << reinterpret_cast<uintptr_t>(cache::GraphicsModulePtr) << std::endl; 
   }
+}
+
+WylandMMIOModule *loadMMIOModule(const std::string &path) {
+  if (path.empty()) {
+    return new WylandMMIOModule();
+  } else if ( !std::filesystem::exists(path)) {
+    std::cerr << "[e]: " << path << " no such file. Loading default GraphicsModule" << std::endl;
+    return new WylandMMIOModule();
+  } else {
+    auto ptr = loadIExternalMMIOModule(path);
+    std::cout << "[i]: new IExternalGraphicsModule loaded at: " << std::hex << reinterpret_cast<uintptr_t>(cache::GraphicsModulePtr) << std::endl; 
+    return ptr;
+  }
+}
+
+void loadModules(const std::string &pathGraphics, const std::string &m1, const std::string &m2) {
+  loadGraphicsModule(pathGraphics);
+  cache::MMIOModule1Ptr = loadMMIOModule(m1);
+  cache::MMIOModule2Ptr = loadMMIOModule(m2);
 }
 
 void run_core(core_base *base) {

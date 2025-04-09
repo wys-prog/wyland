@@ -60,6 +60,8 @@ enum set_wtarg64 {
   wthrow, 
   clfn, // Call Linked Function, std:wy2.4
   empl,
+  push_mmio, 
+  pop_mmio,
 };
 
 enum set_wtargmarch {
