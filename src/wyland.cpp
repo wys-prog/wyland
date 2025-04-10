@@ -381,7 +381,7 @@ int wylandMain(int argc, char *const argv[]) {
     return -1;
   }
 
-  std::cout << "=== Wyland " << WYLAND_VERSION << " : " << WYLAND_BUILD_NAME " ===" << std::endl;
+  std::cout << "========= Wyland " << WYLAND_VERSION << " : " << WYLAND_BUILD_NAME " =========" << std::endl;
 
   for (int i = 1; i < argc; i++) {
     std::string arg = argv[i];

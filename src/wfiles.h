@@ -48,19 +48,18 @@ wheader_t wyland_files_make_header(const wblock *block) {
   return header;
 }
 
-
 const char *wyland_files_header_fmt(const wheader_t *header) {
   static char buffer[256];
   snprintf(buffer, sizeof(buffer),
            "Certificate:\t%c%c%c\n"
            "Target:\t\t%u (%s)\n"
-           "Version:\t%u\n"
+           "Version:\t%u (%s)\n"
            "Code Address:\t0x%016llX\n"
            "Data Address:\t0x%016llX\n"
            "Lib Address:\t0x%016llX\n",
            header->certificat[0], header->certificat[1], header->certificat[2],
-           header->target, nameof(header->target),
-           header->version,
+           header->target, nameof(header->target), 
+           header->version, (header->version <= WYLAND_VERSION_UINT32 ? "supported" : "unsopported"),
            header->code,
            header->data,
            header->lib);
