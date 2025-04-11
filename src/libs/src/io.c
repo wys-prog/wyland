@@ -69,6 +69,7 @@ wyland_extern(wyland_close, flags) {
 
 wyland_extern(wyland_get_stdout, flags) {
   // Returns a pointer to stdout
+  printf("[c]: writing STDOUT's handle in QMM0\n");
   *flags->regspointer->r64[0] = (wyland_ulong)stdout;
 }
 

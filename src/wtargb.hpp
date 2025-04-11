@@ -20,7 +20,7 @@ namespace wylma {
       virtual uint64_t get_ip() { return 0; }
       virtual void run_step() { }
       virtual void step_break_point() { } /* Will read until he don't finds '0xFE' */
-      
+      virtual void run_debug(int) { }
       virtual ~core_base() { /* Mouehehehehehehhehhehe destroy... This. */ }
     };
   }

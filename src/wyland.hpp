@@ -119,7 +119,7 @@ bool load_file(std::fstream &file, const wheader_t &header) {
   return true;
 }
 
-void load_libs(std::fstream &file, const wheader_t &header) {
+void load_libs(std::fstream &file, const wheader_t &header, bool fmt_names = true) {
   file.seekg(header.lib);
   if (!file.good()) {
     std::cerr << "[e]: failed to seek to `lib` position in disk file." << std::endl;
@@ -145,6 +145,8 @@ void load_libs(std::fstream &file, const wheader_t &header) {
 
     std::string libname = fullname.substr(0, libend) + LIB_EXT;
     std::string funcsname = fullname.substr(libend + 1);
+
+    if (fmt_names) libname = format(libname);
     
     if (!std::filesystem::exists(libname)) {
       std::cerr << "[e]: library `" << libname << "`: no such file." << std::endl;
@@ -163,7 +165,7 @@ void load_libs(std::fstream &file, const wheader_t &header) {
         if (parts.size() > 2) throw std::invalid_argument("invalid format. Function format must be <x:str>, where x is the ID (an integer) and str the name of the function.");
         auto id = std::stoll(parts[0]);
         cache::linked_funcs.insert({id, cache::libraries[cache::libraries.size()].loadFunction(parts[1].c_str())});
-        std::cout << "[i]: loaded function `" << func << "` from `" << libname << "`" << std::endl;
+        std::cout << "[i]: loaded from `" << libname << "`: `" << func << "`" << std::endl;
       } catch (const std::runtime_error &e) {
         std::cerr << "[e]: " << e.what() << std::endl;
         continue;
@@ -224,7 +226,7 @@ void loadModules(const std::string &pathGraphics, const std::string &m1, const s
   cache::MMIOModule2Ptr = loadMMIOModule(m2);
 }
 
-void run_core(core_base *base) {
+void run_core(core_base *base, bool debug = false, int max = -1) {
   if (base == nullptr) {
     std::cerr << "[e]: running with <base*> as invalid pointer." << std::endl;
     exit(-400);
@@ -233,7 +235,8 @@ void run_core(core_base *base) {
   std::cout << "[i]: running core at 0x" << std::hex << reinterpret_cast<uintptr_t>(base) << std::endl;
   
   try {
-    base->run();
+    if (debug) base->run_debug(max);
+    else base->run();
     clear_ressources();
     return ;
   } catch (const std::invalid_argument& e) {

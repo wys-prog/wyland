@@ -1,5 +1,6 @@
 import os
 import argparse
+import codecs  # Add this import to handle escape sequences
 
 # Set up argument parser
 parser = argparse.ArgumentParser(description="Symbol viewer for binary files.")
@@ -7,6 +8,36 @@ parser.add_argument("file", help="Path to the binary file to analyze.")
 parser.add_argument("origin", help="Origin address (e.g., 0x1000).")
 parser.add_argument("-o", "--output", help="Path to the output file (optional).", default=None)
 args = parser.parse_args()
+
+instruction_set = {
+    'nop': 0,
+    'lea': 1,
+    'load': 2,
+    'store': 3,
+    'mov': 4,
+    'add': 5,
+    'sub': 6,
+    'mul': 7,
+    'div': 8,
+    'mod': 9,
+    'jmp': 10,
+    'je': 11,
+    'jne': 12,
+    'jl': 13,
+    'jg': 14,
+    'jle': 15,
+    'jge': 16,
+    'cmp': 17,
+    'int': 18,
+    'syscall': 18,
+    'loadat': 19,
+    'ret': 20,
+    'movad': 21,
+    'sal': 22,
+    'sar': 23,
+    'wthrow': 24,
+    'clfn': 25,
+}
 
 # Parse the origin
 try:
@@ -66,7 +97,8 @@ with open(args.file, 'rb') as usrin:
                     string_bytes.append(char[0])
                 try:
                     decoded_string = string_bytes.decode('utf-8')
-                    line = f'0x{org + i:08X}: 0xFE ("{decoded_string}", {len(decoded_string)})\n'
+                    readable_string = codecs.encode(decoded_string, 'unicode_escape').decode('utf-8')  # Replace escape characters
+                    line = f'0x{org + i:08X}: 0xFE ("{readable_string}", {len(decoded_string)})\n'
                 except UnicodeDecodeError:
                     line = f'0x{org + i:08X}: 0xFE (invalid string)\n'
                 if output:
@@ -77,7 +109,11 @@ with open(args.file, 'rb') as usrin:
                 continue
 
         # Default case: print the byte
-        line = f'0x{org + i:08X}: 0x{byte.hex().upper()}\n'
+        line = f'0x{org + i:08X}: 0x{byte.hex().upper()}'
+        if byte_value in instruction_set.values():  # Check if byte matches a known instruction
+            instruction_name = [k for k, v in instruction_set.items() if v == byte_value][0]
+            line += f' ({instruction_name})'
+        line += '\n'
         if output:
             output.write(line)
         else:

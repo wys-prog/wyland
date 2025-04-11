@@ -55,6 +55,8 @@ typedef struct {
   std::string GraphicsModulePath;
   std::string Module1Path;
   std::string Module2Path;
+  int         max_cycles;
+  bool        format_libs_name;
   /* In the future.. */
 } rt_task_t;
 
@@ -66,6 +68,8 @@ rt_task_t task {
   .GraphicsModulePath = "",
   .Module1Path = "", 
   .Module2Path = "",
+  .max_cycles = -1,
+  .format_libs_name = true,
 };
 
 void handle_arguments(std::vector<std::string> args, std::vector<std::string> &files) {
@@ -87,9 +91,86 @@ void handle_arguments(std::vector<std::string> args, std::vector<std::string> &f
     } else if (args[i] == "-module2" || args[i] == "-m2") {
       if (args.size() <= i + 1) { std::cerr << "[e]: excepted argument after " << args[i] << std::endl; wyland_exit(-1); }
       task.Module2Path = args[++i];
+    } else if (args[i] == "-max" || args[i] == "-max-cycles") {
+      if (args.size() <= i + 1) { std::cerr << "[e]: expected argument after " << args[i] << std::endl; wyland_exit(-1); }
+      try { 
+        task.max_cycles = std::stoi(args[++i]); 
+        std::cout << "[i]: max cycle count set to: " << std::dec << task.max_cycles << std::endl;
+      } catch (...) {
+        std::cerr << "[e]: invalid format for " << args[i] << std::endl;
+        wyland_exit(-1);
+      }
+    } else if (args[i] == "-fmt-libs-false" || args[i] == "-nofmtlibs") {
+      task.format_libs_name = false;
     } else {
       files.push_back(args[i]);
     }
+  }
+}
+
+void run_base_function(std::vector<std::string> &args, bool debug = false) {
+  if (args.size() == 0) {
+    std::cerr << "[e]: " << std::invalid_argument("Expected <x> disk after -run token.").what() << std::endl;
+    wyland_exit(-1);
+  }
+
+  std::vector<std::string> files;
+  handle_arguments(args, files);
+
+  if (!debug && task.max_cycles == -1) std::cerr << "[w]: ignoring -max argument: only in debug mode" << std::endl;
+
+  for (const auto&file:files) {
+    std::fstream disk(file);
+
+    if (!disk) {
+      std::cerr << "[e]: Unable to open disk file: " << file << std::endl;
+      wyland_exit(-1);
+    }
+  
+    wblock *block = new wblock;
+    disk.read((char*)block->array, sizeof(block->array));
+    auto header = wyland_files_make_header(block);
+    
+    if (task.auto_targ) task.target = header.target;
+    
+    
+    if (!wyland_files_parse(&header, task.target, task.version)) {
+      std::cerr << "[e]: " << std::invalid_argument("Invalid header file.").what() << std::endl;
+      std::cout << "Extracted header:\n" << wyland_files_header_fmt(&header) << std::endl;
+      
+      wyland_exit(-1);
+    }
+    
+    load_libs(disk, header, task.format_libs_name);
+    
+    delete block;
+    
+    core_base *core = create_core_ptr(task.target);
+    allocate_memory(task.memory);
+    loadModules(task.GraphicsModulePath, task.Module1Path, task.Module2Path);
+    
+    if (!load_file(disk, header)) {
+      delete core;
+      wyland_exit(-1);
+    }
+  
+    if (core == nullptr) {
+      std::cerr << "[e]: *core is a bad pointer." << std::endl;
+      wyland_exit(-400);
+    }
+
+    std::cout << "[i]: initializing object 0x" << std::hex << reinterpret_cast<uintptr_t>(core) << std::endl;
+    core->init(
+      SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START+SYSTEM_SEGMENT_SIZE, 
+      true, 0, &cache::linked_funcs, SYSTEM_SEGMENT_START, cache::GraphicsModulePtr, 
+      cache::MMIOModule1Ptr, cache::MMIOModule2Ptr
+    );
+    
+    run_core(core, debug, task.max_cycles);
+  
+    delete core;
+
+    wyland_exit();
   }
 }
 
@@ -140,67 +221,7 @@ taskHandle set_target = [](std::vector<std::string> &args) {
 };
 
 taskHandle run = [](std::vector<std::string> &args) {
-  if (args.size() == 0) {
-    std::cerr << "[e]: " << std::invalid_argument("Expected <x> disk after -run token.").what() << std::endl;
-    wyland_exit(-1);
-  }
-
-  std::vector<std::string> files;
-  handle_arguments(args, files);
-
-  for (const auto&file:files) {
-    std::fstream disk(file);
-
-    if (!disk) {
-      std::cerr << "[e]: Unable to open disk file: " << file << std::endl;
-      wyland_exit(-1);
-    }
-  
-    wblock *block = new wblock;
-    disk.read((char*)block->array, sizeof(block->array));
-    auto header = wyland_files_make_header(block);
-    
-    if (task.auto_targ) task.target = header.target;
-    
-    
-    if (!wyland_files_parse(&header, task.target, task.version)) {
-      std::cerr << "[e]: " << std::invalid_argument("Invalid header file.").what() << std::endl;
-      std::cout << "Extracted header:\n" << wyland_files_header_fmt(&header) << std::endl;
-      
-      wyland_exit(-1);
-    }
-    
-    load_libs(disk, header);
-    
-    delete block;
-    
-    core_base *core = create_core_ptr(task.target);
-    allocate_memory(task.memory);
-    loadModules(task.GraphicsModulePath, task.Module1Path, task.Module2Path);
-    
-    if (!load_file(disk, header)) {
-      delete core;
-      wyland_exit(-1);
-    }
-  
-    if (core == nullptr) {
-      std::cerr << "[e]: *core is a bad pointer." << std::endl;
-      wyland_exit(-400);
-    }
-
-    std::cout << "[i]: initializing object 0x" << std::hex << reinterpret_cast<uintptr_t>(core) << std::endl;
-    core->init(
-      SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START+SYSTEM_SEGMENT_SIZE, 
-      true, 0, &cache::linked_funcs, SYSTEM_SEGMENT_START, cache::GraphicsModulePtr, 
-      cache::MMIOModule1Ptr, cache::MMIOModule2Ptr
-    );
-    
-    run_core(core);
-  
-    delete core;
-
-    wyland_exit();
-  }
+  run_base_function(args, false);
 };
 
 taskHandle run_raw = [](std::vector<std::string> &args) {
@@ -348,6 +369,10 @@ taskHandle make_disk = [](std::vector<std::string> &args) {
   std::cout << "Saved to: " << args[0] << std::endl;
 };
 
+taskHandle debug = [](std::vector<std::string> &args) {
+  run_base_function(args, true);
+};
+
 std::unordered_map<std::string, taskHandle> handles {
   {"--v", version},
   {"--version", version},
@@ -366,8 +391,8 @@ std::unordered_map<std::string, taskHandle> handles {
   {"-run-raw", run_raw},
   {"-make-disk", make_disk},
   {"-build-disk", make_disk}, 
+  {"-debug", debug},
   //{"-parse", parse},
-  //{"-debug", debug},
   //{"-new-env", new_env},
   // Future tasks (Maybe in the std:wy4 standard !)
   //{"-compile", compile},

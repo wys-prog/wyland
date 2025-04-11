@@ -83,7 +83,8 @@ protected:
   }
 
   void imov() {
-    regs.set(regs.get(read()), read()); 
+    auto r1 = read(), r2 = read();
+    regs.set(r1, regs.get(r2)); 
   };
 
   void iadd() {
@@ -233,7 +234,7 @@ protected:
     if (at >= HARDWARE_SEGMENT_START) segments::keyboard_reserved = false;
   }
 
-  void iret() { ip = regs.get(63); }
+  void iret() { ip = regs.get(R_RET); }
 
   void imovad() {
     auto a = read(), b = read();
@@ -422,14 +423,14 @@ public:
         throw MMIOModuleException(
           "Unable to initialize <MMIOModule1*>", typeid(this).name() + std::string(__func__)
         );
-      } else std::cout << "[i]: MMIOModule initialized: " << GraphicsModule->name() << std::endl;
+      } else std::cout << "[i]: MMIOModule initialized: " << MMIOModule1->name() << std::endl;
 
-      if (!MMIOModule1->init()) {// (!MMIOModule2->init()) {
+      if (!MMIOModule2->init()) {
         std::cerr << "[e]: unable to initialize <MMIOModule2*>" << std::endl;
         throw MMIOModuleException(
           "Unable to initialize <MMIOModule2*>", typeid(this).name() + std::string(__func__)
         );
-      } else std::cout << "[i]: MMIOModule initialized: " << GraphicsModule->name() << std::endl;
+      } else std::cout << "[i]: MMIOModule initialized: " << MMIOModule2->name() << std::endl;
     }
   }
 
@@ -540,7 +541,17 @@ public:
         throw runtime::wyland_runtime_error(e.what(), e.name(), e.caller(), typeid(e).name(), ip, thread_id, NULL, NULL, end-beg);
       } 
     }
+  }  
+
+  void run_debug(int max_step = -1) override {
+    int i = 0;
+    while (!halted && i < max_step) {
+      std::cout << "[d]: 0x" << std::setw(16) << std::setfill('0') << std::hex << ip << ": " << (int)memory[base_address + local_ip] << std::endl;
+      run_step();
+      if (max_step != -1) i++;
+    }
   }
+
 };
 
 WYLAND_END
