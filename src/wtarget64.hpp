@@ -487,6 +487,8 @@ public:
     }
 
     GraphicsModule->shutdown();
+    MMIOModule1->shutdown();
+    MMIOModule2->shutdown();
 
     {
       std::unique_lock<std::mutex> lock(mtx);
@@ -540,6 +542,12 @@ public:
       } catch (const runtime::wyland_runtime_error &e) {
         throw runtime::wyland_runtime_error(e.what(), e.name(), e.caller(), typeid(e).name(), ip, thread_id, NULL, NULL, end-beg);
       } 
+    }
+
+    if (halted) {
+      GraphicsModule->shutdown();
+      MMIOModule1->shutdown();
+      MMIOModule2->shutdown();
     }
   }  
 

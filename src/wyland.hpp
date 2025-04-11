@@ -47,6 +47,8 @@ namespace cache {
 void clear_ressources() {
   cache::linked_funcs.clear();
   cache::libraries.clear();
+  cache::IExternalGraphicsModuleHandles.clear();
+  cache::WylandMMIOModuleHandles.clear();
   delete memory;
   delete cache::GraphicsModulePtr;
   delete cache::MMIOModule1Ptr;

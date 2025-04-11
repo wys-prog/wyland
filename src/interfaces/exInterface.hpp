@@ -28,6 +28,9 @@ typedef wbool (*IEGMFuncSignBool)(void);
 typedef wbool (*IEGMFuncInit)(wint, wint, const char*);
 typedef const char *(*IEGMFuncName)();
 
+namespace cache {
+  std::vector<DynamicLibraryHandle> IExternalGraphicsModuleHandles{};
+}
 
 class IExternalGraphicsModule : public IWylandGraphicsModule {
 public:
@@ -71,7 +74,7 @@ IExternalGraphicsModule *loadIExternalGraphicsModule(const std::string &path) {
     return nullptr;
   }
 
-  DynamicLibraryFree(handle);
+  cache::IExternalGraphicsModuleHandles.push_back(handle);
 
   return module;
 }

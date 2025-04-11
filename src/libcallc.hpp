@@ -26,11 +26,13 @@
 #define DynamicLibraryError() GetLastError()
 #define DynamicLibraryFunc(h, n) GetProcAddress(static_cast<HMODULE>(h), n)
 #define DynamicLibraryFree(h) FreeLibrary(static_cast<HMODULE>(h))
+#define DynamicLibraryHandle HMODULE
 #else 
 #define DynamicLibraryLoad(x) dlopen(x, RTLD_LAZY)
 #define DynamicLibraryError() dlerror()
 #define DynamicLibraryFunc(h, n) dlsym(h, n) 
 #define DynamicLibraryFree(h) dlclose(h);
+#define DynamicLibraryHandle void*
 #endif // WIN ?
 
 namespace wylma {

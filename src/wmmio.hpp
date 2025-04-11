@@ -9,21 +9,25 @@
 
 WYLAND_BEGIN
 
+namespace cache {
+  std::vector<DynamicLibraryHandle> WylandMMIOModuleHandles{};
+}
+
 class WylandMMIOModule {
 private: /* NOTHING ! HAHAHAHAHA */
 public:
   virtual wbool init() { return true; }
   virtual void shutdown() {}
   virtual std::string name() { return typeid(this).name(); }
-  virtual void send_data(uint64_t) {} /* Only 64 bits/call. */
-  virtual uint64_t receive_data() { return -1; }
+  virtual void send_data(wulong) {} /* Only 64 bits/call. */
+  virtual wulong receive_data() { return -1; }
 };
 
 typedef wbool (*EMMIOFuncSingBool)(void);
 typedef void (*EMMIOFunc)(void);
 typedef const char *(*EMMIOFuncSignStr)(void);
-typedef void (*EMMIOFuncArgU64)(uint64_t);
-typedef uint64_t (*EMMIOFuncSignU64)(void);
+typedef void (*EMMIOFuncArgU64)(wulong);
+typedef wulong (*EMMIOFuncSignU64)(void);
 
 class IWylandMMIOExternalModule : public WylandMMIOModule {
 public:
@@ -36,8 +40,8 @@ public:
   wbool init() override { return Einit(); }
   void shutdown() override { Eshutdown(); }
   std::string name() override { return typeid(this).name(); }
-  void send_data(uint64_t data) override { Esend_data(data); }
-  uint64_t receive_data() override { return Ereceive_data(); }
+  void send_data(wulong data) override { Esend_data(data); }
+  wulong receive_data() override { return Ereceive_data(); }
 };
 
 WylandMMIOModule *loadIExternalMMIOModule(const std::string &path) {
@@ -63,7 +67,7 @@ WylandMMIOModule *loadIExternalMMIOModule(const std::string &path) {
     return nullptr;
   }
 
-  DynamicLibraryFree(handle);
+  cache::WylandMMIOModuleHandles.push_back(handle);
 
   return module;
 }
