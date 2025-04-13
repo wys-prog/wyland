@@ -72,13 +72,13 @@ set(BUILD_ID_FILE "${DATA_DIR}/build_id.txt")
 set(VERSION_HEADER "${DATA_DIR}/wyland_version.h")
 set(SCRIPT "${CMAKE_SOURCE_DIR}/scripts/increment_build.py")
 
-#add_custom_command(
-#    OUTPUT ${VERSION_HEADER}
-#    #COMMAND ${CMAKE_COMMAND} -E echo ">> Creating something idk..."
-#    COMMAND python3 ${SCRIPT} ${BUILD_ID_FILE} ${VERSION_HEADER}
-#    DEPENDS ${SCRIPT}
-#    COMMENT "Incrementing build version"
-#)
+add_custom_command(
+    OUTPUT ${VERSION_HEADER}
+    #COMMAND ${CMAKE_COMMAND} -E echo ">> Creating something idk..."
+    COMMAND python3 ${SCRIPT} ${BUILD_ID_FILE} ${VERSION_HEADER}
+    DEPENDS ${SCRIPT}
+    COMMENT "Incrementing build version"
+)
 
 add_custom_target(run_version_script ALL
     COMMAND python3 ${SCRIPT} ${BUILD_ID_FILE} ${VERSION_HEADER}
