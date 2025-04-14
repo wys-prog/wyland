@@ -21,6 +21,7 @@ public:
   virtual std::string name() { return typeid(this).name(); }
   virtual void send_data(wulong) {} /* Only 64 bits/call. */
   virtual wulong receive_data() { return -1; }
+  virtual ~WylandMMIOModule() {}
 };
 
 typedef wbool (*EMMIOFuncSingBool)(void);
@@ -42,6 +43,7 @@ public:
   std::string name() override { return typeid(this).name(); }
   void send_data(wulong data) override { Esend_data(data); }
   wulong receive_data() override { return Ereceive_data(); }
+  // Destructor is not needed in this one, because... WHY USE wylma::wyland::cache !!!! 
 };
 
 WylandMMIOModule *loadIExternalMMIOModule(const std::string &path) {

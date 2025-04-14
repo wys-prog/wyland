@@ -32,6 +32,7 @@
 #include "wtargb.hpp"
 #include "interfaces/exInterface.hpp"
 #include "wmmio.hpp"
+#include "wmutiles.hpp"
 #include "wyland.h"
 
 WYLAND_BEGIN
@@ -48,10 +49,10 @@ namespace cache {
 }
 
 void clear_ressources() {
-  cache::linked_funcs.clear();
-  cache::libraries.clear();
-  cache::IExternalGraphicsModuleHandles.clear();
-  cache::WylandMMIOModuleHandles.clear();
+  destroy(cache::linked_funcs);
+  destroy(cache::libraries);
+  destroy(cache::IExternalGraphicsModuleHandles);
+  destroy(cache::WylandMMIOModuleHandles);
   delete memory;
   delete cache::GraphicsModulePtr;
   delete cache::MMIOModule1Ptr;

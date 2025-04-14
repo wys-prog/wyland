@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <iomanip>
 #include <string>
+#include <vector> 
 #include <thread>
 #include <chrono>
 #include <mutex>
@@ -20,6 +21,8 @@
 #include <boost/container/flat_map.hpp>
 
 #include "data/wyland_version.h"
+
+#include "wmutiles.hpp"
 
 /* Runtime */
 #include "wyland-runtime/wylrt.h"

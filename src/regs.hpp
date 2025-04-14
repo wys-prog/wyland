@@ -16,7 +16,7 @@ namespace wylma {
       uint64_t r64[32]{0};
 
     public:
-      void set(uint8_t to, uint64_t u) {
+      constexpr void set(uint8_t to, uint64_t u) {
         if (to < 16) 
           r8[to] = static_cast<uint8_t>(u & 0xFF);  
         else if (to < 32) 
@@ -31,7 +31,7 @@ namespace wylma {
         }
       }
 
-      uint64_t get(uint8_t who) const {
+      constexpr uint64_t get(uint8_t who) const {
         if (who < 16) 
           return static_cast<uint64_t>(r8[who]);  
         else if (who < 32) 
@@ -57,7 +57,7 @@ namespace wylma {
         return reg;
       }
 
-      static uint8_t get_len(uint8_t of) {
+       static constexpr uint8_t get_len(uint8_t of) {
         if (of < 16)      return 1;
         else if (of < 32) return 2; 
         else if (of < 48) return 4;
