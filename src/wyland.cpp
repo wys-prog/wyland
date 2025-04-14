@@ -72,6 +72,19 @@ rt_task_t task {
   .format_libs_name = true,
 };
 
+/* This is idk (for fun) */
+template <typename Rep, typename Period>
+struct swaiter {
+  std::chrono::duration<Rep, Period> duration;
+}; /* Streamer Waiter */
+
+
+template <typename Rep, typename Period>
+std::ostream &operator<<(std::ostream &os, const swaiter<Rep, Period> &w) {
+  std::this_thread::sleep_for(w.duration);
+  return os;
+}
+
 void handle_arguments(std::vector<std::string> args, std::vector<std::string> &files) {
   for (size_t i = 0; i < args.size(); i++) {
     args[i] = trim(args[i]);
@@ -182,8 +195,10 @@ taskHandle version = [](std::vector<std::string>&) {
   std::cout << WYLAND_VERSION << std::endl;
 };
 
-taskHandle build = [](std::vector<std::string>&) {
-  std::cout << WYLAND_BUILD_NAME << std::endl;
+taskHandle build = [](std::vector<std::string> &) {
+  std::string string = WYLAND_BUILD_NAME;
+  for (const auto&c:string) std::cout << c << swaiter{5ms} << std::flush;
+  std::cout << std::endl;
 };
 
 taskHandle target = [](std::vector<std::string>&) {
@@ -198,14 +213,14 @@ taskHandle target_info = [](std::vector<std::string>&) {
 };
 
 taskHandle infos = [](std::vector<std::string>&) {
-  std::cout << "name:\t\t" << WYLAND_NAME << "\n"
-            << "version:\t" << WYLAND_VERSION "(" << WYLAND_VERSION_UINT32 << ")\n"
-            << "build:\t\t" << WYLAND_BUILD_NAME << "\n"
-            << "targets:\t\n" 
-              "\t- wtarg64\t(" << (wtarg64) << ")\n"
-              "\t- wtarg32\t(" << (wtarg32) << ")\n"
-              "\t- wtargmarch\t(" << (wtargmarch) << ")\n"
-              "\t- wtargfast\t(" << (wtargfast) << ")\n"
+  std::cout << "name:\t\t" << WYLAND_NAME << "\n" << swaiter{10ms}
+            << "version:\t" << WYLAND_VERSION "(" << WYLAND_VERSION_UINT32 << ")\n" << swaiter{10ns}
+            << "build:\t\t" << WYLAND_BUILD_NAME << "\n"  << swaiter{10ms}
+            << "targets:\t\n" << swaiter{10ms} <<
+              "\t- wtarg64\t(" << (wtarg64) << ")\n" << swaiter{10ms} <<
+              "\t- wtarg32\t(" << (wtarg32) << ")\n" << swaiter{10ms} <<
+              "\t- wtargmarch\t(" << (wtargmarch) << ")\n"<< swaiter{10ms} <<
+              "\t- wtargfast\t(" << (wtargfast) << ")\n" 
   << std::endl;
 };
 
@@ -406,7 +421,7 @@ int wylandMain(int argc, char *const argv[]) {
     return -1;
   }
 
-  std::cout << "========= Wyland " << WYLAND_VERSION << " : " << WYLAND_BUILD_NAME " =========" << std::endl;
+  std::cout << "========= Wyland " WYLAND_VERSION " : " WYLAND_BUILD_NAME " =========" << std::endl;
 
   for (int i = 1; i < argc; i++) {
     std::string arg = argv[i];

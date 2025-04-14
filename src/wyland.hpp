@@ -36,6 +36,9 @@
 
 WYLAND_BEGIN
 
+using namespace std::string_literals;
+using namespace std::chrono_literals;
+
 namespace cache {
   boost::container::flat_map<uint32_t, libcallc::DynamicLibrary::FunctionType> linked_funcs{};
   std::vector<libcallc::DynamicLibrary> libraries{};
@@ -203,7 +206,7 @@ void loadGraphicsModule(const std::string &path) {
     // TODO
   } else {
     cache::GraphicsModulePtr = loadIExternalGraphicsModule(path);
-    std::cout << "[i]: new IExternalGraphicsModule loaded at: " << std::hex << reinterpret_cast<uintptr_t>(cache::GraphicsModulePtr) << std::endl; 
+    std::cout << "[i]: new IExternalGraphicsModule loaded at: 0x" << std::hex << reinterpret_cast<uintptr_t>(cache::GraphicsModulePtr) << std::endl; 
   }
 }
 
@@ -215,7 +218,7 @@ WylandMMIOModule *loadMMIOModule(const std::string &path) {
     return new WylandMMIOModule();
   } else {
     auto ptr = loadIExternalMMIOModule(path);
-    std::cout << "[i]: new IExternalGraphicsModule loaded at: " << std::hex << reinterpret_cast<uintptr_t>(cache::GraphicsModulePtr) << std::endl; 
+    std::cout << "[i]: new IExternalMMIOModule loaded at: 0x" << std::hex << reinterpret_cast<uintptr_t>(cache::GraphicsModulePtr) << std::endl; 
     return ptr;
   }
 
