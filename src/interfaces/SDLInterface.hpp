@@ -11,7 +11,7 @@
 #include "interface.hpp"
 
 WYLAND_BEGIN
-
+/*
 class IWylandBuiltInSDLGraphicsModule : public IWylandGraphicsModule {
 public:
   ~IWylandBuiltInSDLGraphicsModule();
@@ -22,7 +22,7 @@ public:
   wbool should_close();
   std::string name();
 
-};
+};*/
 
 
 

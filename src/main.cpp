@@ -1,3 +1,7 @@
+#define ___WYLAND_STD_MAIN___
+#ifndef ___WYLAND_STD_MAIN___
+#define ___WYLAND_STD_MAIN___
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -180,3 +184,5 @@ int main(/*int argc, char *const argv[]*/) {
 
   return 0;
 }
+
+#endif // ? ___WYLAND_STD_MAIN___

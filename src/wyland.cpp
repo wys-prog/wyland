@@ -1,3 +1,5 @@
+#include <Windows.h>
+
 #include <condition_variable>
 #include <initializer_list>
 #include <unordered_map>
@@ -415,7 +417,7 @@ std::unordered_map<std::string, taskHandle> handles {
   //{"-api", api}
 };
 
-int wylandMain(int argc, char *const argv[]) {
+static int wylandMain(int argc, char *const argv[]) {
   if (argc - 1 == 0) {
     std::cerr << "[e]: Expected a task." << std::endl;
     return -1;
@@ -459,6 +461,9 @@ WYLAND_END
 #define ___WYLAND_STD_MAIN___
 
 int main(int argc, char *const argv[]) {
+#ifdef _WIN32
+  std::cout << "[wyland]: running Wyland on Windows, some features can be cursed." << std::endl;
+#endif // Windows ?
   return wylma::wyland::wylandMain(argc, argv);
 }
 

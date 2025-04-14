@@ -31,11 +31,11 @@ typedef wulong (*EMMIOFuncSignU64)(void);
 
 class IWylandMMIOExternalModule : public WylandMMIOModule {
 public:
-  EMMIOFuncSingBool Einit;
-  EMMIOFunc Eshutdown;
-  EMMIOFuncSignStr Ename;
-  EMMIOFuncArgU64 Esend_data;
-  EMMIOFuncSignU64 Ereceive_data;
+  EMMIOFuncSingBool Einit = nullptr;
+  EMMIOFunc Eshutdown = nullptr;
+  EMMIOFuncSignStr Ename = nullptr;
+  EMMIOFuncArgU64 Esend_data = nullptr;
+  EMMIOFuncSignU64 Ereceive_data = nullptr;
 
   wbool init() override { return Einit(); }
   void shutdown() override { Eshutdown(); }

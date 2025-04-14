@@ -262,7 +262,7 @@ protected:
     }
 
     throw runtime::wyland_runtime_error(
-      strdup(what.c_str()), "wyland runtime error", "wyland:vm:iwthrow()", 
+      STRDUP(what.c_str()), "wyland runtime error", "wyland:vm:iwthrow()", 
       typeid(runtime::wyland_runtime_error).name(), ip, 
       thread_id, (uint64_t*)&memory[beg], 
       (uint64_t*)&memory[end], end - beg

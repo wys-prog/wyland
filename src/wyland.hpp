@@ -158,7 +158,7 @@ void load_libs(std::fstream &file, const wheader_t &header, bool fmt_names = tru
       continue;
     }
 
-    libname = std::filesystem::absolute(libname);
+    libname = std::filesystem::absolute(libname).string();
     std::cout << "[i]: " << "loading `" << funcsname << "` from `" << libname << "`" << std::endl;
     cache::libraries.push_back(libcallc::DynamicLibrary());
     cache::libraries[cache::libraries.size()].loadLibrary(libname.c_str());

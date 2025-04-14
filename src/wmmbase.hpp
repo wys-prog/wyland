@@ -31,6 +31,12 @@
 #define LARGER (1)
 #define LESSER (2)
 
+#ifdef _WIN32
+#define STRDUP(x) _strdup(x)
+#else 
+#define STRDUP(x) strdup(x)
+#endif // Is Windows ?
+
 #define mnameof(x) #x
 
 constexpr std::size_t operator""_MB(unsigned long long size) {

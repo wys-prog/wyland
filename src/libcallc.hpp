@@ -21,6 +21,8 @@
 #include "regs.hpp"
 #include "wyland-runtime/wylrt.h"
 
+#include <boost/container/flat_map.hpp>
+
 #ifdef _WIN32
 #define DynamicLibraryLoad(x) LoadLibraryA(x)
 #define DynamicLibraryError() GetLastError()

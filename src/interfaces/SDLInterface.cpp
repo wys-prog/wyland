@@ -1,4 +1,4 @@
-#include <string>
+/*#include <string>
 #include <iostream>
 
 #include "../wyland-runtime/wylrt.h"
@@ -25,8 +25,4 @@ WYLAND_BEGIN
 //  };
 
 
-/* First of all, initialize SDL */
-
-
-
-WYLAND_END
+WYLAND_END */
