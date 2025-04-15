@@ -1,4 +1,6 @@
+#ifdef _WIN32
 #include <Windows.h>
+#endif 
 
 #include <condition_variable>
 #include <initializer_list>

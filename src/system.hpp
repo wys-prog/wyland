@@ -30,13 +30,13 @@ std::string name() const {
 #if defined(__x86_64__) || defined(_M_X64)
     return "x86-64";
 #elif defined(__i386) || defined(_M_IX86)
-    return "x86-32"
+    return "x86-32";
 #elif defined(__aarch64__)
-    return "arm-64"
+    return "arm-64";
 #elif defined(__arm__) || defined(_M_ARM)
-    return "arm"
+    return "arm";
 #else
-    return "nice CPU"
+    return "nice CPU";
 #endif // x64 ?
   }
 

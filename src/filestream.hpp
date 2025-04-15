@@ -15,8 +15,6 @@ namespace wylma {
       uint64_t base_address = 0;
 
     public:
-      fstream() = default;
-
       fstream(std::fstream &base_stream, uint64_t base = 0x0)
         : base_address(base), stream(base_stream) { }
 
@@ -42,7 +40,7 @@ namespace wylma {
       }
 
       uint64_t tell() {
-        return stream.tellg() - base_address;
+        return static_cast<std::streamoff>(stream.tellg()) - base_address;
       }
 
       void read(char *buffer, std::streamsize size) {
