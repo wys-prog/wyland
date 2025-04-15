@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <stdexcept>
 
-
 #define WYLAND_BEGIN namespace wylma { namespace wyland {
 #define WYLAND_END   } }
 
@@ -113,6 +112,12 @@ inline uint8_t* to_bin(const T &__T) {
   }
 
   return buff;
+}
+
+template <typename T>
+inline std::vector<uint8_t> to_bin_v(const T &t) {
+  auto bytes = to_bin(t);
+  return std::vector<uint8_t>(bytes, sizeof(T));
 }
 
 WYLAND_END

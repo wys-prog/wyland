@@ -43,6 +43,7 @@
 #include "wtargb.hpp"
 #include "wyland.h"
 #include "wyland.hpp"
+#include "system.hpp"
 
 #include "parser.hpp"
 
@@ -135,7 +136,7 @@ void run_base_function(std::vector<std::string> &args, bool debug = false) {
   std::vector<std::string> files;
   handle_arguments(args, files);
 
-  if (!debug && task.max_cycles == -1) std::cerr << "[w]: ignoring -max argument: only in debug mode" << std::endl;
+  if (!debug && task.max_cycles != -1) std::cerr << "[w]: ignoring -max argument: only in debug mode" << std::endl;
 
   for (const auto&file:files) {
     std::fstream disk(file);
@@ -217,16 +218,36 @@ taskHandle target_info = [](std::vector<std::string>&) {
   std::cout << wtargfast << ": " << nameof(wtargfast) << " (working on)" << std::endl;
 };
 
-taskHandle infos = [](std::vector<std::string>&) {
-  std::cout << "name:\t\t" << WYLAND_NAME << "\n" << swaiter{10ms}
+taskHandle infos = [](std::vector<std::string> &args) {
+
+  // I added "swaiter{10ms}" just for make fun and a bit "old" style...
+  // by doing --info --nw, wait time will set to 0
+  swaiter wait{10ms};
+  for (const auto &arg:args) {
+    if (arg == "--nw" || arg == "--no-wait") {
+      wait.duration = 0ms;
+    }
+  }
+
+  std::stringstream ss;
+
+  ss << "name:\t\t" << WYLAND_NAME << "\n" 
             << "version:\t" << WYLAND_VERSION "(" << WYLAND_VERSION_UINT32 << ")\n" << swaiter{10ns}
-            << "build:\t\t" << WYLAND_BUILD_NAME << "\n"  << swaiter{10ms}
-            << "targets:\t\n" << swaiter{10ms} <<
-              "\t- wtarg64\t(" << (wtarg64) << ")\n" << swaiter{10ms} <<
-              "\t- wtarg32\t(" << (wtarg32) << ")\n" << swaiter{10ms} <<
-              "\t- wtargmarch\t(" << (wtargmarch) << ")\n"<< swaiter{10ms} <<
-              "\t- wtargfast\t(" << (wtargfast) << ")\n" 
-  << std::endl;
+            << "build:\t\t" << WYLAND_BUILD_NAME << "\n"  
+            << "targets:\t\n"  <<
+              "\t- wtarg64\t(" << (wtarg64) << ")\n"  <<
+              "\t- wtarg32\t(" << (wtarg32) << ")\n"  <<
+              "\t- wtargmarch\t(" << (wtargmarch) << ")\n" <<
+              "\t- wtargfast\t(" << (wtargfast) << ")\n"
+              "===== SYSTEM =====\n"
+            << os.get_fmt_specs()
+            << "===== RUNTIME =====\n"
+               "sizeof base-runtime:\t" << sizeof(core_base) << "\n"
+               "sizeof wtarg64:\t\t" << sizeof(corewtarg64) << "\n"
+            << std::endl;
+  
+  std::string line;
+  while (std::getline(ss, line)) std::cout << line << wait << std::endl;
 };
 
 taskHandle set_target = [](std::vector<std::string> &args) {
