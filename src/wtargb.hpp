@@ -15,7 +15,7 @@ namespace wylma {
     public:
       virtual void init(uint64_t, uint64_t, bool, uint64_t, linkedfn_array*, uint64_t, 
                         IWylandGraphicsModule* = nullptr, WylandMMIOModule* = nullptr, 
-                        WylandMMIOModule* = nullptr) { }
+                        WylandMMIOModule* = nullptr, WylandMMIOModule* = nullptr) { }
       virtual void run() { }
       virtual uint64_t get_ip() { return 0; }
       virtual void run_step() { }

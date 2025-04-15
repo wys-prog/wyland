@@ -235,7 +235,8 @@ public:
             uint64_t _name, 
             linkedfn_array *table, 
             uint64_t base, IWylandGraphicsModule* = nullptr, 
-            WylandMMIOModule* = nullptr, WylandMMIOModule* = nullptr) override {
+            WylandMMIOModule* = nullptr, WylandMMIOModule* = nullptr, 
+            WylandMMIOModule* = nullptr) override {
     beg = _memory_segment_begin;
     end = _memory_segment_end;
     ip  = beg;

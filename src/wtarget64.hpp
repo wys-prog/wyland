@@ -55,6 +55,7 @@ protected:
   IWylandGraphicsModule *GraphicsModule;
   WylandMMIOModule      *MMIOModule1;
   WylandMMIOModule      *MMIOModule2;
+  WylandMMIOModule      *DiskModule;
 
   /* Deprecated ! */
   std::unordered_map<uint64_t, libcallc::DynamicLibrary> libs;
@@ -320,8 +321,9 @@ protected:
       case 0: GraphicsModule->send_data(bytes); break;
       case 1: MMIOModule1->send_data(bytes); break;
       case 2: MMIOModule2->send_data(bytes); break;
+      case 3: DiskModule->send_data(bytes); break;
       default: 
-        throw std::runtime_error("somewhere::ipushmmio(): given index is invalid (from 0 to 2 only is valid): " + std::to_string(index));
+        throw std::runtime_error("somewhere::ipushmmio(): given index is invalid (from 0 to 3 only is valid): " + std::to_string(index));
         break;
     }
   }
@@ -332,8 +334,9 @@ protected:
       case 0: regs.set(R_POP_MMIO, GraphicsModule->receive_data()); break; /* ... What would you like to recive from.. That ? */
       case 1: regs.set(R_POP_MMIO, MMIOModule1->receive_data()); break;
       case 2: regs.set(R_POP_MMIO, MMIOModule2->receive_data()); break;
+      case 3: regs.set(R_POP_MMIO, DiskModule->receive_data()); break;
       default: 
-        throw std::runtime_error("somewhere::ipushmmio(): given index is invalid (from 0 to 2 only is valid): " + std::to_string(index));
+        throw std::runtime_error("somewhere::ipushmmio(): given index is invalid (from 0 to 3 only is valid): " + std::to_string(index));
         break;
     }
   }
@@ -347,7 +350,8 @@ public:
             uint64_t _name, 
             linkedfn_array *table, 
             uint64_t base, IWylandGraphicsModule *_GraphicsModule, 
-            WylandMMIOModule *m1, WylandMMIOModule *m2) override {
+            WylandMMIOModule *m1, WylandMMIOModule *m2, 
+            WylandMMIOModule *disk) override {
     beg = _memory_segment_begin;
     end = _memory_segment_end;
     ip  = beg;
@@ -369,6 +373,10 @@ public:
     if (m2 == nullptr) {
       MMIOModule2 = new WylandMMIOModule();
     } else MMIOModule2 = m2;
+
+    if (disk == nullptr) {
+      DiskModule = new WylandMMIOModule();
+    } else DiskModule = disk;
 
     linked_functions = table;
 
@@ -431,6 +439,13 @@ public:
           "Unable to initialize <MMIOModule2*>", typeid(this).name() + std::string(__func__)
         );
       } else std::cout << "[i]: MMIOModule initialized: " << MMIOModule2->name() << std::endl;
+
+      if (!DiskModule->init()) {
+        std::cerr << "[e]: unable to initialize <DiskModule*>" << std::endl;
+        throw MMIOModuleException(
+          "Unable to initialize <MMIOModule2*>", typeid(this).name() + std::string(__func__)
+        );
+      } else std::cout << "[i]: MMIOModule initialized: " << MMIOModule2->name() << std::endl;
     }
   }
 
@@ -489,6 +504,7 @@ public:
     GraphicsModule->shutdown();
     MMIOModule1->shutdown();
     MMIOModule2->shutdown();
+    DiskModule->shutdown();
 
     {
       std::unique_lock<std::mutex> lock(mtx);
@@ -559,7 +575,6 @@ public:
       if (max_step != -1) i++;
     }
   }
-
 };
 
 WYLAND_END

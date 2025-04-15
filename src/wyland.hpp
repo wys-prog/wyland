@@ -33,6 +33,7 @@
 #include "interfaces/exInterface.hpp"
 #include "wmmio.hpp"
 #include "wmutiles.hpp"
+#include "disk.hpp"
 #include "wyland.h"
 
 WYLAND_BEGIN
@@ -46,6 +47,7 @@ namespace cache {
   IWylandGraphicsModule *GraphicsModulePtr = nullptr;
   WylandMMIOModule      *MMIOModule1Ptr = nullptr;
   WylandMMIOModule      *MMIOModule2Ptr = nullptr;
+  IWylandDiskModule     *DiskModulePtr = nullptr;
 }
 
 void clear_ressources() {
@@ -53,14 +55,19 @@ void clear_ressources() {
   destroy(cache::libraries);
   destroy(cache::IExternalGraphicsModuleHandles);
   destroy(cache::WylandMMIOModuleHandles);
+  destroy(cache::WylandDiskModuleBuffer);
+  cache::ReadBlockBuffer.fill(0x00000000);
   delete memory;
   delete cache::GraphicsModulePtr;
   delete cache::MMIOModule1Ptr;
   delete cache::MMIOModule2Ptr;
+  delete cache::DiskModulePtr;
   memory = nullptr;
   cache::GraphicsModulePtr = nullptr;
   cache::MMIOModule1Ptr = nullptr;
   cache::MMIOModule2Ptr = nullptr;
+  cache::DiskModulePtr = nullptr;
+  cache::ReadBlockIndex = 0;
 }
 
 void wyland_exit(int _code = 0) {
@@ -226,10 +233,11 @@ WylandMMIOModule *loadMMIOModule(const std::string &path) {
   return new WylandMMIOModule();
 }
 
-void loadModules(const std::string &pathGraphics, const std::string &m1, const std::string &m2) {
+void loadModules(const std::string &pathGraphics, const std::string &m1, const std::string &m2, fstream &stream) {
   loadGraphicsModule(pathGraphics);
   cache::MMIOModule1Ptr = loadMMIOModule(m1);
   cache::MMIOModule2Ptr = loadMMIOModule(m2);
+  cache::DiskModulePtr = new IWylandDiskModule(stream);
 }
 
 void run_core(core_base *base, bool debug = false, int max = -1) {

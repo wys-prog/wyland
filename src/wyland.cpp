@@ -45,6 +45,8 @@
 #include "wyland.hpp"
 #include "system.hpp"
 
+#include "filestream.hpp"
+
 #include "parser.hpp"
 
 #include "sock2.h"
@@ -149,9 +151,9 @@ void run_base_function(std::vector<std::string> &args, bool debug = false) {
     wblock *block = new wblock;
     disk.read((char*)block->array, sizeof(block->array));
     auto header = wyland_files_make_header(block);
+    fstream stream(disk, header.data);
     
     if (task.auto_targ) task.target = header.target;
-    
     
     if (!wyland_files_parse(&header, task.target, task.version)) {
       std::cerr << "[e]: " << std::invalid_argument("Invalid header file.").what() << std::endl;
@@ -166,13 +168,13 @@ void run_base_function(std::vector<std::string> &args, bool debug = false) {
     
     core_base *core = create_core_ptr(task.target);
     allocate_memory(task.memory);
-    loadModules(task.GraphicsModulePath, task.Module1Path, task.Module2Path);
+    loadModules(task.GraphicsModulePath, task.Module1Path, task.Module2Path, stream);
     
     if (!load_file(disk, header)) {
       delete core;
       wyland_exit(-1);
     }
-  
+    
     if (core == nullptr) {
       std::cerr << "[e]: *core is a bad pointer." << std::endl;
       wyland_exit(-400);
@@ -182,13 +184,14 @@ void run_base_function(std::vector<std::string> &args, bool debug = false) {
     core->init(
       SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START+SYSTEM_SEGMENT_SIZE, 
       true, 0, &cache::linked_funcs, SYSTEM_SEGMENT_START, cache::GraphicsModulePtr, 
-      cache::MMIOModule1Ptr, cache::MMIOModule2Ptr
+      cache::MMIOModule1Ptr, cache::MMIOModule2Ptr, cache::DiskModulePtr
     );
     
     run_core(core, debug, task.max_cycles);
   
     delete core;
-
+    
+    disk.close();
     wyland_exit();
   }
 }
@@ -277,6 +280,7 @@ taskHandle run_raw = [](std::vector<std::string> &args) {
 
   for (const auto&file:files) {
     std::fstream disk(file);
+    fstream stream(disk, 0);
 
     if (!disk) {
       std::cerr << "[e]: Unable to open disk file: " << file << std::endl;
@@ -286,7 +290,7 @@ taskHandle run_raw = [](std::vector<std::string> &args) {
     }
 
     allocate_memory(task.memory);
-    loadModules(task.GraphicsModulePath, task.Module1Path, task.Module2Path);
+    loadModules(task.GraphicsModulePath, task.Module1Path, task.Module2Path, stream);
 
     size_t i = 0;
     while (!disk.eof() && i < SYSTEM_SEGMENT_SIZE) {

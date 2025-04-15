@@ -117,7 +117,7 @@ inline uint8_t* to_bin(const T &__T) {
 template <typename T>
 inline std::vector<uint8_t> to_bin_v(const T &t) {
   auto bytes = to_bin(t);
-  return std::vector<uint8_t>(bytes, sizeof(T));
+  return std::vector<uint8_t>(bytes, bytes + sizeof(T));
 }
 
 WYLAND_END
