@@ -487,7 +487,7 @@ static int wylandMain(int argc, char *const argv[]) {
 
 WYLAND_END
 
-#ifndef ___WYLAND_STD_MAIN___
+//#ifndef ___WYLAND_STD_MAIN___
 #define ___WYLAND_STD_MAIN___
 
 int main(int argc, char *const argv[]) {
@@ -497,7 +497,7 @@ int main(int argc, char *const argv[]) {
   return wylma::wyland::wylandMain(argc, argv);
 }
 
-#endif // ___WYLAND_STD_MAIN___
+//#endif // ___WYLAND_STD_MAIN___
 
 /* Arguments: 
   --v, --version:  prints the version
