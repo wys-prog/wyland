@@ -10,6 +10,8 @@
 
 struct Alias {
   std::unordered_map<std::string, std::string> members;
+  size_t size;
+  bool is_primary;
 };
 
 struct Struct {
@@ -20,6 +22,12 @@ struct Struct {
 struct Aliases {
   std::unordered_map<std::string, Alias> types;
   std::unordered_map<std::string, std::string> names;
+
+  bool is_declared(const std::string &string) {
+    if (names.find(string) == names.end() || types.find(string) == types.end()) {
+      return false;
+    } return true;
+  }
 };
 
 struct SymbolTable {
@@ -30,6 +38,12 @@ struct SymbolTable {
     if (symbols.find(name) != symbols.end()) return true;
     else if (private_symbols.find(name) != private_symbols.end()) return true;
     return false;
+  }
+
+  std::string get_symbol(const std::string &name) {
+    if (private_symbols.find(name) != private_symbols.end()) {
+      return private_symbols[name];
+    } return name;
   }
 };
 
@@ -85,7 +99,7 @@ private:
     std::cerr << "error: " << what << "\n\t| " << line_count << ":" << line << "\n\t|  ";
     for (size_t i = 0; i < std::to_string(line_count).size(); i++) std::cout << ' ';
     size_t beg = line.find(word);
-    if (beg == std::string::npos) beg = 0;
+    if (beg == std::string::npos || word.empty()) beg = 0; // Don't trim word ! '  ' can be an error (but idk where)
     for (size_t i = 0; i < beg; i++) std::cout << ' ';
     for (const auto &c: word) std::cout << '~';
     std::cout << std::endl;
@@ -94,8 +108,45 @@ private:
 
   uint64_t current_address = 0;
   SymbolTable symbolTable;
-  Aliases aliases;
+  Aliases aliases {
+    .types {
+      {"byte",  Alias{.members{{"x", "byte"}},  .size = 1, .is_primary = true}},
+      {"word",  Alias{.members{{"x", "word"}},  .size = 2, .is_primary = true}},
+      {"dword", Alias{.members{{"x", "dword"}}, .size = 4, .is_primary = true}},
+      {"qword", Alias{.members{{"x", "qword"}}, .size = 8, .is_primary = true}},
+    },
+    .names {
+      {"byte", "byte"},
+      {"word", "word"},
+      {"dword", "dword"},
+      {"qword", "qword"},
+    }
+  };
   Globals globals;
+
+  std::vector<std::string> flatten_type(const std::string &type_name) {
+    std::vector<std::string> result;
+  
+    if (aliases.types.find(type_name) == aliases.types.end()) {
+      std::cerr << "flatten_type: unknown type `" << type_name << "`" << std::endl;
+      return result;
+    }
+  
+    const Alias &alias = aliases.types[type_name];
+  
+    if (alias.is_primary) {
+      result.push_back(type_name);
+      return result;
+    }
+
+    for (const auto &[member_name, member_type] : alias.members) {
+      auto sub = flatten_type(member_type);
+      result.insert(result.end(), sub.begin(), sub.end());
+    }
+  
+    return result;
+  }
+  
 
   void compile_symbol(std::istringstream &iss, bool is_private) {
     std::string line = iss.str();
@@ -149,17 +200,25 @@ private:
       iss >> type;
     }
 
-    std::string value = iss.str();
-    output << type << "(" << trim(value) << ")" << std::endl;
-    // "clear" the istringstream.
-    iss.str("");
+    if (!aliases.is_declared(type)) {
+      generate_error("unknown type `" + type + "`", type);
+      return;
+    }
   }
 
   void declare_struct(std::istringstream &iss) {
     std::string name;
     iss >> name;
 
-    Alias alias;
+    if (aliases.names.find(name) != aliases.names.end()) {
+      generate_error("redefinition of `" + name + "` struct...", name);
+      return;
+    } if (name.empty() || !good_name(name)) {
+      generate_error("invalid name `" + name + "`", name);
+      return;
+    }
+
+    Alias alias {.is_primary = false};
 
     if (trim(iss.str()) != "") {
       generate_error("extra-arguments after 'struct' declaration.", trim(iss.str()));
@@ -180,9 +239,16 @@ private:
 
       if (aliases.names.find(Mtype) == aliases.names.end()) {
         generate_error("unknown type `" + Mtype + "`...", Mtype);
+        return;
       }
 
       alias.members[Mname] = Mtype;
+      alias.size += aliases.types[Mtype].size;
+    }
+
+    if (!ended) {
+      generate_error("unended struct `" + name + "`...", line);
+      return;
     }
 
     std::string Tname = random_string(4) + name + random_string(4);
@@ -190,6 +256,58 @@ private:
     aliases.types[Tname] = alias;
   }
 
+  void construct_struct(std::istringstream &iss) {
+    std::string struct_name, name;
+    iss >> struct_name >> name;
+  
+    if (!aliases.is_declared(struct_name)) {
+      generate_error("unknown type `" + struct_name + "`", struct_name);
+      return;
+    }
+  
+    if (!symbolTable.has_symbol(name)) {
+      generate_error("redefinition of `" + name + "`...", name);
+      return;
+    }
+  
+    std::string real = aliases.names[struct_name];
+    Alias &type = aliases.types[real];
+    
+    output << "; struct instance: " << real << "\n.array [";
+
+    auto types_to_emit = flatten_type(real);
+    for (size_t i = 0; i < types_to_emit.size(); ++i) {
+      if (i > 0) output << ", ";
+      output << types_to_emit[i] << "(0x00)";
+    }
+    
+    output << "]" << std::endl;
+    
+    current_address += type.size;
+  }
+  
+  void compile_call(std::istringstream &iss) {
+    std::string function;
+    iss >> function;
+
+    if (function.empty() || symbolTable.has_symbol(function)) {
+      generate_error("cannot call <empty>() --It's not a function", line);
+      return;
+    }
+
+    if (!trim(iss.str()).empty()) {
+      generate_error("extra arguments after 'call'", trim(iss.str()));
+      return;
+    }
+
+    function = symbolTable.get_symbol(function);
+
+    output << ".lqword byte(63) qword(" << current_address + 20 << ")\n"
+              ".jmp qword(" << symbolTable.symbols[function] << ") ; function call: " << function 
+              << std::endl;
+    
+    current_address += 20;
+  }
 
 public:
 };
@@ -208,8 +326,10 @@ public "label"
   while false 
   end
 
+  # this code is just idk !
   struct __int
-
+    qword __intA
+    qword __intB
   end
 
 end 

@@ -44,3 +44,4 @@ src/interfaces/SDL2
 *.sln
 *.swp
 *.DS_Store
+.DS_Store
