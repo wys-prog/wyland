@@ -4,7 +4,7 @@
 *.DS_Store
 wyland-runtime/
 wyland-godot/
-compiler/
+# compiler/
 debug/
 
 # This is only for my fucking editor...
