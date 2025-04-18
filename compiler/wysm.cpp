@@ -38,7 +38,7 @@ void generate_error(const std::string &what, const std::string &line, size_t lin
 
 // ==== COMPILER ====
 class AutoAssembler {
-	std::unordered_map<std::string, std::pair<std::string, uint8_t>> instructions;
+	std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> instructions;
 
 	std::vector<uint8_t> parse_array(const std::string& raw, const std::string& line, size_t line_num) {
 		std::vector<uint8_t> result;
@@ -113,42 +113,42 @@ class AutoAssembler {
 public:
 	AutoAssembler() {
 		// Define instruction format and opcode (1 byte)
-		instructions[".nop"] = {"", 0x00};
-		instructions[".lea"] = {"qword", 0x01};
+		instructions[".nop"] = {"", {0x00}};
+		instructions[".lea"] = {"qword", {0x01}};
 		/* Loads */
-		instructions[".lbyte"] = {"byte, byte", 0x02};
-		instructions[".lword"] = {"byte, word", 0x02};
-		instructions[".ldword"] = {"byte, dword", 0x02};
-		instructions[".lqword"] = {"byte, qword", 0x02};
+		instructions[".lbyte"] = {"byte, byte", {0x02, 1 * 8}};
+		instructions[".lword"] = {"byte, word", {0x02, 2 * 8}};
+		instructions[".ldword"] = {"byte, dword", {0x02, 4 * 8}};
+		instructions[".lqword"] = {"byte, qword", {0x02, 8 * 8}};
 		/* Stores */
-		instructions[".store"] = {"byte, byte, qword", 3};
+		instructions[".store"] = {"byte, byte, qword", {3}};
 
-		instructions[".mov"] = {"byte, byte", 4};
-		instructions[".add"] = {"byte, byte", 5};
-		instructions[".sub"] = {"byte, byte", 6};
-		instructions[".mul"] = {"byte, byte", 7};
-		instructions[".div"] = {"byte, byte", 8};
-		instructions[".mod"] = {"byte, byte", 9};
-		instructions[".jmp"] = {"qword", 10};
-		instructions[".je"] = {"qword", 11};
-		instructions[".jne"] = {"qword", 12};
-		instructions[".jl"] = {"qword", 13};
-		instructions[".jg"] = {"qword", 14};
-		instructions[".jle"] = {"qword", 15};
-		instructions[".jlg"] = {"qword", 16};
-		instructions[".cmp"] = {"byte, byte", 17};
-		instructions[".int"] = {"", 18};
-		instructions[".loadat"] = {"byte, qword", 19};
-		instructions[".ret"] = {"", 20};
-		instructions[".movad"] = {"byte, byte", 21};
-		instructions[".sal"] = {"byte, qword", 22};
-		instructions[".sar"] = {"byte, qword", 23};
-		instructions[".throw"] = {"", 24};
-		instructions[".clfn"] = {"dword", 25};
-		instructions[".call-c"] = {"dword", 25};
-		instructions[".emplace"] = {"qword, byte", 26};
-		instructions[".pushmmio"] = {"byte, qword", 27};
-		instructions[".popmmio"] = {"byte", 28};
+		instructions[".mov"] = {"byte, byte", {4}};
+		instructions[".add"] = {"byte, byte", {5}};
+		instructions[".sub"] = {"byte, byte", {6}};
+		instructions[".mul"] = {"byte, byte", {7}};
+		instructions[".div"] = {"byte, byte", {8}};
+		instructions[".mod"] = {"byte, byte", {9}};
+		instructions[".jmp"] = {"qword", {10}};
+		instructions[".je"] = {"qword", {11}};
+		instructions[".jne"] = {"qword", {12}};
+		instructions[".jl"] = {"qword", {13}};
+		instructions[".jg"] = {"qword", {14}};
+		instructions[".jle"] = {"qword", {15}};
+		instructions[".jlg"] = {"qword", {16}};
+		instructions[".cmp"] = {"byte, byte", {17}};
+		instructions[".int"] = {"", {18}};
+		instructions[".loadat"] = {"byte, qword", {19}};
+		instructions[".ret"] = {"", {20}};
+		instructions[".movad"] = {"byte, byte", {21}};
+		instructions[".sal"] = {"byte, qword", {22}};
+		instructions[".sar"] = {"byte, qword", {23}};
+		instructions[".throw"] = {"", {24}};
+		instructions[".clfn"] = {"dword", {25}};
+		instructions[".call-c"] = {"dword", {25}};
+		instructions[".emplace"] = {"qword, byte", {26}};
+		instructions[".pushmmio"] = {"byte, qword", {27}};
+		instructions[".popmmio"] = {"byte", {28}};
 	}
 
 	std::vector<uint8_t> compile_line(const std::string &line_raw, size_t line_number) {
@@ -200,7 +200,7 @@ public:
 			return {};
 		}
 		
-		std::vector<uint8_t> result = { opcode };
+		std::vector<uint8_t> result = opcode;
 		for (size_t i = 0; i < params.size(); ++i) {
 			const std::string &type = expected[i];
 			const std::string &arg = params[i];

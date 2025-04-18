@@ -229,14 +229,16 @@ private:
 
     Alias alias {.is_primary = false};
 
-    if (trim(iss.str()) != "") {
+    /*if (trim(iss.str()) != "") {
       generate_error("extra-arguments after 'struct' declaration.", trim(iss.str()));
       return;
-    }
+    }*/
 
     bool ended = false;
-    while (std::getline(input, line) && !ended) {
+    while (std::getline(input, line)) {
+      line_count++;
       std::string Mtype, Mname; // Member name, Member type
+      std::istringstream iss(line); // Reset iss with the new line content
       iss >> Mtype >> Mname;
       if (Mtype.empty()) continue;
       if (Mtype == "end") {ended = true; break;}
@@ -263,18 +265,20 @@ private:
     std::string Tname = random_string(4) + name + random_string(4);
     aliases.names[name] = Tname;
     aliases.types[Tname] = alias;
+    // Just to keep track on structures, we "export" it.
+    output << "; struct `" << Tname << "` declared, template not exported." << std::endl;
   }
 
   void construct_struct(std::istringstream &iss) {
     std::string struct_name, name;
     iss >> struct_name >> name;
   
-    if (!aliases.is_declared(struct_name)) {
+    if (aliases.names.find(struct_name) == aliases.names.end()) {
       generate_error("unknown type `" + struct_name + "`", struct_name);
       return;
     }
   
-    if (!symbolTable.has_symbol(name)) {
+    if (symbolTable.has_symbol(name)) {
       generate_error("redefinition of `" + name + "`...", name);
       return;
     }
@@ -370,6 +374,8 @@ public:
 };
 
 int main(int argc, char *const argv[]) {
+  srand(static_cast<unsigned int>(
+    std::chrono::high_resolution_clock::now().time_since_epoch().count()));
   if (argc < 2) {
     std::cerr << "error: excepted input file." << std::endl;
     return (-'E'); // It's just for fun

@@ -1,0 +1,45 @@
+struct vec2
+  dword x
+  dword y
+end
+
+struct basic_string
+  qword strbeg
+  qword strlen
+  byte  encoding_type
+end
+
+struct player
+  basic_string name
+  vec2 position
+  vec2 scale
+end
+
+struct sprite
+  vec2 pos
+  vec2 size
+  vec2 scale
+  basic_string name
+end
+
+struct world
+  sprite world_sprite
+  qword sprite_pointers
+  player bob
+end
+
+private "game-init-rd"
+  construct world level1
+  construct world level2
+
+
+public "main"
+  construct player me
+  construct player you
+  construct basic_string
+
+public "hash"
+  construct basic_string
+
+public "end"
+  call "main"
