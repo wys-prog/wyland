@@ -7,6 +7,8 @@
 #include <unordered_map>
 #include <iostream>
 #include <iomanip>
+#include <functional>
+#include <filesystem>
 
 struct Alias {
   std::unordered_map<std::string, std::string> members;
@@ -49,6 +51,7 @@ struct SymbolTable {
 
 struct Globals {
   bool export_label_names;
+  bool export_symbol_table;
 };
 
 class Compiler {
@@ -107,7 +110,10 @@ private:
   }
 
   uint64_t current_address = 0;
-  SymbolTable symbolTable;
+  SymbolTable symbolTable {
+    .symbols {}
+  };
+
   Aliases aliases {
     .types {
       {"byte",  Alias{.members{{"x", "byte"}},  .size = 1, .is_primary = true}},
@@ -122,7 +128,7 @@ private:
       {"qword", "qword"},
     }
   };
-  Globals globals;
+  Globals &globals;
 
   std::vector<std::string> flatten_type(const std::string &type_name) {
     std::vector<std::string> result;
@@ -152,24 +158,27 @@ private:
     std::string line = iss.str();
     size_t beg = line.find('"'), end = line.find('"', beg + 1);
     if (beg == std::string::npos || end == std::string::npos) { generate_error("excepted \" char after 'public' statement.", line); return; }
-    std::string name = "";
-
-    if (is_private) {
-      name = random_string(4) + name + random_string(4);
-    } else name = line.substr(beg + 1, end - (beg + 1));
-
+    std::string name = line.substr(beg + 1, end - (beg + 1));
+    std::string shield_name = "";
+    
     if (symbolTable.has_symbol(name)) {
       generate_error("re-definition of `" + name + "`...", name);
       return;
     }
 
-    symbolTable.symbols[name] = current_address;
+    if (is_private) {
+      shield_name = random_string(4) + name + random_string(4);
+      symbolTable.private_symbols[name] = shield_name;
+    } else shield_name = name;
+
+
+    symbolTable.symbols[shield_name] = current_address;
     if (globals.export_label_names) {
       output << ".jmp qword(" << current_address + name.size() + 1 << ")\n"
       ".array [string(\"" << name << "\"), byte(0x00)] ; function" << std::endl;
-      std::cout << std::hex << "[i]: 0x" << std::setw(16) << std::setfill('0') << current_address << ": " << name << std::endl;
       current_address += name.size() + 1 + 9;
     }
+    std::cout << std::hex << "[i]: 0x" << std::setw(16) << std::setfill('0') << current_address << ": " << name << std::endl;
     iss.str(line.substr(end + 1));
   }
 
@@ -287,35 +296,120 @@ private:
   }
   
   void compile_call(std::istringstream &iss) {
-    std::string function;
-    iss >> function;
+    std::string lined = iss.str();
+    size_t beg = lined.find('"');
+    size_t end = lined.find('"', beg + 1);
 
-    if (function.empty() || symbolTable.has_symbol(function)) {
-      generate_error("cannot call <empty>() --It's not a function", line);
+    if (beg == std::string::npos || end == std::string::npos) {
+      generate_error("excepted quoted name.", lined);
       return;
     }
 
-    if (!trim(iss.str()).empty()) {
-      generate_error("extra arguments after 'call'", trim(iss.str()));
+    std::string function = lined.substr(beg + 1, end - (beg + 1));
+
+    if (function.empty() || !symbolTable.has_symbol(function)) {
+      generate_error("cannot call `" + function + "` --It's not a function", function);
       return;
     }
 
     function = symbolTable.get_symbol(function);
 
-    output << ".lqword byte(63) qword(" << current_address + 20 << ")\n"
+    output << ".lqword byte(63), qword(" << current_address + 20 << ")\n"
               ".jmp qword(" << symbolTable.symbols[function] << ") ; function call: " << function 
               << std::endl;
     
     current_address += 20;
+    iss.str(lined.substr(end + 1));
+  }
+
+  std::unordered_map<std::string, std::function<void(std::istringstream &)>> funcs {};
+
+  void init() {
+    funcs["call"] = [this](std::istringstream &iss){compile_call(iss);};
+    funcs["private"] = [this](std::istringstream &iss){compile_private(iss);};
+    funcs["public"] = [this](std::istringstream &iss){compile_public(iss);};
+    funcs["let"] = [this](std::istringstream &iss){compile_let(iss);};
+    funcs["struct"] = [this](std::istringstream &iss){declare_struct(iss);};
+    funcs["construct"] = [this](std::istringstream &iss){construct_struct(iss);};
   }
 
 public:
+  Compiler(std::ifstream &in, std::ofstream &out, Globals &glob) : input(in), output(out), globals(glob) {
+    init();
+  }
+
+  void compile() {
+    while (std::getline(input, line)) {
+      line_count++;
+      std::istringstream iss(line);
+      std::string word;
+      while (iss >> word) {
+        if (funcs.find(word) != funcs.end()) {
+          funcs[word](iss);
+        } else {
+          generate_error("unknown token", word);
+          return;
+        }
+      }
+    }
+
+    if (globals.export_symbol_table) {
+      output << "; symbol table\n.array [string(\"symbol table\"), ";
+      for (const auto &symbol : symbolTable.symbols) {
+        output << "string(\"" << symbol.first << "\"), qword("
+               << symbol.second << "), ";
+      }
+      output << "]\n";
+    }
+  }
+
+  int get_errors() {
+    return errors;
+  }
+
 };
+
+int main(int argc, char *const argv[]) {
+  if (argc < 2) {
+    std::cerr << "error: excepted input file." << std::endl;
+    return (-'E'); // It's just for fun
+  }
+  
+  std::string input;
+  std::string output;
+  Globals glob {
+    .export_label_names = false, 
+    .export_symbol_table = true,
+  };
+
+  for (int i = 0; i < argc; i++) {
+    if (std::string(argv[i]) == "-export-label-names:no") { glob.export_label_names = false; }
+    else if (std::string(argv[i]) == "-export-label-names:yes") { glob.export_label_names = true; }
+    else if (std::string(argv[i]) == "-export-symbol-table:no") { glob.export_symbol_table = false; }
+    else if (std::string(argv[i]) == "-export-symbol-table:yes") { glob.export_symbol_table = true; }
+    else if (std::string(argv[i]) == "-o") {
+      if (i + 1 >= argc) {
+        std::cerr << "excepted argument after '-o'." << std::endl;
+        return (-'E');
+      } output = (argv[++i]);
+    } else {
+      input = (argv[i]);
+    }
+  }
+
+  std::ifstream ifile(input);
+  std::ofstream ofile(output);
+
+  Compiler compiler(ifile, ofile, glob);
+  compiler.compile();
+  
+  return compiler.get_errors();
+}
 
 /*
 public "label" 
-  let i dword 0
-  let msg array ["Hello, world !"]
+  let i dword
+  let msg array
   compute (90 + 78 - 0xFF * 78)
   
   if i equals 90
