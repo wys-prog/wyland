@@ -36,6 +36,13 @@ void generate_error(const std::string &what, const std::string &line, size_t lin
 	errors++;
 }
 
+bool is_numeric_string(const std::string &string) {
+	for (const auto&c:string) {
+		if (!ishexnumber(c)) return false;
+	}
+	return true;
+}
+
 // ==== COMPILER ====
 class AutoAssembler {
 	uint64_t current_address = 0;
@@ -204,9 +211,9 @@ public:
 		} else if (symbols.find(instr) != symbols.end()) {
 			current_address += 8;
 			return binof(symbols[instr]);
-		} else if (instructions.find(instr) == instructions.end()) {
-			generate_error("Unknown instruction", line_raw, line_number, instr);
-			return {};
+		} else {
+			unresolved_references[instr].push_back(current_address);
+			return {binof<uint64_t>(0x00)};
 		}
 		
 		std::vector<std::string> params;
@@ -244,11 +251,22 @@ public:
 			
 			std::string type_prefix = arg.substr(0, beg);
 			std::string value_str = arg.substr(beg + 1, end - beg - 1);
-			uint64_t value = std::stoull(value_str, nullptr, 16);
+			uint64_t value = 0;
 			
 			if (type_prefix != type) {
 				generate_error("Argument type mismatch", line_raw, line_number, arg);
 				return {};
+			}
+			
+			if (value_str.starts_with("0x")) value = std::stoull(value_str, nullptr, 16); 
+			else if (value_str.starts_with("0o")) value = std::stoull(value_str, nullptr, 8); 
+			else if (is_numeric_string(value_str)) value = std::stoull(value_str, nullptr, 10);
+			else {
+				if (symbols.find(value_str) != symbols.end()) value = symbols[value_str];
+				else {
+					value = 0;
+					unresolved_references[value_str].push_back(current_address);
+				}
 			}
 			
 			if (type == "byte") {

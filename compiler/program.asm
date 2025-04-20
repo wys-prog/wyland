@@ -1,2 +1,2 @@
 .l main:
-    .jmp main
+  .mov byte(8), byte(9)
