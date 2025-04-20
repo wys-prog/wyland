@@ -153,7 +153,6 @@ private:
     return result;
   }
   
-
   void compile_symbol(std::istringstream &iss, bool is_private) {
     std::string line = iss.str();
     size_t beg = line.find('"'), end = line.find('"', beg + 1);

@@ -31,14 +31,17 @@ void generate_error(const std::string &what, const std::string &line, size_t lin
 	size_t beg = line.find(word);
 	if (beg == std::string::npos) beg = 0;
 	for (size_t i = 0; i < beg; i++) std::cout << ' ';
-	for (const auto &c: word) std::cout << '~';
+	for (size_t i = 0; i < word.size(); i++) std::cout << '~';
 	std::cout << std::endl;
 	errors++;
 }
 
 // ==== COMPILER ====
 class AutoAssembler {
+	uint64_t current_address = 0;
 	std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> instructions;
+	std::unordered_map<std::string, uint8_t> registers;
+	std::unordered_map<std::string, uint64_t> symbols;
 
 	std::vector<uint8_t> parse_array(const std::string& raw, const std::string& line, size_t line_num) {
 		std::vector<uint8_t> result;
@@ -105,6 +108,8 @@ class AutoAssembler {
 				return {};
 			}
 		}
+
+		current_address += result.size();
 	
 		return result;
 	}
@@ -149,6 +154,16 @@ public:
 		instructions[".emplace"] = {"qword, byte", {26}};
 		instructions[".pushmmio"] = {"byte, qword", {27}};
 		instructions[".popmmio"] = {"byte", {28}};
+		// Define registers
+		for (int i = 0; i <= 15; ++i) {
+			registers["%bmm" + std::to_string(i)] = (i);
+			registers["%wmm" + std::to_string(i)] = (16 + i);
+			registers["%dmm" + std::to_string(i)] = (32 + i);
+		}
+
+		for (int i = 0; i <= 31; ++i) {
+			registers["%qmm" + std::to_string(i)] = (48 + i);
+		}
 	}
 
 	std::vector<uint8_t> compile_line(const std::string &line_raw, size_t line_number) {
@@ -173,9 +188,25 @@ public:
 			std::string array_content = line_raw.substr(bracket_start, bracket_end - bracket_start + 1);
 			return parse_array(trim(array_content), line_raw, line_number);
 		}
-		
 
-		if (instructions.find(instr) == instructions.end()) {
+		if (instr == ".l") {
+			std::string label_name;
+			iss >> label_name;
+			if (label_name.ends_with(':')) label_name.pop_back();
+			if (symbols.find(label_name) != symbols.end()) {
+				generate_error("Redefinition of `" + label_name + "`", line, line_number, label_name);
+				return {};
+			} else {
+				symbols[label_name] = current_address;
+				return {};
+			}
+		} else if (symbols.find(instr) != symbols.end()) {
+			current_address += 8;
+			return binof(symbols[instr]);
+		} else if (registers.find(instr) != registers.end()) {
+			current_address += 1;
+			return binof(registers[instr]);
+		} else if (instructions.find(instr) == instructions.end()) {
 			generate_error("Unknown instruction", line_raw, line_number, instr);
 			return {};
 		}
@@ -223,13 +254,13 @@ public:
 			}
 			
 			if (type == "byte") {
-				auto b = binof<uint8_t>(static_cast<uint8_t>(value));
+				auto b = binof<uint8_t>(value);
 				result.insert(result.end(), b.begin(), b.end());
 			} else if (type == "word") {
-				auto b = binof<uint16_t>(static_cast<uint16_t>(value));
+				auto b = binof<uint16_t>(value);
 				result.insert(result.end(), b.begin(), b.end());
 			} else if (type == "dword") {
-				auto b = binof<uint32_t>(static_cast<uint32_t>(value));
+				auto b = binof<uint32_t>(value);
 				result.insert(result.end(), b.begin(), b.end());
 			} else if (type == "qword") {
 				auto b = binof<uint64_t>(value);
@@ -239,6 +270,8 @@ public:
 				return {};
 			}
 		}
+
+		current_address += result.size();
 		
 		return result;
 	}
