@@ -40,8 +40,9 @@ void generate_error(const std::string &what, const std::string &line, size_t lin
 class AutoAssembler {
 	uint64_t current_address = 0;
 	std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> instructions;
-	std::unordered_map<std::string, uint8_t> registers;
 	std::unordered_map<std::string, uint64_t> symbols;
+	std::unordered_map<std::string, std::string> macros;
+	std::unordered_map<std::string, std::vector<uint64_t>> unresolved_references;
 
 	std::vector<uint8_t> parse_array(const std::string& raw, const std::string& line, size_t line_num) {
 		std::vector<uint8_t> result;
@@ -156,13 +157,13 @@ public:
 		instructions[".popmmio"] = {"byte", {28}};
 		// Define registers
 		for (int i = 0; i <= 15; ++i) {
-			registers["%bmm" + std::to_string(i)] = (i);
-			registers["%wmm" + std::to_string(i)] = (16 + i);
-			registers["%dmm" + std::to_string(i)] = (32 + i);
+			macros["%bmm" + std::to_string(i)] = "byte(" + std::to_string(i) + ")";
+			macros["%wmm" + std::to_string(i)] = "byte(" + std::to_string(16 + i) + ")";
+			macros["%dmm" + std::to_string(i)] = "byte(" + std::to_string(32 + i) + ")";
 		}
 
 		for (int i = 0; i <= 31; ++i) {
-			registers["%qmm" + std::to_string(i)] = (48 + i);
+			macros["%qmm" + std::to_string(i)] = "byte(" + std::to_string(48 + i) + ")";
 		}
 	}
 
@@ -203,9 +204,6 @@ public:
 		} else if (symbols.find(instr) != symbols.end()) {
 			current_address += 8;
 			return binof(symbols[instr]);
-		} else if (registers.find(instr) != registers.end()) {
-			current_address += 1;
-			return binof(registers[instr]);
 		} else if (instructions.find(instr) == instructions.end()) {
 			generate_error("Unknown instruction", line_raw, line_number, instr);
 			return {};
@@ -275,6 +273,24 @@ public:
 		
 		return result;
 	}
+
+	std::string expand_macro(const std::string &line) {
+		std::string expanded = line;
+		bool changed = true;
+
+		while (changed) {
+			changed = false;
+			for (const auto &[macro_name, macro_body] : macros) {
+				size_t pos = expanded.find(macro_name);
+				if (pos != std::string::npos) {
+					expanded.replace(pos, macro_name.size(), macro_body);
+					changed = true;
+				}
+			}
+		}
+
+		return expanded;
+	}
 	
 	void compile_file(const std::string &filename, const std::string &outputfile) {
 		std::ifstream in(filename);
@@ -283,6 +299,7 @@ public:
 		size_t line_num = 1;
 		
 		while (std::getline(in, line)) {
+			line = (expand_macro(line));
 			auto compiled = compile_line(line, line_num);
 			out.write((char*)compiled.data(), compiled.size());
 			line_num++;
@@ -298,7 +315,7 @@ public:
 // ==== MAIN ====
 int main(int argc, char **argv) {
 	if (argc < 3) {
-		std::cerr << "Usage: ./assembler <input.asm> <output.bin>\n";
+		std::cerr << "Usage: " << argv[0] << " <input.asm> <output.bin>\n";
 		return 1;
 	}
 

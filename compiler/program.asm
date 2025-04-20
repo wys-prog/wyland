@@ -1,13 +1,2 @@
 .l main:
-    .mov byte(9), byte(0)
-    .mov byte(9), byte(0)
-    .mov byte(9), byte(0)
-    .mov byte(9), byte(0)
-    .mov byte(9), byte(0)
-    .mov byte(9), byte(0)
-    .mov byte(9), byte(0)
-    .mov byte(9), byte(0)
-    .mov byte(9), byte(0)
-    .mov byte(9), byte(0)
-    .mov byte(9), byte(0)
-    .mov byte(9), byte(0)
+    .jmp main
