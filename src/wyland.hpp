@@ -132,7 +132,7 @@ bool load_file(std::fstream &file, const wheader_t &header) {
   return true;
 }
 
-void load_libs(std::fstream &file, const wheader_t &header, bool fmt_names = true) {
+void load_libs(std::fstream &file, std::streampos max, const wheader_t &header, bool fmt_names = true) {
   file.seekg(header.lib);
   if (!file.good()) {
     std::cerr << "[e]: failed to seek to `lib` position in disk file." << std::endl;
@@ -142,7 +142,7 @@ void load_libs(std::fstream &file, const wheader_t &header, bool fmt_names = tru
 
   std::cout << "[i]: loading libraries" << std::endl;
 
-  while (!file.eof()) {
+  while (file.tellg() < max) {
     char buff[1]{0};
     file.read(buff, sizeof(buff));
     std::string fullname = "";

@@ -222,19 +222,15 @@ private:
   }
 
 public:
-  void init(uint64_t _memory_segment_begin, 
-            uint64_t _memory_segment_end, 
-            bool _is_system, 
-            uint64_t _name, 
-            linkedfn_array *table, 
-            uint64_t base, IWylandGraphicsModule * = nullptr,
+  void init(uint64_t, 
+            uint64_t, 
+            bool , 
+            uint64_t, 
+            linkedfn_array *, 
+            uint64_t, IWylandGraphicsModule * = nullptr,
             WylandMMIOModule* = nullptr, WylandMMIOModule* = nullptr, 
             WylandMMIOModule * = nullptr) override {
   
-    beg = _memory_segment_begin;
-    end = _memory_segment_end;
-    is_system = _is_system;
-    thread_id = _name;
   }
 
   void run() override {

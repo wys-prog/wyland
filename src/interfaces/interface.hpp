@@ -23,9 +23,9 @@ WYLAND_BEGIN
 class IWylandGraphicsModule : public WylandMMIOModule {
 public:
   virtual ~IWylandGraphicsModule() {}
-  virtual wbool init(wint width, wint height, const std::string &title) { return wyland_true; }
+  virtual wbool init(wint, wint, const std::string &) { return wyland_true; }
   virtual void shutdown() {}
-  virtual void process(wfloat delta) {} // Godot style !
+  virtual void process(wfloat) {} // Godot style !
   virtual void render() {}
   virtual wbool should_close() { return wyland_false; }
   virtual std::string name() { return typeid(this).name(); }

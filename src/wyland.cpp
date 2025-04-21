@@ -164,7 +164,7 @@ void run_base_function(std::vector<std::string> &args, bool debug = false) {
       wyland_exit(-1);
     }
     
-    load_libs(disk, header, task.format_libs_name);
+    load_libs(disk, header.data, header, task.format_libs_name);
     
     delete block;
     
@@ -330,7 +330,7 @@ taskHandle check = [](std::vector<std::string> &args) {
 
       disk.read((char*)block->array, sizeof(block->array));
 
-      for (int i = 0; i < sizeof(block->array); i++) std::cout << (int)block->array[i];
+      for (unsigned int i = 0; i < sizeof(block->array); i++) std::cout << (int)block->array[i];
       std::cout << std::endl;
       disk.close();
       delete block;

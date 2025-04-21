@@ -11,8 +11,8 @@ namespace wylma {
 
     class fstream {
     private:
-      std::fstream &stream;
       uint64_t base_address = 0;
+      std::fstream &stream;
 
     public:
       fstream(std::fstream &base_stream, uint64_t base = 0x0)

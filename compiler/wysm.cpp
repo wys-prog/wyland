@@ -5,6 +5,7 @@
 #include <fstream>
 #include <cctype>
 #include <algorithm>
+#include <iomanip>
 
 // ==== UTILS ====
 template <typename T>
@@ -13,6 +14,14 @@ std::vector<uint8_t> binof(T value) {
 	for (size_t i = 0; i < sizeof(T); ++i) {
 		result[sizeof(T) - 1 - i] = static_cast<uint8_t>(value >> (i * 8));
 	}
+	return result;
+}
+
+std::vector<uint8_t> binof(const std::string &value) {
+	std::vector<uint8_t> result(value.size());
+	
+	for (const auto&c:value) result.push_back((uint8_t)c);
+
 	return result;
 }
 
@@ -49,7 +58,7 @@ class AutoAssembler {
 	std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> instructions;
 	std::unordered_map<std::string, uint64_t> symbols;
 	std::unordered_map<std::string, std::string> macros;
-	std::unordered_map<std::string, std::vector<uint64_t>> unresolved_references;
+	std::unordered_map<std::string, std::vector<std::pair<uint64_t, std::pair<std::string, uint64_t>>>> unresolved_references;
 
 	std::vector<uint8_t> parse_array(const std::string& raw, const std::string& line, size_t line_num) {
 		std::vector<uint8_t> result;
@@ -102,15 +111,6 @@ class AutoAssembler {
 					generate_error("Invalid char format. Expected 'X'", line, line_num, val);
 					return {};
 				}
-			} else if (type == "string") {
-				if (val.size() >= 2 && val.front() == '"' && val.back() == '"') {
-					for (size_t i = 1; i < val.size() - 1; ++i) {
-						result.push_back(static_cast<uint8_t>(val[i]));
-					}
-				} else {
-					generate_error("Invalid string format. Expected \"...\"", line, line_num, val);
-					return {};
-				}
 			} else {
 				generate_error("Unsupported array element type", line, line_num, type);
 				return {};
@@ -127,7 +127,7 @@ public:
 	AutoAssembler() {
 		// Define instruction format and opcode (1 byte)
 		instructions[".nop"] = {"", {0x00}};
-		instructions[".lea"] = {"qword", {0x01}};
+		instructions[".lea"] = {"byte, qword", {0x01}};
 		/* Loads */
 		instructions[".lbyte"] = {"byte, byte", {0x02, 1 * 8}};
 		instructions[".lword"] = {"byte, word", {0x02, 2 * 8}};
@@ -186,33 +186,43 @@ public:
 		std::getline(iss, args);
 		args = trim(args);
 
-		if (instr == ".array") {
+		if (instr == ".array" || instr == ".data") {
 			size_t bracket_start = line_raw.find('[');
 			size_t bracket_end = line_raw.rfind(']');
 			if (bracket_start == std::string::npos || bracket_end == std::string::npos || bracket_end <= bracket_start) {
-				generate_error("Missing or misplaced brackets in .array", line_raw, line_number, line_raw);
+				generate_error("Missing or misplaced brackets", line_raw, line_number, line_raw);
 				return {};
 			}
 			std::string array_content = line_raw.substr(bracket_start, bracket_end - bracket_start + 1);
 			return parse_array(trim(array_content), line_raw, line_number);
-		}
-
-		if (instr == ".l") {
-			std::string label_name;
-			iss >> label_name;
-			if (label_name.ends_with(':')) label_name.pop_back();
+		} else if (line.starts_with(".string")) {
+			size_t beg = line.find('"');
+			size_t end = line.find('"', beg + 1);
+			if (beg == std::string::npos || end == std::string::npos) { generate_error("excepted double quotes", line, line_number, line); return{}; }
+			std::string string = line.substr(beg + 1, end - (beg + 1));
+			return binof(string);
+		} else if (line.contains(':') && !line.starts_with(':')) {
+			size_t end = line.find(':');
+			if (end == std::string::npos) { generate_error("Excepted ':' token to end label's name", line, line_number, line); return{}; }
+			std::string label_name = (line.substr(0, end));
+			
 			if (symbols.find(label_name) != symbols.end()) {
 				generate_error("Redefinition of `" + label_name + "`", line, line_number, label_name);
 				return {};
 			} else {
+				std::cout << "0x" << std::hex << std::setw(16) << std::setfill('0') << current_address << ": "
+				"new symbol: `" << label_name << "`" << std::endl;
 				symbols[label_name] = current_address;
+
 				return {};
 			}
+
+			iss.str(line.substr(end + 1));
 		} else if (symbols.find(instr) != symbols.end()) {
 			current_address += 8;
 			return binof(symbols[instr]);
-		} else {
-			unresolved_references[instr].push_back(current_address);
+		} else if (instructions.find(instr) == instructions.end()) {
+			unresolved_references[instr].push_back({current_address, {line, line_number}});
 			return {binof<uint64_t>(0x00)};
 		}
 		
@@ -232,7 +242,7 @@ public:
 		}
 		
 		if (params.size() != expected.size()) {
-			generate_error("Wrong argument count", line_raw, line_number, line);
+			generate_error("Wrong argument count excepted: " + std::to_string(expected.size()), line_raw, line_number, line);
 			return {};
 		}
 		
@@ -265,7 +275,7 @@ public:
 				if (symbols.find(value_str) != symbols.end()) value = symbols[value_str];
 				else {
 					value = 0;
-					unresolved_references[value_str].push_back(current_address);
+					unresolved_references[value_str].push_back({current_address, {line, line_number}});
 				}
 			}
 			
@@ -310,6 +320,28 @@ public:
 		return expanded;
 	}
 	
+	void resolve_reference(const std::string &refname, std::ofstream &stream) {
+		if (symbols.find(refname) == symbols.end()) {
+			auto &smth = unresolved_references[refname];
+
+			for (const auto&idk:smth) {
+				generate_error("Undefined reference to `" + idk.second.first + "`", idk.second.first, idk.second.second, idk.second.first);
+			}
+
+			return;
+		}
+
+		auto &smth = unresolved_references[refname];
+
+		for (const auto&idk:smth) {
+			stream.seekp(idk.first + 1);
+			auto bytes = binof(symbols[refname]);
+			stream.write((char*)bytes.data(), bytes.size());
+		}
+
+		unresolved_references.erase(refname);
+	}
+
 	void compile_file(const std::string &filename, const std::string &outputfile) {
 		std::ifstream in(filename);
 		std::ofstream out(outputfile);
@@ -323,7 +355,14 @@ public:
 			line_num++;
 			file_size += compiled.size();
 		}
-		
+
+				
+		if (!unresolved_references.empty()) {
+			for (const auto&unref:unresolved_references) {
+				resolve_reference(unref.first, out);
+			}
+		}
+
 		return;
 	}
 

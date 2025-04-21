@@ -109,10 +109,10 @@ public:
 
   wulong receive_data() override {
     wuint info = read_next_wuint();
-    if (info == weof) return static_cast<wulong>(weof);
+    if (info == (wuint)weof) return static_cast<wulong>(weof);
 
     wuint val = read_next_wuint();
-    if (val == weof) return static_cast<wulong>(weof);
+    if (val == (wuint)weof) return static_cast<wulong>(weof);
 
     wulong result = 0;
     result |= static_cast<wulong>(info) << 32;
