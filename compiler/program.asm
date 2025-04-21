@@ -1,3 +1,17 @@
+header:
+; header
+.string "wlf"
+; target
+.dw word(0xA64)
+
+.dd dword(14)
+
+.dq qword(entry)
+.dq qword(disk_start)
+.dq qword(lib_start)
+
+entry:
+
 main:
   .lea %qmm0, qword(@system.data.string)
   .lbyte %qmm1, byte(13)
@@ -35,18 +49,20 @@ main:
 
 @system.data:
   @system.data.string:
-    .data [string("Hello, world"), byte(0x0A), byte(0x00)] ; len = 13
+    .string("Hello, world")
+    .data [byte(0x0A), byte(0x00)] ; len = 13
 
 
-@lib_start:
+lib_start:
   ; external functions
-  .data [string("io/0:wyland_get_stdout,1:wyland_get_stdin,2:wyland_get_stderr,") ]
-  .data [string("3:wyland_putc,4:wyland_readc,"), byte(0)]
+  .string "io/0:wyland_get_stdout,1:wyland_get_stdin,2:wyland_get_stderr,"
+  .string "3:wyland_putc,4:wyland_readc,"
+  .data [byte(0x00)]
   ; putc -> dmm0 char, qmm0 -> handle;
   ; readc -> (return)dmm0(char)
   ; (gets) -> (return)qmm0
 
-@disk_start:
+disk_start:
   .data [qword(0x00), qword(0x00), qword(0x00), qword(0x00)]
   .data [qword(0x00), qword(0x00), qword(0x00), qword(0x00)]
   .data [qword(0x00), qword(0x00), qword(0x00), qword(0x00)]

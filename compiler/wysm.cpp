@@ -18,7 +18,7 @@ std::vector<uint8_t> binof(T value) {
 }
 
 std::vector<uint8_t> binof(const std::string &value) {
-	std::vector<uint8_t> result(value.size());
+	std::vector<uint8_t> result;
 	
 	for (const auto&c:value) result.push_back((uint8_t)c);
 
@@ -52,13 +52,20 @@ bool is_numeric_string(const std::string &string) {
 	return true;
 }
 
+struct undefined_reference {
+	uint64_t filepos;
+	std::string line;
+	uint64_t line_count;
+	std::string refname;
+};
+
 // ==== COMPILER ====
 class AutoAssembler {
 	uint64_t current_address = 0;
 	std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> instructions;
 	std::unordered_map<std::string, uint64_t> symbols;
 	std::unordered_map<std::string, std::string> macros;
-	std::unordered_map<std::string, std::vector<std::pair<uint64_t, std::pair<std::string, uint64_t>>>> unresolved_references;
+	std::unordered_map<std::string, std::vector<undefined_reference>> unresolved_references;
 
 	std::vector<uint8_t> parse_array(const std::string& raw, const std::string& line, size_t line_num) {
 		std::vector<uint8_t> result;
@@ -122,7 +129,6 @@ class AutoAssembler {
 		return result;
 	}
 	
-
 public:
 	AutoAssembler() {
 		// Define instruction format and opcode (1 byte)
@@ -162,6 +168,10 @@ public:
 		instructions[".emplace"] = {"qword, byte", {26}};
 		instructions[".pushmmio"] = {"byte, qword", {27}};
 		instructions[".popmmio"] = {"byte", {28}};
+		instructions[".db"] = {"byte", {}};
+		instructions[".dw"] = {"word", {}};
+		instructions[".dd"] = {"dword", {}};
+		instructions[".dq"] = {"qword", {}};
 		// Define registers
 		for (int i = 0; i <= 15; ++i) {
 			macros["%bmm" + std::to_string(i)] = "byte(" + std::to_string(i) + ")";
@@ -200,6 +210,7 @@ public:
 			size_t end = line.find('"', beg + 1);
 			if (beg == std::string::npos || end == std::string::npos) { generate_error("excepted double quotes", line, line_number, line); return{}; }
 			std::string string = line.substr(beg + 1, end - (beg + 1));
+			current_address += string.size();
 			return binof(string);
 		} else if (line.contains(':') && !line.starts_with(':')) {
 			size_t end = line.find(':');
@@ -222,7 +233,16 @@ public:
 			current_address += 8;
 			return binof(symbols[instr]);
 		} else if (instructions.find(instr) == instructions.end()) {
-			unresolved_references[instr].push_back({current_address, {line, line_number}});
+			unresolved_references[instr].push_back(
+				undefined_reference{
+					.filepos = current_address,
+					.line = line, 
+					.line_count = line_number, 
+					.refname = instr
+				}
+			);
+			
+			current_address += 8;
 			return {binof<uint64_t>(0x00)};
 		}
 		
@@ -272,10 +292,19 @@ public:
 			else if (value_str.starts_with("0o")) value = std::stoull(value_str, nullptr, 8); 
 			else if (is_numeric_string(value_str)) value = std::stoull(value_str, nullptr, 10);
 			else {
-				if (symbols.find(value_str) != symbols.end()) value = symbols[value_str];
+				if (symbols.find(value_str) != symbols.end()) {
+					value = symbols[value_str];
+				}
 				else {
 					value = 0;
-					unresolved_references[value_str].push_back({current_address, {line, line_number}});
+					unresolved_references[value_str].push_back(
+						undefined_reference {
+							.filepos = current_address,
+							.line = line, 
+							.line_count = line_number, 
+							.refname = value_str
+						}
+					);
 				}
 			}
 			
@@ -325,7 +354,7 @@ public:
 			auto &smth = unresolved_references[refname];
 
 			for (const auto&idk:smth) {
-				generate_error("Undefined reference to `" + idk.second.first + "`", idk.second.first, idk.second.second, idk.second.first);
+				generate_error("Undefined reference to `" + idk.refname + "`", idk.line, idk.line_count, idk.refname);
 			}
 
 			return;
@@ -334,9 +363,11 @@ public:
 		auto &smth = unresolved_references[refname];
 
 		for (const auto&idk:smth) {
-			stream.seekp(idk.first + 1);
+			std::cout << "resolving `" << refname << "`, address: 0x" << std::setw(16) << std::setfill('0') << symbols[refname] << std::endl;
+			stream.seekp(idk.filepos);
 			auto bytes = binof(symbols[refname]);
 			stream.write((char*)bytes.data(), bytes.size());
+			stream.flush();
 		}
 
 		unresolved_references.erase(refname);
@@ -344,7 +375,7 @@ public:
 
 	void compile_file(const std::string &filename, const std::string &outputfile) {
 		std::ifstream in(filename);
-		std::ofstream out(outputfile);
+		std::ofstream out(outputfile, std::ios::binary);
 		std::string line;
 		size_t line_num = 1;
 		
@@ -356,10 +387,13 @@ public:
 			file_size += compiled.size();
 		}
 
-				
 		if (!unresolved_references.empty()) {
-			for (const auto&unref:unresolved_references) {
-				resolve_reference(unref.first, out);
+			std::vector<std::string> keys;
+			for (const auto &[refname, _] : unresolved_references) {
+				keys.push_back(refname);
+			}
+			for (const auto &refname : keys) {
+				resolve_reference(refname, out);
 			}
 		}
 
@@ -384,7 +418,7 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	std::cout << "Compiled, output size: " << compiler.file_size << " bytes" << std::endl;
+	std::cout << "Compiled, output size: " << std::dec << compiler.file_size << " bytes" << std::endl;
 
 	return 0;
 }
