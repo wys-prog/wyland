@@ -212,13 +212,16 @@ void load_libs(std::fstream &file, std::streampos max, const wheader_t &header, 
 }
 
 void loadGraphicsModule(const std::string &path) {
-  if (path.empty()) {
-    cache::GraphicsModulePtr = new IWylandGraphicsModule();
-  } else if (path == "console" || path == "consgraphs") {
+  if (path == "console" || path == "consgraphs") {
     cache::GraphicsModulePtr = new WylandConsoleGraphicsModule();
     std::cout << "[i]: using built-in WylandConsoleGraphicsModule GPU" << std::endl;
+    return;
+  }
+
+  if (path.empty()) {
+    cache::GraphicsModulePtr = new IWylandGraphicsModule();
   } else if (!std::filesystem::exists(path)) {
-    std::cerr << "[e]: " << path << " no such file. Loading default GraphicsModule" << std::endl;
+    std::cerr << "[e]: `" << path << "` no such file. Loading default GraphicsModule" << std::endl;
     cache::GraphicsModulePtr = new IWylandGraphicsModule();
   } else if (path == "SDL" || "sdl") {
     // TODO
