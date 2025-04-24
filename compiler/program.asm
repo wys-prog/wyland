@@ -11,7 +11,8 @@ header:
 .dq qword(lib_start)
 
 entry:
-
+  .db byte(0xFE)
+  
 main:
   .lea %qmm0, qword(@system.data.string)
   .lbyte %qmm1, byte(13)
@@ -103,3 +104,4 @@ disk_start:
   .data [qword(0x00), qword(0x00), qword(0x00), qword(0x00)]
   .data [qword(0x00), qword(0x00), qword(0x00), qword(0x00)]
   .data [qword(0x00), qword(0x00), qword(0x00), qword(0x00)]
+  .data [qword(0xDEADBEEF)]

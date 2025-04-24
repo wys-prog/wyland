@@ -36,12 +36,12 @@ std::string trim(const std::string &what) {
 int errors = 0;
 void generate_error(const std::string &what, const std::string &line, size_t line_count, const std::string &word) {
 	std::cerr << "error: " << what << "\n\t| " << line_count << ":" << line << "\n\t|  ";
-	for (size_t i = 0; i < std::to_string(line_count).size(); i++) std::cout << ' ';
+	for (size_t i = 0; i < std::to_string(line_count).size(); i++) std::cerr << ' ';
 	size_t beg = line.find(word);
 	if (beg == std::string::npos) beg = 0;
-	for (size_t i = 0; i < beg; i++) std::cout << ' ';
-	for (size_t i = 0; i < word.size(); i++) std::cout << '~';
-	std::cout << std::endl;
+	for (size_t i = 0; i < beg; i++) std::cerr << ' ';
+	for (size_t i = 0; i < word.size(); i++) std::cerr << '~';
+	std::cerr << std::endl;
 	errors++;
 }
 
@@ -267,6 +267,7 @@ public:
 		}
 		
 		std::vector<uint8_t> result = opcode;
+		current_address += result.size();
 		for (size_t i = 0; i < params.size(); ++i) {
 			const std::string &type = expected[i];
 			const std::string &arg = params[i];
@@ -282,6 +283,7 @@ public:
 			std::string type_prefix = arg.substr(0, beg);
 			std::string value_str = arg.substr(beg + 1, end - beg - 1);
 			uint64_t value = 0;
+			bool is_ref_def = true;
 			
 			if (type_prefix != type) {
 				generate_error("Argument type mismatch", line_raw, line_number, arg);
@@ -297,6 +299,7 @@ public:
 				}
 				else {
 					value = 0;
+					is_ref_def = false;
 					unresolved_references[value_str].push_back(
 						undefined_reference {
 							.filepos = current_address,
@@ -311,23 +314,31 @@ public:
 			if (type == "byte") {
 				auto b = binof<uint8_t>(value);
 				result.insert(result.end(), b.begin(), b.end());
+				//if (!is_ref_def) unresolved_references[value_str].back().filepos += 1;
+				current_address += 1;
 			} else if (type == "word") {
 				auto b = binof<uint16_t>(value);
 				result.insert(result.end(), b.begin(), b.end());
+				//if (!is_ref_def) unresolved_references[value_str].back().filepos += 2;
+				current_address += 2;
 			} else if (type == "dword") {
 				auto b = binof<uint32_t>(value);
 				result.insert(result.end(), b.begin(), b.end());
+				//if (!is_ref_def) unresolved_references[value_str].back().filepos += 4;
+				current_address += 4;
 			} else if (type == "qword") {
 				auto b = binof<uint64_t>(value);
 				result.insert(result.end(), b.begin(), b.end());
+				//if (!is_ref_def) unresolved_references[value_str].back().filepos += 8;
+				current_address += 8;
 			} else {
 				generate_error("Unsupported type", line_raw, line_number, type);
 				return {};
 			}
 		}
-
-		current_address += result.size();
 		
+		// current_address += result.size();
+
 		return result;
 	}
 
@@ -363,7 +374,13 @@ public:
 		auto &smth = unresolved_references[refname];
 
 		for (const auto&idk:smth) {
-			std::cout << "resolving `" << refname << "`, address: 0x" << std::setw(16) << std::setfill('0') << symbols[refname] << std::endl;
+			std::cout << "0x" << std::setw(16) << std::setfill('0') << symbols[refname] << ", resovled: " <<
+			std::setw(20) << std::setfill('.')
+			<< refname << " "
+			<< "Memory usage: ~" << std::dec << std::setw(12) << std::setfill('.')
+			<< unresolved_references.size() * (sizeof(undefined_reference) + sizeof(refname) + refname.size()) << " bytes, " 
+			<< std::dec << std::setw(10) << std::setfill('.')
+			<< unresolved_references.size() << " elements" << std::endl;
 			stream.seekp(idk.filepos);
 			auto bytes = binof(symbols[refname]);
 			stream.write((char*)bytes.data(), bytes.size());
@@ -373,8 +390,13 @@ public:
 		unresolved_references.erase(refname);
 	}
 
-	void compile_file(const std::string &filename, const std::string &outputfile) {
+	void compile_file(const std::string &filename, const std::string &outputfile,  const std::string &strarv, bool table = false) {
 		std::ifstream in(filename);
+		if (!in) {
+			generate_error(("cannot open file " + filename), ("<argv>: " + strarv), 0, filename);
+			return;
+		}
+
 		std::ofstream out(outputfile, std::ios::binary);
 		std::string line;
 		size_t line_num = 1;
@@ -387,6 +409,8 @@ public:
 			file_size += compiled.size();
 		}
 
+		std::cout << unresolved_references.size() << " symbols to resolve.." << std::endl;
+
 		if (!unresolved_references.empty()) {
 			std::vector<std::string> keys;
 			for (const auto &[refname, _] : unresolved_references) {
@@ -397,22 +421,68 @@ public:
 			}
 		}
 
+		out.flush();
+		out.seekp(current_address + 1);
+
+
+		if (table) {
+			char smth[] = "Symbol table:";
+			out.write(smth, sizeof(smth));
+			for (const auto&symbol:symbols) {
+				auto addr = binof(symbol.second);
+				out.write(symbol.first.c_str(), symbol.first.size());
+				out.write(":", 1);
+				out.write((char*)addr.data(), addr.size());
+				out.write("\0", 1);
+				file_size += symbol.first.size() + addr.size() + 2;
+			}
+		}
+
 		return;
 	}
 
 	size_t file_size = 0;
 };
 
+void linify(const int argc, const char *const argv[], std::stringstream &ss) {
+	for (int i = 0; i < argc; i++) {
+		ss << argv[i] << " ";
+	}
+}
+
 // ==== MAIN ====
 int main(int argc, char **argv) {
 	if (argc < 3) {
-		std::cerr << "Usage: " << argv[0] << " <input.asm> <output.bin>\n";
+		std::cerr << "Usage: " << argv[0] << " <input.asm> -o <output.bin>\n";
 		return 1;
 	}
 
-	AutoAssembler compiler;
-	compiler.compile_file(argv[1], argv[2]);
+	bool include_symbol_table = false;
+	bool verbose = false;
+	std::string input, output = "out.bin";
+	std::stringstream ss;
+	linify(argc, argv, ss);
 
+	for (int i = 1; i < argc; i++) {
+		if (std::string(argv[i]) == "-o") {
+			if (i + 1 >= argc) {
+				std::cerr << "[e]: excepted file after -o" << std::endl;
+				return -1;
+			} else {
+				output = argv[++i];
+			}
+		} else if (std::string(argv[i]) == "-table") include_symbol_table = true;
+		else if (std::string(argv[i]) == "-v") verbose = true;
+		else input = argv[i];
+	}
+
+	if (!verbose) {
+		std::cout.setstate(std::ios_base::failbit);
+	}
+
+	AutoAssembler compiler;
+	compiler.compile_file(input, output, ss.str(), include_symbol_table);
+	
 	if (errors > 0) {
 		std::cerr << "Aborted due to errors." << std::endl;
 		return 1;

@@ -31,6 +31,7 @@
 
 #include "interfaces/interface.hpp"
 #include "wmmio.hpp"
+#include "security.hpp"
 
 WYLAND_BEGIN
 
@@ -49,9 +50,6 @@ protected:
   int      flags  = 0;
   bool     is_system = false;
   uint64_t thread_id = '?' * '?';
-  uint8_t  children = 0;
-  std::mutex mtx;
-  std::condition_variable cv;
   IWylandGraphicsModule *GraphicsModule;
   WylandMMIOModule      *MMIOModule1;
   WylandMMIOModule      *MMIOModule2;
@@ -447,6 +445,8 @@ public:
         );
       } else std::cout << "[i]: MMIOModule initialized: " << MMIOModule2->name() << std::endl;
     }
+
+    security::SecurityAddModules({GraphicsModule, MMIOModule1, MMIOModule2, DiskModule});
   }
 
   void run() override {
@@ -476,13 +476,17 @@ public:
       
       if (fetched >= sizeof(set) / sizeof(set[0])) {
         std::ostringstream oss;
-        oss << "Invalid instruction: " << std::hex << std::uppercase << (int)fetched << "\n"
+        oss << "Invalid instruction: " << std::hex << std::setw(2) << std::setfill('0') << (int)fetched << "\n"
         "\tfetched:\t[" << (int)fetched<< "]\n"
         "\t4 bytes:\t[" <<  
         format({memory[ip-2],memory[ip-1],memory[ip],memory[ip+1]}, ',') 
         << "]\n"
-        "\tCore IP:\t" << ip << std::dec << "\n"
-        "\tLocal IP:\t" << local_ip << "\n\tThread:\t" << thread_id;
+        "\tCore IP:\t0x" << std::setw(16) << std::setfill('0') << std::hex << ip  << "\n"
+        "\tLocal IP:\t0x" << std::setw(16) << std::setfill('0') << std::hex << local_ip << "\n"
+        "\tDisk IP:\t0x" << std::setw(16) << std::setfill('0') << std::hex << relative_address + ip << "\n"
+        "\tbase.add:\t0x" << std::setw(16) << std::setfill('0') << std::hex << base_address << "\n"
+        "\trel.add:\t0x"  << std::setw(16) << std::setfill('0') << std::hex << relative_address << "\n"
+        "\tThread:\t" << std::dec << thread_id;
         throw std::runtime_error(oss.str());
       }
 
@@ -505,11 +509,6 @@ public:
     MMIOModule1->shutdown();
     MMIOModule2->shutdown();
     DiskModule->shutdown();
-
-    {
-      std::unique_lock<std::mutex> lock(mtx);
-      cv.wait(lock, [this] { return children == 0; });
-    }
   }
 
   uint64_t get_ip() override { return ip; }
@@ -525,6 +524,7 @@ public:
         "\tIP (global):\t" + std::to_string(ip) + "\n"
         "\tthread:\t\t" + std::to_string(thread_id)  + "\n"
         "\tlocal IP:\t" + std::to_string(local_ip) + "\n"
+        "\tglob.relat:\t" + std::to_string(relative_address) + "(use it as base address for disk-file)\n"
         "\tfrom wtarg64::run()"
       );
       
@@ -541,13 +541,16 @@ public:
       
       if (fetched >= sizeof(set) / sizeof(set[0])) {
         std::ostringstream oss;
-        oss << "Invalid instruction: " << std::hex << std::uppercase << (int)fetched << "\n"
+        oss << "Invalid instruction: " << std::hex << std::setw(2) << std::setfill('0') << (int)fetched << "\n"
         "\tfetched:\t[" << (int)fetched<< "]\n"
         "\t4 bytes:\t[" <<  
         format({memory[ip-2],memory[ip-1],memory[ip],memory[ip+1]}, ',') 
         << "]\n"
-        "\tCore IP:\t" << ip << std::dec << "\n"
-        "\tLocal IP:\t" << local_ip << "\n\tThread:\t" << thread_id;
+        "\tCore IP:\t" << std::setw(16) << std::setfill('0') << std::hex << ip  << "\n"
+        "\tLocal IP:\t" << std::setw(16) << std::setfill('0') << std::hex << local_ip << "\n"
+        "\tbase.add:\t0x" << std::setw(16) << std::setfill('0') << std::hex << base_address << "\n"
+        "\trel.add:\t0x"  << std::setw(16) << std::setfill('0') << std::hex << relative_address << "\n"
+        "\tThread:\t" << std::dec << thread_id;
         throw std::runtime_error(oss.str());
       }
 

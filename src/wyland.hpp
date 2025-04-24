@@ -31,9 +31,11 @@
 #include "wfiles.h"
 #include "wtargb.hpp"
 #include "interfaces/exInterface.hpp"
+#include "interfaces/ConsoleGraphics.hpp"
 #include "wmmio.hpp"
 #include "wmutiles.hpp"
 #include "disk.hpp"
+#include "security.hpp"
 #include "wyland.h"
 
 WYLAND_BEGIN
@@ -51,6 +53,8 @@ namespace cache {
 }
 
 void clear_ressources() {
+  security::SecurityShutDownModules();
+  destroy(cache::SecurityMMIOPointers);
   destroy(cache::linked_funcs);
   destroy(cache::libraries);
   destroy(cache::IExternalGraphicsModuleHandles);
@@ -121,8 +125,11 @@ bool load_file(std::fstream &file, const wheader_t &header) {
     return false;
   }
 
+  std::cout << "[i]: code region beg: " << header.code << std::endl;
+  relative_address = header.code;
+
   size_t i = 0;
-  while (!file.eof() && i < SYSTEM_SEGMENT_SIZE) {
+  while (!file.eof() && i < SYSTEM_SEGMENT_SIZE && file.tellp() < (std::streampos)header.lib) {
     char buff[1]{0};
     file.read(buff, sizeof(buff));
     memory[SYSTEM_SEGMENT_START+i] = buff[0];
@@ -207,6 +214,9 @@ void load_libs(std::fstream &file, std::streampos max, const wheader_t &header, 
 void loadGraphicsModule(const std::string &path) {
   if (path.empty()) {
     cache::GraphicsModulePtr = new IWylandGraphicsModule();
+  } else if (path == "console" || path == "consgraphs") {
+    cache::GraphicsModulePtr = new WylandConsoleGraphicsModule();
+    std::cout << "[i]: using built-in WylandConsoleGraphicsModule GPU" << std::endl;
   } else if (!std::filesystem::exists(path)) {
     std::cerr << "[e]: " << path << " no such file. Loading default GraphicsModule" << std::endl;
     cache::GraphicsModulePtr = new IWylandGraphicsModule();
