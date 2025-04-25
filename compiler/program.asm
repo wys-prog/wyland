@@ -2,9 +2,9 @@
 
 ; section .code
 boot:
-  .lbyte %qmm1, byte(0x0E)
+  .lbyte %qmm1, byte(0x0F)
   .lea %qmm0, qword(system.data.strb1)
-  .lea %qmm15, qword(system.stop)
+  .lea byte(0x3F), qword(system.stop)
   .jmp qword(print)
 
 ; libs
@@ -34,19 +34,9 @@ print:
   print.end:
     .ret
 
-system:
+system:  
   system.stop:
-    .lea %qmm0, qword(system.stop.string)
-    .lbyte %qmm1, byte(0x10)
-    .lea %qmm15, qword(system.stop.end)
-    .jmp qword(print)
-
-    system.stop.string:
-      .string "Stopping system"
-      .db byte(0x0A)
-    
-    system.stop.end:
-      .db byte(0xFF)
+    .db byte(0xFF)
 
 ; system reserved disks
 system.data:

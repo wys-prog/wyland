@@ -17,7 +17,12 @@
 # define COMPILER_NAME "Unknown compiler"
 #endif
 
-#define WYLAND_NAME    "Wyland wy:2.5"
+#ifdef JAVA
+#define WYLAND_NAME "Java Shit" 
+/* We're coding in JS, Not JavaScript, but Java Shit !! */
+#else
+#define WYLAND_NAME    "Wyland wy:2.6"
+#endif // Java ?
 #define WYLAND_BUILD_NAME "Wyland Build " WYLAND_VERSION_MAJOR_STR "." WYLAND_VERSION_MINOR_STR " - Sequoia - " COMPILER_NAME
 
 #ifndef WYLAND_VERSION_UINT32

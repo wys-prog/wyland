@@ -54,6 +54,7 @@ protected:
   WylandMMIOModule      *MMIOModule1;
   WylandMMIOModule      *MMIOModule2;
   WylandMMIOModule      *DiskModule;
+  WylandMMIOModule      *Modules[4];
 
   /* Deprecated ! */
   std::unordered_map<uint64_t, libcallc::DynamicLibrary> libs;
@@ -316,31 +317,33 @@ protected:
     auto index = read();
     auto reg = read();
     auto bytes = regs.get(reg);
-    switch (index) {
-      case 0: GraphicsModule->send_data(bytes); break;
-      case 1: MMIOModule1->send_data(bytes); break;
-      case 2: MMIOModule2->send_data(bytes); break;
-      case 3: DiskModule->send_data(bytes); break;
-      default: 
-        throw std::runtime_error("somewhere::ipushmmio(): given index is invalid (from 0 to 3 only is valid): " + std::to_string(index));
-        break;
+    if (index >= 4) {
+      throw std::runtime_error("somewhere::ipushmmio(): given index is invalid (from 0 to 3 only is valid): " + std::to_string(index));
+    } else {
+      Modules[index]->send_data(bytes);
     }
   }
 
   void ipopmmio() { /* New in std:wy2.5 ! */
     auto index = read();
-    switch (index) {
-      case 0: regs.set(R_POP_MMIO, GraphicsModule->receive_data()); break; /* ... What would you like to recive from.. That ? */
-      case 1: regs.set(R_POP_MMIO, MMIOModule1->receive_data()); break;
-      case 2: regs.set(R_POP_MMIO, MMIOModule2->receive_data()); break;
-      case 3: regs.set(R_POP_MMIO, DiskModule->receive_data()); break;
-      default: 
-        throw std::runtime_error("somewhere::ipushmmio(): given index is invalid (from 0 to 3 only is valid): " + std::to_string(index));
-        break;
+    if (index >= 4) {
+      throw std::runtime_error("somewhere::ipopmmio(): given index is invalid (from 0 to 3 only is valid): " + std::to_string(index));
+    } else {
+      regs.set(R_POP_MMIO, Modules[index]->receive_data());
     }
   }
 
-  setfunc_t set[29];
+  void iconnectmmio() { /* New in stdwy:2.6 ! */
+    auto index = read();
+    auto namebeg = read<uint64_t>();
+    uint64_t i = 0;
+    int8_t c = (int8_t)memory[base_address + namebeg + i];
+    std::string name = "";
+    while (c) name += c;
+    loadIExternalMMIOModule(name);
+  }
+
+  setfunc_t set[31];
 
 public:
   void init(uint64_t _memory_segment_begin, 
@@ -378,6 +381,10 @@ public:
     } else DiskModule = disk;
 
     linked_functions = table;
+    Modules[0] = GraphicsModule;
+    Modules[1] = DiskModule;
+    Modules[2] = MMIOModule1;
+    Modules[3] = MMIOModule2;
 
     set[set_wtarg64::nop] = &corewtarg64::nop;
     set[set_wtarg64::lea] = &corewtarg64::ilea; 
