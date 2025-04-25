@@ -166,22 +166,93 @@ public:
 		instructions[".clfn"] = {"dword", {25}};
 		instructions[".call-c"] = {"dword", {25}};
 		instructions[".emplace"] = {"qword, byte", {26}};
-		instructions[".pushmmio"] = {"byte, qword", {27}};
+		instructions[".pushmmio"] = {"byte, byte", {27}};
 		instructions[".popmmio"] = {"byte", {28}};
 		instructions[".db"] = {"byte", {}};
 		instructions[".dw"] = {"word", {}};
 		instructions[".dd"] = {"dword", {}};
 		instructions[".dq"] = {"qword", {}};
 		// Define registers
-		for (int i = 0; i <= 15; ++i) {
-			macros["%bmm" + std::to_string(i)] = "byte(" + std::to_string(i) + ")";
-			macros["%wmm" + std::to_string(i)] = "byte(" + std::to_string(16 + i) + ")";
-			macros["%dmm" + std::to_string(i)] = "byte(" + std::to_string(32 + i) + ")";
-		}
-
-		for (int i = 0; i <= 31; ++i) {
-			macros["%qmm" + std::to_string(i)] = "byte(" + std::to_string(48 + i) + ")";
-		}
+		macros["%bmm0"] = "byte(0x00)";
+		macros["%wmm0"] = "byte(0x10)";
+		macros["%dmm0"] = "byte(0x20)";
+		macros["%bmm1"] = "byte(0x01)";
+		macros["%wmm1"] = "byte(0x11)";
+		macros["%dmm1"] = "byte(0x21)";
+		macros["%bmm2"] = "byte(0x02)";
+		macros["%wmm2"] = "byte(0x12)";
+		macros["%dmm2"] = "byte(0x22)";
+		macros["%bmm3"] = "byte(0x03)";
+		macros["%wmm3"] = "byte(0x13)";
+		macros["%dmm3"] = "byte(0x23)";
+		macros["%bmm4"] = "byte(0x04)";
+		macros["%wmm4"] = "byte(0x14)";
+		macros["%dmm4"] = "byte(0x24)";
+		macros["%bmm5"] = "byte(0x05)";
+		macros["%wmm5"] = "byte(0x15)";
+		macros["%dmm5"] = "byte(0x25)";
+		macros["%bmm6"] = "byte(0x06)";
+		macros["%wmm6"] = "byte(0x16)";
+		macros["%dmm6"] = "byte(0x26)";
+		macros["%bmm7"] = "byte(0x07)";
+		macros["%wmm7"] = "byte(0x17)";
+		macros["%dmm7"] = "byte(0x27)";
+		macros["%bmm8"] = "byte(0x08)";
+		macros["%wmm8"] = "byte(0x18)";
+		macros["%dmm8"] = "byte(0x28)";
+		macros["%bmm9"] = "byte(0x09)";
+		macros["%wmm9"] = "byte(0x19)";
+		macros["%dmm9"] = "byte(0x29)";
+		macros["%bmm10"] = "byte(0x0a)";
+		macros["%wmm10"] = "byte(0x1a)";
+		macros["%dmm10"] = "byte(0x2a)";
+		macros["%bmm11"] = "byte(0x0b)";
+		macros["%wmm11"] = "byte(0x1b)";
+		macros["%dmm11"] = "byte(0x2b)";
+		macros["%bmm12"] = "byte(0x0c)";
+		macros["%wmm12"] = "byte(0x1c)";
+		macros["%dmm12"] = "byte(0x2c)";
+		macros["%bmm13"] = "byte(0x0d)";
+		macros["%wmm13"] = "byte(0x1d)";
+		macros["%dmm13"] = "byte(0x2d)";
+		macros["%bmm14"] = "byte(0x0e)";
+		macros["%wmm14"] = "byte(0x1e)";
+		macros["%dmm14"] = "byte(0x2e)";
+		macros["%bmm15"] = "byte(0x0f)";
+		macros["%wmm15"] = "byte(0x1f)";
+		macros["%dmm15"] = "byte(0x2f)";
+		macros["%qmm0"] = "byte(0x30)";
+		macros["%qmm1"] = "byte(0x31)";
+		macros["%qmm2"] = "byte(0x32)";
+		macros["%qmm3"] = "byte(0x33)";
+		macros["%qmm4"] = "byte(0x34)";
+		macros["%qmm5"] = "byte(0x35)";
+		macros["%qmm6"] = "byte(0x36)";
+		macros["%qmm7"] = "byte(0x37)";
+		macros["%qmm8"] = "byte(0x38)";
+		macros["%qmm9"] = "byte(0x39)";
+		macros["%qmm10"] = "byte(0x3a)";
+		macros["%qmm11"] = "byte(0x3b)";
+		macros["%qmm12"] = "byte(0x3c)";
+		macros["%qmm13"] = "byte(0x3d)";
+		macros["%qmm14"] = "byte(0x3e)";
+		macros["%qmm15"] = "byte(0x3f)";
+		macros["%qmm16"] = "byte(0x40)";
+		macros["%qmm17"] = "byte(0x41)";
+		macros["%qmm18"] = "byte(0x42)";
+		macros["%qmm19"] = "byte(0x43)";
+		macros["%qmm20"] = "byte(0x44)";
+		macros["%qmm21"] = "byte(0x45)";
+		macros["%qmm22"] = "byte(0x46)";
+		macros["%qmm23"] = "byte(0x47)";
+		macros["%qmm24"] = "byte(0x48)";
+		macros["%qmm25"] = "byte(0x49)";
+		macros["%qmm26"] = "byte(0x4a)";
+		macros["%qmm27"] = "byte(0x4b)";
+		macros["%qmm28"] = "byte(0x4c)";
+		macros["%qmm29"] = "byte(0x4d)";
+		macros["%qmm30"] = "byte(0x4e)";
+		macros["%qmm31"] = "byte(0x4f)";
 	}
 
 	std::vector<uint8_t> compile_line(const std::string &line_raw, size_t line_number) {
@@ -205,6 +276,28 @@ public:
 			}
 			std::string array_content = line_raw.substr(bracket_start, bracket_end - bracket_start + 1);
 			return parse_array(trim(array_content), line_raw, line_number);
+		} else if (instr == ".resb" || (line.starts_with(".resb") && !line.contains(':'))) {
+			size_t beg = line.find('(');
+			size_t end = line.find(')', beg + 1);
+			if (end == std::string::npos || beg == std::string::npos) {
+				generate_error("excepted '(uint)' format.", line, line_number, line);
+				return {};
+			}
+
+			std::string strval = line.substr(beg + 1, end - (beg + 1));
+			try {
+				unsigned long val = std::stoul(strval);
+				std::vector<uint8_t> values{};
+				for (unsigned long i = 0; i < val; i++) {
+					values.push_back(0x00);
+					current_address++;
+				}
+
+				return values;
+			} catch (...) {
+				generate_error("invalid format", line, line_number, line);
+				return {};
+			}
 		} else if (line.starts_with(".string")) {
 			size_t beg = line.find('"');
 			size_t end = line.find('"', beg + 1);

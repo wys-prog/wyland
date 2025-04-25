@@ -314,7 +314,8 @@ protected:
 
   void ipushmmio() { /* New in std:wy2.5 ! */
     auto index = read();
-    auto bytes = read<uint64_t>();
+    auto reg = read();
+    auto bytes = regs.get(reg);
     switch (index) {
       case 0: GraphicsModule->send_data(bytes); break;
       case 1: MMIOModule1->send_data(bytes); break;
