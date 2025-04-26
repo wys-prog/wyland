@@ -62,6 +62,11 @@ enum set_wtarg64 {
   empl,
   push_mmio, 
   pop_mmio,
+  connect_mmio, 
+  deconnect_mmio,
+  oxor, 
+  oor, 
+  oand,
 };
 
 enum set_wtargmarch {

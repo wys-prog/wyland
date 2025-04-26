@@ -333,17 +333,50 @@ protected:
     }
   }
 
-  void iconnectmmio() { /* New in stdwy:2.6 ! */
+  void iconnectmmio() { /* New in std:wy2.6 ! */
     auto index = read();
     auto namebeg = read<uint64_t>();
     uint64_t i = 0;
-    int8_t c = (int8_t)memory[base_address + namebeg + i];
+    int8_t c = (int8_t)memory[base_address + namebeg + (i)];
     std::string name = "";
-    while (c) name += c;
-    loadIExternalMMIOModule(name);
+    while (c) {
+      name += c;
+      c = (int8_t)memory[base_address + namebeg + (i++)];
+    }
+
+    if (index >= 4) {
+      throw std::runtime_error("somewhere::iconnectmmio(): given index is invalid (from 0 to 3 only is valid): " + std::to_string(index));
+    } else {
+      Modules[index] = loadIExternalMMIOModule(name);
+    }
   }
 
-  setfunc_t set[31];
+  void ideconnectmmio() { /* New in std:wy2.6 ! */
+    auto index = read();
+    if (index >= 4) {
+      throw std::runtime_error("somewhere::haha::ideconnectmmio(): given index is invalid (from 0 to 3 only is valid): " + std::to_string(index));
+    } else {
+      Modules[index]->shutdown();
+      Modules[index]->~WylandMMIOModule();
+    }
+  }
+
+  void ixor() { /* New in std:wy2.6 ! */
+    auto r1 = read(), r2 = read();
+    regs.set(regs.get(r1), regs.get(r1) ^ regs.get(r2));
+  }
+
+  void ior() { /* New in std:wy2.6 ! */
+    auto r1 = read(), r2 = read();
+    regs.set(regs.get(r1), regs.get(r1) | regs.get(r2));
+  }
+
+  void iand() { /* New in std:wy2.6 ! */
+    auto r1 = read(), r2 = read();
+    regs.set(regs.get(r1), regs.get(r1) & regs.get(r2));
+  }
+
+  setfunc_t set[34];
 
 public:
   void init(uint64_t _memory_segment_begin, 
@@ -359,6 +392,7 @@ public:
     ip  = beg;
     is_system = _is_system;
     thread_id = _name;
+    base_address = base;
 
     if (table == nullptr) {
       throw std::runtime_error("linked_functions table is null.");
@@ -415,14 +449,21 @@ public:
     set[set_wtarg64::empl] = &corewtarg64::iemplace;
     set[set_wtarg64::push_mmio] = &corewtarg64::ipushmmio;
     set[set_wtarg64::pop_mmio] = &corewtarg64::ipopmmio;
+    set[set_wtarg64::connect_mmio] = &corewtarg64::iconnectmmio;
+    set[set_wtarg64::deconnect_mmio] = &corewtarg64::ideconnectmmio;
+    set[set_wtarg64::oand] = &corewtarg64::iand;
+    set[set_wtarg64::oor] = &corewtarg64::ior;
+    set[set_wtarg64::oxor] = &corewtarg64::ixor;
 
     /* Initialize the core, with some "basic" values. */
 
     regs.set(R_ORG, beg);
-    regs.set(R_STACK_BASE, end - STACK_SIZE);
+    regs.set(R_STACK_BASE, end - STACK_SIZE); // You can also put stack where ever you want...
     regs.set(0, 'A');
     regs.set(1, 1);
     regs.set(REG_KEY, 0x00);
+    regs.set(R_MEMORY_INF, segments::memory_size);
+    regs.set(R_RELATIVE_N, base_address);
 
     if (is_system) {
       if (!GraphicsModule->init(800, 600, "Wyland")) {

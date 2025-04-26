@@ -20,6 +20,8 @@
 #define WYLAND_MEMORY_MINIMUM 16_MB
 
 #define REG_KEY (32)
+#define R_RELATIVE_N 59
+#define R_MEMORY_INF 60
 #define R_POP_MMIO 61
 #define R_ORG 62
 #define R_RET 63

@@ -6,7 +6,7 @@
 #include <cctype>
 #include <algorithm>
 #include <iomanip>
-
+#warning todo: interface...
 // ==== UTILS ====
 template <typename T>
 std::vector<uint8_t> binof(T value) {
@@ -168,11 +168,18 @@ public:
 		instructions[".emplace"] = {"qword, byte", {26}};
 		instructions[".pushmmio"] = {"byte, byte", {27}};
 		instructions[".popmmio"] = {"byte", {28}};
+		instructions[".connectmmio"] = {"byte, qword", {29}};
+		instructions[".deconnectmmio"] = {"byte, qword", {30}};
+		instructions[".ctmmio"] = {"byte, qword", {29}};
+		instructions[".dcmmio"] = {"byte, qword", {30}};
+		instructions[".xor"] = {"byte, byte", {31}};
+		instructions[".or"] = {"byte, byte", {32}};
+		instructions[".and"] = {"byte, byte", {33}};
 		instructions[".db"] = {"byte", {}};
 		instructions[".dw"] = {"word", {}};
 		instructions[".dd"] = {"dword", {}};
 		instructions[".dq"] = {"qword", {}};
-		// Define registers
+		// Define registers (idk why, some of them didn't work..)
 		macros["%bmm0"] = "byte(0x00)";
 		macros["%wmm0"] = "byte(0x10)";
 		macros["%dmm0"] = "byte(0x20)";
@@ -467,13 +474,7 @@ public:
 		auto &smth = unresolved_references[refname];
 
 		for (const auto&idk:smth) {
-			std::cout << "0x" << std::setw(16) << std::setfill('0') << symbols[refname] << ", resovled: " <<
-			std::setw(20) << std::setfill('.')
-			<< refname << " "
-			<< "Memory usage: ~" << std::dec << std::setw(12) << std::setfill('.')
-			<< unresolved_references.size() * (sizeof(undefined_reference) + sizeof(refname) + refname.size()) << " bytes, " 
-			<< std::dec << std::setw(10) << std::setfill('.')
-			<< unresolved_references.size() << " elements" << std::endl;
+			std::cout << "resovled: " << refname << std::endl;
 			stream.seekp(idk.filepos);
 			auto bytes = binof(symbols[refname]);
 			stream.write((char*)bytes.data(), bytes.size());
