@@ -1,6 +1,10 @@
 #ifndef ___WYLAND_TARGETS___
 #define ___WYLAND_TARGETS___
 
+#ifdef _WIN32
+#include <windows.h>
+#endif 
+
 #include <stdint.h>
 #include <string.h>
 

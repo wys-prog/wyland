@@ -1,6 +1,10 @@
 #ifndef ___WYLAND_SOCK_H___
 #define ___WYLAND_SOCK_H___
 
+#ifdef _WIN32
+#include <windows.h>
+#endif 
+
 #include <stdint.h>
 
 // Swap functions

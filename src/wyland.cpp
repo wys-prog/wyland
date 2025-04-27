@@ -1,5 +1,6 @@
 #ifdef _WIN32
-#include <Windows.h>
+#include <windows.h>
+#include <oleauto.h>
 #endif 
 
 #include <condition_variable>

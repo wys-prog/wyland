@@ -1,7 +1,10 @@
 #pragma once
 
-#include "wmmbase.hpp"
+#ifdef _WIN32
+#include <windows.h>
+#endif 
 
+#include "wmmbase.hpp"
 
 #include <vector>
 #include <string>

@@ -1,6 +1,10 @@
 #ifndef ___WYLAND_FILES_H___
 #define ___WYLAND_FILES_H___
 
+#ifdef _WIN32
+#include <windows.h>
+#endif 
+
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>

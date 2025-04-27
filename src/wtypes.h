@@ -1,6 +1,10 @@
 #ifndef ___WYLAND_TYPES_H___
 #define ___WYLAND_TYPES_H___
 
+#ifdef _WIN32
+#include <windows.h>
+#endif 
+
 #include <stdint.h>
 
 typedef void (*lambda)();

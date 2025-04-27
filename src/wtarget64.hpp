@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef _WIN32
+#include <windows.h>
+#endif 
+
 #include <condition_variable>
 #include <initializer_list>
 #include <unordered_map>
