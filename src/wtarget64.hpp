@@ -89,8 +89,7 @@ protected:
 
   void iadd() {
     auto r1 = read(), r2 = read();
-    auto v1 = regs.get(r1) + regs.get(r2);
-    regs.set(r1, v1);
+    regs.set(r1, (regs.get(r1) + regs.get(r2)));
   };
 
   void isub() {
@@ -202,7 +201,7 @@ protected:
     auto r1 = read();
     auto ad = base_address + read<uint64_t>();
 
-    if (ad >= SYSTEM_SEGMENT_START && !is_system) 
+    if (ad <= (SYSTEM_SEGMENT_START + SYSTEM_SEGMENT_SIZE) && !is_system) 
       throw std::runtime_error("Permission denied: Accessing system's segment.\n"
       "Thread: " + std::to_string(thread_id));
     
@@ -220,7 +219,7 @@ protected:
     auto dst = read();
     auto at = base_address + read<uint64_t>(); /* This function will at memory[at]. */
     
-    if (at >= SYSTEM_SEGMENT_START && !is_system) 
+    if (at <= (SYSTEM_SEGMENT_START + SYSTEM_SEGMENT_SIZE) && !is_system) 
     throw std::runtime_error("Permission denied: Accessing system's segment.\n"
     "Thread: " + std::to_string(thread_id));
   
@@ -384,7 +383,7 @@ public:
             bool _is_system, 
             uint64_t _name, 
             linkedfn_array *table, 
-            uint64_t base, IWylandGraphicsModule *_GraphicsModule, 
+            uint64_t, IWylandGraphicsModule *_GraphicsModule, 
             WylandMMIOModule *m1, WylandMMIOModule *m2, 
             WylandMMIOModule *disk) override {
     beg = _memory_segment_begin;
@@ -392,7 +391,7 @@ public:
     ip  = beg;
     is_system = _is_system;
     thread_id = _name;
-    base_address = base;
+    base_address = _memory_segment_begin;
 
     if (table == nullptr) {
       throw std::runtime_error("linked_functions table is null.");
@@ -540,6 +539,9 @@ public:
       }
 
       try {
+        #ifdef __WYLAND_DEBUG_PRINT_IP__
+        std::cout << "0x" << std::setfill('0') << std::setw(16) << std::hex << ip << ":0x" << std::setw(2) << (int)fetched << std::endl;
+        #endif
         (this->*set[fetched])();
         auto now = std::chrono::high_resolution_clock::now();
         std::chrono::duration<float> delta = now - last;
@@ -562,6 +564,7 @@ public:
 
   uint64_t get_ip() override { return ip; }
 
+  #pragma region bad...
   void run_step() override {
     if (!halted) {
 
@@ -604,6 +607,9 @@ public:
       }
 
       try {
+        #ifdef __WYLAND_DEBUG_PRINT_IP__
+        std::cout << "0x" << std::setfill('0') << std::setw(16) << std::hex << ip << ":0x" << std::setw(2) << (int)fetched << std::endl;
+        #endif
         (this->*set[fetched])();
       } catch (const std::exception &e) {
         throw runtime::wyland_runtime_error(e.what(), "Instruction Invokation Exception", __func__, typeid(e).name(), ip, thread_id, NULL, NULL, end-beg);
@@ -627,6 +633,7 @@ public:
       if (max_step != -1) i++;
     }
   }
+  #pragma endregion
 };
 
 WYLAND_END

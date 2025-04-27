@@ -247,6 +247,7 @@ taskHandle infos = [](std::vector<std::string> &args) {
               "===== SYSTEM =====\n"
             << os.get_fmt_specs()
             << "===== RUNTIME =====\n"
+               "runtime version:\t" << wyland_get_runtime_version() << "\n"
                "sizeof base-runtime:\t" << sizeof(core_base) << "\n"
                "sizeof wtarg64:\t\t" << sizeof(corewtarg64) << "\n"
             << std::endl;
