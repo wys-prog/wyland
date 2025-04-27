@@ -218,7 +218,7 @@ std::vector<rawlib> get_libnames(std::fstream &file, std::streampos max, const w
     libname = std::filesystem::absolute(libname).string();
     libs.push_back({
       .path = libname, 
-      .funcs = get_funcs_from_lib(libname)
+      .funcs = get_funcs_from_lib(funcs)
     });
 
   }
