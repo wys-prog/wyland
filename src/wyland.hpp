@@ -43,6 +43,11 @@ WYLAND_BEGIN
 using namespace std::string_literals;
 using namespace std::chrono_literals;
 
+typedef struct {
+  std::string path;
+  std::vector<std::pair<uint32_t, std::string>> funcs;
+} rawlib;
+
 namespace cache {
   boost::container::flat_map<uint32_t, libcallc::DynamicLibrary::FunctionType> linked_funcs{};
   std::vector<libcallc::DynamicLibrary> libraries{};
@@ -139,76 +144,112 @@ bool load_file(std::fstream &file, const wheader_t &header) {
   return true;
 }
 
-void load_libs(std::fstream &file, std::streampos max, const wheader_t &header, bool fmt_names = true) {
+std::vector<std::pair<uint32_t, std::string>> get_funcs_from_lib(const std::string &string) {
+  std::vector<std::pair<uint32_t, std::string>> funcs;
+  std::istringstream iss(string);
+  std::string funcname;
+  while (std::getline(iss, funcname, ',')) {
+    size_t id_beg = funcname.find(':');
+
+    if (id_beg == std::string::npos) {
+      std::cerr << "[e]: invalid libname format. Must have libpath%ID:funcA,ID:funcB,ID:funcC,<...>, with ID: uint32" << std::endl;
+      std::cerr << "[e]: with line: " << funcname << std::endl;
+      wyland_exit(-120);
+    }
+
+    std::string id = funcname.substr(0, id_beg);
+    std::string realname = format(funcname.substr(id_beg + 1));
+
+    if (trim(format(id)).empty() && trim(format(realname)).empty()) break;
+
+    try {
+      uint32_t uintID = std::stoul(id);
+      funcs.push_back({uintID, realname});
+    } catch (const std::exception &e) {
+      std::cerr << "[e]: C++ Exception during string-conversion (to uint32): " << e.what() << std::endl;
+      wyland_exit(-120); 
+    }
+  }
+
+  return funcs;
+}
+
+#pragma region IMPORTANT 
+/*
+  Starting from std:wy2.6, the format for external functions has been updated.
+  The new format is as follows:
+  <library_path>%ID:FUNCTION_NAME,ID:FUNCTION_NAME,ID:FUNCTION_NAME,<...>
+*/
+#pragma endregion
+
+std::vector<rawlib> get_libnames(std::fstream &file, std::streampos max, const wheader_t &header, bool fmt_names = true) {
+  std::vector<rawlib> libs = {};
+
   file.seekg(header.lib);
   if (!file.good()) {
     std::cerr << "[e]: failed to seek to `lib` position in disk file." << std::endl;
     std::cerr << "[w]: process will continue, without libraries. Program can crash without them." << std::endl;
-    return;
+    return {};
   }
-
-  std::cout << "[i]: loading libraries" << std::endl;
 
   while (file.tellg() < max) {
     char buff[1]{0};
     file.read(buff, sizeof(buff));
-    std::string fullname = "";
-    fullname.push_back(buff[0]);
-
-    while (buff[0] && !(file.eof())) {
+    std::string rawstring = "";
+    rawstring.push_back(buff[0]);
+    // load other chars
+    while (buff[0] && !(file.eof()) && (file.tellg() < max)) {
       file.read(buff, sizeof(buff));
-      fullname += buff[0];
+      rawstring += buff[0];
     }
-    
-    size_t libend = fullname.find('/');
-    if (libend == std::string::npos) continue;
 
-    std::string libname = fullname.substr(0, libend) + LIB_EXT;
-    std::string funcsname = fullname.substr(libend + 1);
+    size_t libname_end = rawstring.find('%');
+    if (libname_end == std::string::npos) continue;
+
+    std::string libname = rawstring.substr(0, libname_end) + LIB_EXT;
+    std::string funcs = rawstring.substr(libname_end + 1);
 
     if (fmt_names) libname = format(libname);
-    
     if (!std::filesystem::exists(libname)) {
       std::cerr << "[e]: library `" << libname << "`: no such file." << std::endl;
       continue;
     }
 
     libname = std::filesystem::absolute(libname).string();
-    std::cout << "[i]: " << "loading `" << funcsname << "` from `" << libname << "`" << std::endl;
-    cache::libraries.push_back(libcallc::DynamicLibrary());
-    cache::libraries[cache::libraries.size()].loadLibrary(libname.c_str());
-    auto funcs = split(funcsname, ',');
+    libs.push_back({
+      .path = libname, 
+      .funcs = get_funcs_from_lib(libname)
+    });
 
-    for (const auto&func:funcs) {
-      try {
-        auto parts = split(func, ':');
-        if (parts.size() > 2) throw std::invalid_argument("invalid format. Function format must be <x:str>, where x is the ID (an integer) and str the name of the function.");
-        auto id = std::stoll(parts[0]);
-        cache::linked_funcs.insert({id, cache::libraries[cache::libraries.size()].loadFunction(parts[1].c_str())});
-        std::cout << "[i]: loaded from `" << libname << "`: `" << func << "`" << std::endl;
-      } catch (const std::runtime_error &e) {
-        std::cerr << "[e]: " << e.what() << std::endl;
-        continue;
-      } catch (const std::invalid_argument &e) {
-        std::cerr << "[e]: " << e.what() << std::endl;
-        continue;
-      } catch (const std::out_of_range &e) {
-        std::cerr << "[e]: " << e.what() << std::endl;
-        continue;
-      } catch (const std::exception &e) {
-        std::cerr << "[e]: " << e.what() << std::endl;
-        continue;
+  }
+  
+  return libs;
+}
+
+void load_libs(std::fstream &file, std::streampos max, const wheader_t &header, bool fmt_names = true) {
+  std::cout << "[i]: loading libraries" << std::endl;
+
+  auto libs = get_libnames(file, max, header, fmt_names);
+  for (const auto& lib : libs) {
+    try {
+      cache::libraries.push_back(libcallc::DynamicLibrary(lib.path));
+      for (const auto& func : lib.funcs) {
+        std::cout << "[i]: loading from `" << lib.path << "`: (" << func.first << ") `" << func.second << "`" << std::endl;
+        auto efunc = cache::libraries.back().loadFunction(func.second.c_str());
+        if (!efunc) {
+          std::cerr << "[e]: Failed to load function `" << func.second << "` from `" << lib.path << "`" << std::endl;
+          continue;
+        }
+        cache::linked_funcs.insert({func.first, efunc});
       }
+    } catch (const std::exception& e) {
+      std::cerr << "[e]: Failed to load library `" << lib.path << "`: " << e.what() << std::endl;
     }
   }
 
   std::sort(cache::linked_funcs.begin(), cache::linked_funcs.end());
-  
-  boost::container::flat_map<uint32_t, libcallc::DynamicLibrary::FunctionType> fn_map(
-    cache::linked_funcs.begin(), cache::linked_funcs.end()
-  );
 
-  std::cout << "[i]: " << std::dec << fn_map.size() << " functions loaded." << std::endl;
+  std::cout << "[i]: " << std::dec << cache::linked_funcs.size() << " functions loaded." << std::endl;
 }
 
 void loadGraphicsModule(const std::string &path) {

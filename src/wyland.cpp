@@ -154,6 +154,7 @@ void run_base_function(std::vector<std::string> &args, bool debug = false) {
     wblock *block = new wblock;
     disk.read((char*)block->array, sizeof(block->array));
     auto header = wyland_files_make_header(block);
+    delete block;
     fstream stream(disk, header.data);
     
     if (task.auto_targ) task.target = header.target;
@@ -166,8 +167,6 @@ void run_base_function(std::vector<std::string> &args, bool debug = false) {
     }
     
     load_libs(disk, header.data, header, task.format_libs_name);
-    
-    delete block;
     
     core_base *core = create_core_ptr(task.target);
     allocate_memory(task.memory);
@@ -422,6 +421,39 @@ taskHandle debug = [](std::vector<std::string> &args) {
   run_base_function(args, true);
 };
 
+taskHandle libsof = [](std::vector<std::string> &args) {
+  std::cout << "libsof" << std::endl;
+  for (const auto &file:args) {
+    std::fstream disk(file);
+
+    if (!disk) {
+      std::cerr << "[e]: Unable to open disk file: " << file << std::endl;
+      wyland_exit(-1);
+    }
+  
+    wblock *block = new wblock;
+    disk.read((char*)block->array, sizeof(block->array));
+    auto header = wyland_files_make_header(block);
+    delete block;
+    
+    task.target = header.target; /* To don't have target warning */
+    
+    if (!wyland_files_parse(&header, task.target, task.version)) {
+      std::cerr << "[e]: " << std::invalid_argument("Invalid header file.").what() << std::endl;
+      std::cout << "Extracted header:\n" << wyland_files_header_fmt(&header) << std::endl;
+      wyland_exit(-1);
+    }
+
+    auto libs = get_libnames(disk, header.data, header, true);
+    for (const auto&lib:libs) {
+      std::cout << "from: " << lib.path << std::endl;
+      for (const auto&func:lib.funcs) {
+        std::cout << "\t(" << func.first << ")" << func.second << std::endl;
+      }
+    }
+  }
+};
+
 std::unordered_map<std::string, taskHandle> handles {
   {"--v", version},
   {"--version", version},
@@ -445,7 +477,7 @@ std::unordered_map<std::string, taskHandle> handles {
   //{"-new-env", new_env},
   // Future tasks (Maybe in the std:wy4 standard !)
   //{"-compile", compile},
-  //{"-libsof", libsof},
+  {"-libsof", libsof},
   //{"-api", api}
 };
 
