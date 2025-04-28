@@ -63,7 +63,7 @@ constexpr std::size_t operator""_B(unsigned long long size) {
 WYLAND_BEGIN
 
 uint8_t *memory;
-uint64_t relative_address;
+uint64_t code_start;
 
 namespace segments {
   static bool keyboard_reserved;

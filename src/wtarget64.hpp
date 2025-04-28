@@ -44,11 +44,12 @@ class corewtarg64 : public core_base {
   using setfunc_t = void(corewtarg64::*)();
 
 protected:
-  uint64_t beg = 0x0000000000000000;
-  uint64_t end = 0xFFFFFFFFFFFFFFFF;
-  uint64_t ip  = 0x0000000000000000;
-  uint64_t local_ip = 0x0000000000000000;
-  uint64_t base_address = 0x0000000000000000;
+  uint64_t beg           = 0x0000000000000000;
+  uint64_t end           = 0xFFFFFFFFFFFFFFFF;
+  uint64_t ip            = 0x0000000000000000;
+  uint64_t local_ip      = 0x0000000000000000;
+  uint64_t base_address  = 0x0000000000000000;
+  uint64_t disk_base = 0x0000000000000000;
   reg_t    regs;
   bool     halted = false;
   int      flags  = 0;
@@ -117,37 +118,37 @@ protected:
   };
 
   void ijmp() {
-    ip = read<uint64_t>();
+    ip = (base_address + read<uint64_t>()) - disk_base;
   };
 
   void ije() {
-    auto tmp = read<uint64_t>();
+    auto tmp = base_address + read<uint64_t>() - disk_base;
     if (flags == EQUAL) ip = tmp;
   };
 
   void ijne() {
-    auto tmp = read<uint64_t>();
+    auto tmp = base_address + read<uint64_t>() - disk_base;
     if (flags == EQUAL) return;
     ip = tmp;
   };
 
   void ijg() {
-    auto tmp = read<uint64_t>();
+    auto tmp = base_address + read<uint64_t>() - disk_base;
     if (flags == LARGER) ip = tmp;
   };
 
   void ijl() {
-    auto tmp = read<uint64_t>();
+    auto tmp = base_address + read<uint64_t>() - disk_base;
     if (flags == LESSER) ip = tmp;
   };
 
   void ijge() {
-    auto tmp = read<uint64_t>();
+    auto tmp = base_address + read<uint64_t>() - disk_base;
     if (flags == LARGER || flags == EQUAL) ip = tmp;
   };
 
   void ijle() {
-    auto tmp = read<uint64_t>();
+    auto tmp = base_address + read<uint64_t>() - disk_base;
     if (flags == LESSER || flags == EQUAL) ip = tmp;
   };
 
@@ -187,7 +188,7 @@ protected:
   void istore() {
     auto size = read() / 8;
     auto r1 = read();
-    auto org = base_address + read<uint64_t>();
+    auto org = base_address + read<uint64_t>() - disk_base;
     auto array = to_bin(regs.get(r1));
     for (uint8_t i = 0; i < size; i++) {
       memory[org+i] = array[i];
@@ -203,7 +204,7 @@ protected:
 
   void ilea() {
     auto r1 = read();
-    auto ad = base_address + read<uint64_t>();
+    auto ad = base_address + read<uint64_t>() - disk_base;
 
     if (ad <= (SYSTEM_SEGMENT_START + SYSTEM_SEGMENT_SIZE) && !is_system) 
       throw std::runtime_error("Permission denied: Accessing system's segment.\n"
@@ -221,8 +222,8 @@ protected:
 
   void iloadat() {
     auto dst = read();
-    auto at = base_address + read<uint64_t>(); /* This function will at memory[at]. */
-    
+    auto at = base_address + read<uint64_t>() - disk_base; /* This function will at memory[at]. */
+    //                                                              ^^^^^^^^^^^^^^^ wtf ?
     if (at <= (SYSTEM_SEGMENT_START + SYSTEM_SEGMENT_SIZE) && !is_system) 
     throw std::runtime_error("Permission denied: Accessing system's segment.\n"
     "Thread: " + std::to_string(thread_id));
@@ -241,7 +242,7 @@ protected:
 
   void imovad() {
     auto a = read(), b = read();
-    regs.set(a, memory[base_address + regs.get(b)]);
+    regs.set(a, memory[base_address + regs.get(b) - disk_base]);
   }
 
   void isal() { /* New in std:wy2.3 ! */
@@ -296,7 +297,7 @@ protected:
   }
 
   void iemplace() { /* New in std:wy2.4 ! */
-    uint64_t address = regs.get(read());
+    uint64_t address = regs.get(read()) - disk_base;
     uint8_t with = read();
 
     if (address <= beg || address >= end) throw std::out_of_range(
@@ -338,7 +339,7 @@ protected:
 
   void iconnectmmio() { /* New in std:wy2.6 ! */
     auto index = read();
-    auto namebeg = read<uint64_t>();
+    auto namebeg = base_address + read<uint64_t>() - disk_base;
     uint64_t i = 0;
     int8_t c = (int8_t)memory[base_address + namebeg + (i)];
     std::string name = "";
@@ -387,7 +388,7 @@ public:
             bool _is_system, 
             uint64_t _name, 
             linkedfn_array *table, 
-            uint64_t, IWylandGraphicsModule *_GraphicsModule, 
+            uint64_t _disk_relative, IWylandGraphicsModule *_GraphicsModule, 
             WylandMMIOModule *m1, WylandMMIOModule *m2, 
             WylandMMIOModule *disk) override {
     beg = _memory_segment_begin;
@@ -396,6 +397,8 @@ public:
     is_system = _is_system;
     thread_id = _name;
     base_address = _memory_segment_begin;
+    disk_base = _disk_relative;
+    if (_is_system) std::cout << "[i]: base disk address: 0x" << std::hex << std::setfill('0') << std::setw(16) << _disk_relative << std::endl;
 
     if (table == nullptr) {
       throw std::runtime_error("linked_functions table is null.");
@@ -504,7 +507,7 @@ public:
   void run() override {
     auto last = std::chrono::high_resolution_clock::now();
     while (!halted) {
-      if (ip < beg || ip > end) 
+      if (ip < beg || ip >= end) 
       throw std::out_of_range(
         "Reading out of the local segment.\n"
         "\tflag 'beg':\t" + std::to_string(beg) + "\n"
@@ -518,7 +521,7 @@ public:
       auto fetched = read();
       local_ip++;
 
-      if (fetched == 0xFF) { halted = true; continue; }
+      if (fetched == 0xFF) { break; }
       if (fetched == 0xFE) { continue; } /* Specific mark for labels. Used for debugging. */
 
       wyland_uint key = get_key();
@@ -535,9 +538,9 @@ public:
         << "]\n"
         "\tCore IP:\t0x" << std::setw(16) << std::setfill('0') << std::hex << ip  << "\n"
         "\tLocal IP:\t0x" << std::setw(16) << std::setfill('0') << std::hex << local_ip << "\n"
-        "\tDisk IP:\t0x" << std::setw(16) << std::setfill('0') << std::hex << relative_address + ip << "\n"
+        "\tDisk IP:\t0x" << std::setw(16) << std::setfill('0') << std::hex << code_start + ip << "\n"
         "\tbase.add:\t0x" << std::setw(16) << std::setfill('0') << std::hex << base_address << "\n"
-        "\trel.add:\t0x"  << std::setw(16) << std::setfill('0') << std::hex << relative_address << "\n"
+        "\trel.add:\t0x"  << std::setw(16) << std::setfill('0') << std::hex << code_start << "\n"
         "\tThread:\t" << std::dec << thread_id;
         throw std::runtime_error(oss.str());
       }
@@ -572,7 +575,7 @@ public:
   void run_step() override {
     if (!halted) {
 
-      if (ip < beg || ip > end) 
+      if (ip < beg || ip >= end) 
       throw std::out_of_range(
         "Reading out of the local segment.\n"
         "\tflag 'beg':\t" + std::to_string(beg) + "\n"
@@ -580,7 +583,7 @@ public:
         "\tIP (global):\t" + std::to_string(ip) + "\n"
         "\tthread:\t\t" + std::to_string(thread_id)  + "\n"
         "\tlocal IP:\t" + std::to_string(local_ip) + "\n"
-        "\tglob.relat:\t" + std::to_string(relative_address) + "(use it as base address for disk-file)\n"
+        "\tglob.relat:\t" + std::to_string(code_start) + "(use it as base address for disk-file)\n"
         "\tfrom wtarg64::run()"
       );
       
@@ -605,7 +608,7 @@ public:
         "\tCore IP:\t" << std::setw(16) << std::setfill('0') << std::hex << ip  << "\n"
         "\tLocal IP:\t" << std::setw(16) << std::setfill('0') << std::hex << local_ip << "\n"
         "\tbase.add:\t0x" << std::setw(16) << std::setfill('0') << std::hex << base_address << "\n"
-        "\trel.add:\t0x"  << std::setw(16) << std::setfill('0') << std::hex << relative_address << "\n"
+        "\trel.add:\t0x"  << std::setw(16) << std::setfill('0') << std::hex << code_start << "\n"
         "\tThread:\t" << std::dec << thread_id;
         throw std::runtime_error(oss.str());
       }

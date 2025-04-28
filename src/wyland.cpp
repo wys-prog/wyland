@@ -155,7 +155,7 @@ void run_base_function(std::vector<std::string> &args, bool debug = false) {
     disk.read((char*)block->array, sizeof(block->array));
     auto header = wyland_files_make_header(block);
     delete block;
-    fstream stream(disk, header.data);
+    fstream stream(disk, header.data); // TODO: Adding enabling/disabling of "append/extend disk's size"
     
     if (task.auto_targ) task.target = header.target;
     
@@ -185,7 +185,7 @@ void run_base_function(std::vector<std::string> &args, bool debug = false) {
     std::cout << "[i]: initializing object 0x" << std::hex << reinterpret_cast<uintptr_t>(core) << std::endl;
     core->init(
       SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START+SYSTEM_SEGMENT_SIZE, 
-      true, 0, &cache::linked_funcs, SYSTEM_SEGMENT_START, cache::GraphicsModulePtr, 
+      true, 0, &cache::linked_funcs, SYSTEM_SEGMENT_START+code_start, cache::GraphicsModulePtr, 
       cache::MMIOModule1Ptr, cache::MMIOModule2Ptr, cache::DiskModulePtr
     );
     
@@ -323,6 +323,102 @@ taskHandle run_raw = [](std::vector<std::string> &args) {
   }
 };
 
+
+taskHandle make_disk = [](std::vector<std::string> &args) {
+  if (args.size() == 0) {
+    std::cerr << "[e]: " << std::invalid_argument("Excepted disk name.").what() << std::endl;
+    wyland_exit(-1);
+  }
+  
+  std::ofstream disk(args[0]);
+  
+  if (!disk) {
+    std::cerr << "[e]: Unable to create file " << args[0] << std::endl;
+    wyland_exit(-1);
+  }
+  
+  wheader_t header = wyland_files_basic_header();
+  
+  for (size_t i = 1; i < args.size(); i++) {
+    if (args[i] == "-version") {
+      header.version = std::stoul(args[++i]);
+    } else if (args[i] == "-target") {
+      header.version = ofname(args[++i].c_str());
+    } else if (args[i] == "-data") {
+      header.data = std::stoull(args[++i]);
+    } else if (args[i] == "-code") {
+      header.code = std::stoull(args[++i]);
+    } else if (args[i] == "-lib") {
+      header.lib = std::stoull(args[++i]);
+    }
+  }
+  
+  disk.write((char*)wyland_files_header_to_block(&header).array, sizeof(wblock));
+  
+  for (size_t i = 1; i < args.size(); i++) {
+    if (args[i].starts_with("-")) { // So files that starts with '-' aren't parsed... NOT MY PROBLEM AHAHAHA
+      i++;
+      continue;
+    }
+    
+    std::ifstream file(args[i]);
+    if (!file) {
+      std::cerr << "[e]: Unable to create file " << args[i] << std::endl;
+      wyland_exit(-1);
+    }
+    
+    while (!file.eof()) {
+      char buff[4]{0};
+      file.read(buff, sizeof(buff));
+      disk.write(buff, sizeof(buff));
+    }
+    
+    file.close();
+  }
+  
+  disk.close();
+  
+  std::cout << wyland_files_header_fmt(&header) << std::endl;
+  std::cout << "Saved to: " << args[0] << std::endl;
+};
+
+taskHandle debug = [](std::vector<std::string> &args) {
+  run_base_function(args, true);
+};
+
+taskHandle libsof = [](std::vector<std::string> &args) {
+  std::cout << "libsof" << std::endl;
+  for (const auto &file:args) {
+    std::fstream disk(file);
+    
+    if (!disk) {
+      std::cerr << "[e]: Unable to open disk file: " << file << std::endl;
+      wyland_exit(-1);
+    }
+    
+    wblock *block = new wblock;
+    disk.read((char*)block->array, sizeof(block->array));
+    auto header = wyland_files_make_header(block);
+    delete block;
+    
+    task.target = header.target; /* To don't have target warning */
+    
+    if (!wyland_files_parse(&header, task.target, task.version)) {
+      std::cerr << "[e]: " << std::invalid_argument("Invalid header file.").what() << std::endl;
+      std::cout << "Extracted header:\n" << wyland_files_header_fmt(&header) << std::endl;
+      wyland_exit(-1);
+    }
+    
+    auto libs = get_libnames(disk, header.data, header, true);
+    for (const auto&lib:libs) {
+      std::cout << "from: " << lib.path << std::endl;
+      for (const auto&func:lib.funcs) {
+        std::cout << "\t(" << func.first << ")" << func.second << std::endl;
+      }
+    }
+  }
+};
+
 taskHandle check = [](std::vector<std::string> &args) {
   for (size_t i = 0; i < args.size(); i++) {
     if (args[i] == "--raw") {
@@ -347,6 +443,11 @@ taskHandle check = [](std::vector<std::string> &args) {
       delete block;
     }
 
+    if (args[i] == "--libs") {
+      std::vector<std::string> libs_args{args[++i]};
+      libsof(libs_args);
+    }
+
     std::ifstream disk(args[i]);
 
     if (!disk) std::cerr << "[e]: not a file: " << args[i] << std::endl;
@@ -356,104 +457,10 @@ taskHandle check = [](std::vector<std::string> &args) {
     auto header = wyland_files_make_header(block);
     
     std::cout << wyland_files_header_fmt(&header) << std::endl;
-  }
-};
-
-taskHandle make_disk = [](std::vector<std::string> &args) {
-  if (args.size() == 0) {
-    std::cerr << "[e]: " << std::invalid_argument("Excepted disk name.").what() << std::endl;
-    wyland_exit(-1);
-  }
-
-  std::ofstream disk(args[0]);
-  
-  if (!disk) {
-    std::cerr << "[e]: Unable to create file " << args[0] << std::endl;
-    wyland_exit(-1);
-  }
-
-  wheader_t header = wyland_files_basic_header();
-  
-  for (size_t i = 1; i < args.size(); i++) {
-    if (args[i] == "-version") {
-      header.version = std::stoul(args[++i]);
-    } else if (args[i] == "-target") {
-      header.version = ofname(args[++i].c_str());
-    } else if (args[i] == "-data") {
-      header.data = std::stoull(args[++i]);
-    } else if (args[i] == "-code") {
-      header.code = std::stoull(args[++i]);
-    } else if (args[i] == "-lib") {
-      header.lib = std::stoull(args[++i]);
-    }  
-  }
-  
-  disk.write((char*)wyland_files_header_to_block(&header).array, sizeof(wblock));
-
-  for (size_t i = 1; i < args.size(); i++) {
-    if (args[i].starts_with("-")) {
-      i++;
-      continue;
-    }
-
-    std::ifstream file(args[i]);
-    if (!file) {
-      std::cerr << "[e]: Unable to create file " << args[i] << std::endl;
-      wyland_exit(-1);
-    }
-
-    while (!file.eof()) {
-      char buff[4]{0};
-      file.read(buff, sizeof(buff));
-      disk.write(buff, sizeof(buff));
-    }
-
-    file.close();
-  }
-
-  disk.close();
-
-  std::cout << wyland_files_header_fmt(&header) << std::endl;
-  std::cout << "Saved to: " << args[0] << std::endl;
-};
-
-taskHandle debug = [](std::vector<std::string> &args) {
-  run_base_function(args, true);
-};
-
-taskHandle libsof = [](std::vector<std::string> &args) {
-  std::cout << "libsof" << std::endl;
-  for (const auto &file:args) {
-    std::fstream disk(file);
-
-    if (!disk) {
-      std::cerr << "[e]: Unable to open disk file: " << file << std::endl;
-      wyland_exit(-1);
-    }
-  
-    wblock *block = new wblock;
-    disk.read((char*)block->array, sizeof(block->array));
-    auto header = wyland_files_make_header(block);
+    // That's why i shouldn't use dynamic-pointers...
     delete block;
-    
-    task.target = header.target; /* To don't have target warning */
-    
-    if (!wyland_files_parse(&header, task.target, task.version)) {
-      std::cerr << "[e]: " << std::invalid_argument("Invalid header file.").what() << std::endl;
-      std::cout << "Extracted header:\n" << wyland_files_header_fmt(&header) << std::endl;
-      wyland_exit(-1);
-    }
-
-    auto libs = get_libnames(disk, header.data, header, true);
-    for (const auto&lib:libs) {
-      std::cout << "from: " << lib.path << std::endl;
-      for (const auto&func:lib.funcs) {
-        std::cout << "\t(" << func.first << ")" << func.second << std::endl;
-      }
-    }
   }
 };
-
 std::unordered_map<std::string, taskHandle> handles {
   {"--v", version},
   {"--version", version},

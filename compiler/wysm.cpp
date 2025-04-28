@@ -6,7 +6,7 @@
 #include <cctype>
 #include <algorithm>
 #include <iomanip>
-#warning todo: interface...
+
 // ==== UTILS ====
 template <typename T>
 std::vector<uint8_t> binof(T value) {
@@ -179,6 +179,7 @@ public:
 		instructions[".dw"] = {"word", {}};
 		instructions[".dd"] = {"dword", {}};
 		instructions[".dq"] = {"qword", {}};
+		instructions[".header"] = {"word, dword, qword, qword, qword", {0x77, 0x6C, 0x66}};
 		// Define registers (idk why, some of them didn't work..)
 		macros["%bmm0"] = "byte(0x00)";
 		macros["%wmm0"] = "byte(0x10)";
@@ -283,6 +284,29 @@ public:
 			}
 			std::string array_content = line_raw.substr(bracket_start, bracket_end - bracket_start + 1);
 			return parse_array(trim(array_content), line_raw, line_number);
+		} else if (instr == ".resbuntil") {
+			size_t beg = line.find('(');
+			size_t end = line.find(')', beg + 1);
+			if (end == std::string::npos || beg == std::string::npos) {
+				generate_error("excepted '(uint)' format.", line, line_number, line);
+				return {};
+			}
+
+			std::string strval = line.substr(beg + 1, end - (beg + 1));
+			try {
+				unsigned long val = std::stoul(strval);
+				std::vector<uint8_t> values{};
+				if (val < current_address) return {};
+				for (unsigned long i = current_address; i < val; i++) {
+					values.push_back(0x00);
+					current_address++;
+				}
+
+				return values;
+			} catch (...) {
+				generate_error("invalid format", line, line_number, line);
+				return {};
+			}
 		} else if (instr == ".resb" || (line.starts_with(".resb") && !line.contains(':'))) {
 			size_t beg = line.find('(');
 			size_t end = line.find(')', beg + 1);
@@ -383,8 +407,7 @@ public:
 			std::string type_prefix = arg.substr(0, beg);
 			std::string value_str = arg.substr(beg + 1, end - beg - 1);
 			uint64_t value = 0;
-			bool is_ref_def = true;
-			
+
 			if (type_prefix != type) {
 				generate_error("Argument type mismatch", line_raw, line_number, arg);
 				return {};
@@ -399,7 +422,6 @@ public:
 				}
 				else {
 					value = 0;
-					is_ref_def = false;
 					unresolved_references[value_str].push_back(
 						undefined_reference {
 							.filepos = current_address,

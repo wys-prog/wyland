@@ -87,7 +87,7 @@ void wyland_exit(int _code = 0) {
 
 core_base *create_core_ptr(wtarget target) {
   if (target == wtarg64) {
-    auto ptr = new corewtarg64;
+    auto ptr = new corewtarg64();
 
     std::cout << "[i]: object " << typeid(*ptr).name() << " created at " 
     << "0x" << std::hex << reinterpret_cast<uintptr_t>(ptr) << std::endl;
@@ -107,7 +107,7 @@ core_base *create_core_ptr(wtarget target) {
 
 bool allocate_memory(size_t size) {
   try {
-    memory = new uint8_t[size];
+    memory = new uint8_t[size]();
 
     std::cout << "[i]: memory segment created at: 0x" << std::hex << std::uintptr_t(&memory) << std::endl;
     std::cout << "[i]: " << std::dec << size << " bytes allocated" << std::hex << std::endl;
@@ -131,7 +131,7 @@ bool load_file(std::fstream &file, const wheader_t &header) {
   }
 
   std::cout << "[i]: code region beg: " << header.code << std::endl;
-  relative_address = header.code;
+  code_start = header.code;
 
   size_t i = 0;
   while (!file.eof() && i < SYSTEM_SEGMENT_SIZE && file.tellp() < (std::streampos)header.lib) {
