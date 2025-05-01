@@ -36,6 +36,7 @@
 #include "interfaces/interface.hpp"
 #include "wmmio.hpp"
 #include "security.hpp"
+#include "bios/bios.hpp"
 
 WYLAND_BEGIN
 
@@ -47,19 +48,20 @@ protected:
   uint64_t beg           = 0x0000000000000000;
   uint64_t end           = 0xFFFFFFFFFFFFFFFF;
   uint64_t ip            = 0x0000000000000000;
-  uint64_t local_ip      = 0x0000000000000000;
+  uint64_t local_ip      = 0x0000000000000000; /* PAY ATTENTION !! LOCAL IP ISN'T LIKE IP !! Simply, it counts executed instructions... */
   uint64_t base_address  = 0x0000000000000000;
-  uint64_t disk_base = 0x0000000000000000;
+  uint64_t disk_base     = 0x0000000000000000;
   reg_t    regs;
   bool     halted = false;
-  int      flags  = 0;
+  wint     flags  = 0; // Big issue !! Don't use int here !!
   bool     is_system = false;
-  uint64_t thread_id = '?' * '?';
+  uint64_t thread_id = std::chrono::high_resolution_clock::now().time_since_epoch().count(); // Wtf ?
   IWylandGraphicsModule *GraphicsModule;
   WylandMMIOModule      *MMIOModule1;
   WylandMMIOModule      *MMIOModule2;
   WylandMMIOModule      *DiskModule;
   WylandMMIOModule      *Modules[4];
+  BIOS                   Bios = {};
 
   /* Deprecated ! */
   std::unordered_map<uint64_t, libcallc::DynamicLibrary> libs;
@@ -197,7 +199,8 @@ protected:
   };
 
   void ixint() {
-    // TODO ?
+    auto regs_ptr =  regs.wrap();
+    Bios.interrupt(read<wint>(), &regs_ptr);
   };
 
   void nop() {};
@@ -382,6 +385,43 @@ protected:
 
   setfunc_t set[34];
 
+  void init_set() {
+    set[set_wtarg64::nop] = &corewtarg64::nop;
+    set[set_wtarg64::lea] = &corewtarg64::ilea; 
+    set[set_wtarg64::load] = &corewtarg64::iload;
+    set[set_wtarg64::store] = &corewtarg64::istore;
+    set[set_wtarg64::mov] = &corewtarg64::imov;
+    set[set_wtarg64::add] = &corewtarg64::iadd;
+    set[set_wtarg64::sub] = &corewtarg64::isub;
+    set[set_wtarg64::mul] = &corewtarg64::imul;
+    set[set_wtarg64::odiv] = &corewtarg64::idiv;
+    set[set_wtarg64::mod] = &corewtarg64::imov;
+    set[set_wtarg64::jmp] = &corewtarg64::ijmp;
+    set[set_wtarg64::je] = &corewtarg64::ije;
+    set[set_wtarg64::jne] = &corewtarg64::ijne;
+    set[set_wtarg64::jl] = &corewtarg64::ijl;
+    set[set_wtarg64::jg] = &corewtarg64::ijg;
+    set[set_wtarg64::jle] = &corewtarg64::ijle;
+    set[set_wtarg64::jge] = &corewtarg64::ijge;
+    set[set_wtarg64::cmp] = &corewtarg64::icmp;
+    set[set_wtarg64::xint] = &corewtarg64::ixint;
+    set[set_wtarg64::loadat] = &corewtarg64::iloadat;
+    set[set_wtarg64::ret]    = &corewtarg64::iret;
+    set[set_wtarg64::movad]  = &corewtarg64::imovad;
+    set[set_wtarg64::sal] = &corewtarg64::isal;
+    set[set_wtarg64::sar] = &corewtarg64::isar;
+    set[set_wtarg64::wthrow] = &corewtarg64::iwthrow;
+    set[set_wtarg64::clfn] = &corewtarg64::iclfn;
+    set[set_wtarg64::empl] = &corewtarg64::iemplace;
+    set[set_wtarg64::push_mmio] = &corewtarg64::ipushmmio;
+    set[set_wtarg64::pop_mmio] = &corewtarg64::ipopmmio;
+    set[set_wtarg64::connect_mmio] = &corewtarg64::iconnectmmio;
+    set[set_wtarg64::deconnect_mmio] = &corewtarg64::ideconnectmmio;
+    set[set_wtarg64::oand] = &corewtarg64::iand;
+    set[set_wtarg64::oor] = &corewtarg64::ior;
+    set[set_wtarg64::oxor] = &corewtarg64::ixor;
+  }
+
 public:
   void init(uint64_t _memory_segment_begin, 
             uint64_t _memory_segment_end, 
@@ -426,41 +466,7 @@ public:
     Modules[2] = MMIOModule1;
     Modules[3] = MMIOModule2;
 
-    set[set_wtarg64::nop] = &corewtarg64::nop;
-    set[set_wtarg64::lea] = &corewtarg64::ilea; 
-    set[set_wtarg64::load] = &corewtarg64::iload;
-    set[set_wtarg64::store] = &corewtarg64::istore;
-    set[set_wtarg64::mov] = &corewtarg64::imov;
-    set[set_wtarg64::add] = &corewtarg64::iadd;
-    set[set_wtarg64::sub] = &corewtarg64::isub;
-    set[set_wtarg64::mul] = &corewtarg64::imul;
-    set[set_wtarg64::odiv] = &corewtarg64::idiv;
-    set[set_wtarg64::mod] = &corewtarg64::imov;
-    set[set_wtarg64::jmp] = &corewtarg64::ijmp;
-    set[set_wtarg64::je] = &corewtarg64::ije;
-    set[set_wtarg64::jne] = &corewtarg64::ijne;
-    set[set_wtarg64::jl] = &corewtarg64::ijl;
-    set[set_wtarg64::jg] = &corewtarg64::ijg;
-    set[set_wtarg64::jle] = &corewtarg64::ijle;
-    set[set_wtarg64::jge] = &corewtarg64::ijge;
-    set[set_wtarg64::cmp] = &corewtarg64::icmp;
-    set[set_wtarg64::xint] = &corewtarg64::ixint;
-    set[set_wtarg64::loadat] = &corewtarg64::iloadat;
-    set[set_wtarg64::ret]    = &corewtarg64::iret;
-    set[set_wtarg64::movad]  = &corewtarg64::imovad;
-    set[set_wtarg64::sal] = &corewtarg64::isal;
-    set[set_wtarg64::sar] = &corewtarg64::isar;
-    set[set_wtarg64::wthrow] = &corewtarg64::iwthrow;
-    set[set_wtarg64::clfn] = &corewtarg64::iclfn;
-    set[set_wtarg64::empl] = &corewtarg64::iemplace;
-    set[set_wtarg64::push_mmio] = &corewtarg64::ipushmmio;
-    set[set_wtarg64::pop_mmio] = &corewtarg64::ipopmmio;
-    set[set_wtarg64::connect_mmio] = &corewtarg64::iconnectmmio;
-    set[set_wtarg64::deconnect_mmio] = &corewtarg64::ideconnectmmio;
-    set[set_wtarg64::oand] = &corewtarg64::iand;
-    set[set_wtarg64::oor] = &corewtarg64::ior;
-    set[set_wtarg64::oxor] = &corewtarg64::ixor;
-
+    init_set();
     /* Initialize the core, with some "basic" values. */
 
     regs.set(R_ORG, beg);
@@ -479,44 +485,29 @@ public:
         );
       } else std::cout << "[i]: GraphicsModule initialized: " << GraphicsModule->name() << std::endl;
 
-      if (!MMIOModule1->init()) {
-        std::cerr << "[e]: unable to initialize <MMIOModule1*>" << std::endl;
-        throw MMIOModuleException(
-          "Unable to initialize <MMIOModule1*>", typeid(this).name() + std::string(__func__)
-        );
-      } else std::cout << "[i]: MMIOModule initialized: " << MMIOModule1->name() << std::endl;
-
-      if (!MMIOModule2->init()) {
-        std::cerr << "[e]: unable to initialize <MMIOModule2*>" << std::endl;
-        throw MMIOModuleException(
-          "Unable to initialize <MMIOModule2*>", typeid(this).name() + std::string(__func__)
-        );
-      } else std::cout << "[i]: MMIOModule initialized: " << MMIOModule2->name() << std::endl;
-
-      if (!DiskModule->init()) {
-        std::cerr << "[e]: unable to initialize <DiskModule*>" << std::endl;
-        throw MMIOModuleException(
-          "Unable to initialize <MMIOModule2*>", typeid(this).name() + std::string(__func__)
-        );
-      } else std::cout << "[i]: MMIOModule initialized: " << MMIOModule2->name() << std::endl;
+      Bios.init({MMIOModule1, MMIOModule2, DiskModule});
     }
 
     security::SecurityAddModules({GraphicsModule, MMIOModule1, MMIOModule2, DiskModule});
   }
-
+  
   void run() override {
-    auto last = std::chrono::high_resolution_clock::now();
+    auto start_time =  std::chrono::high_resolution_clock::now();
+    auto last = start_time;
+    static wuint key_counter = 0;
+    static wuint tick = 0;
+
     while (!halted) {
       if (ip < beg || ip >= end) 
-      throw std::out_of_range(
-        "Reading out of the local segment.\n"
-        "\tflag 'beg':\t" + std::to_string(beg) + "\n"
-        "\tflag 'end':\t" + std::to_string(end) + "\n"
-        "\tIP (global):\t" + std::to_string(ip) + "\n"
-        "\tthread:\t\t" + std::to_string(thread_id)  + "\n"
-        "\tlocal IP:\t" + std::to_string(local_ip) + "\n"
-        "\tfrom wtarg64::run()"
-      );
+        throw std::out_of_range(
+          "Reading out of the local segment.\n"
+          "\tflag 'beg':\t" + std::to_string(beg) + "\n"
+          "\tflag 'end':\t" + std::to_string(end) + "\n"
+          "\tIP (global):\t" + std::to_string(ip) + "\n"
+          "\tthread:\t\t" + std::to_string(thread_id)  + "\n"
+          "\tlocal IP:\t" + std::to_string(local_ip) + "\n"
+          "\tfrom wtarg64::run()"
+        );
       
       auto fetched = read();
       local_ip++;
@@ -524,11 +515,11 @@ public:
       if (fetched == 0xFF) { break; }
       if (fetched == 0xFE) { continue; } /* Specific mark for labels. Used for debugging. */
 
-      wyland_uint key = get_key();
-      if (key)  {
-        regs.set(REG_KEY, key); // What are you looking for ?
+      if (++key_counter % 1000 == 0) {
+        wyland_uint key = get_key();
+        if (key) regs.set(REG_KEY, key);
       }
-      
+
       if (fetched >= sizeof(set) / sizeof(set[0])) {
         std::ostringstream oss;
         oss << "Invalid instruction: " << std::hex << std::setw(2) << std::setfill('0') << (int)fetched << "\n"
@@ -550,11 +541,14 @@ public:
         std::cout << "0x" << std::setfill('0') << std::setw(16) << std::hex << ip << ":0x" << std::setw(2) << (int)fetched << std::endl;
         #endif
         (this->*set[fetched])();
-        auto now = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<float> delta = now - last;
-        GraphicsModule->process(float_to_wfloat(delta.count()));
-        GraphicsModule->render();
-        last = now;
+        if (++tick >= 1000) {
+          auto now = std::chrono::high_resolution_clock::now();
+          std::chrono::duration<long double> delta = now - last;
+          GraphicsModule->process(long_double_to_longfloat(delta.count()));
+          GraphicsModule->render();
+          last = now;
+          tick = 0;
+        }
         if (GraphicsModule->should_close()) halted = true;
       } catch (const std::exception &e) {
         throw runtime::wyland_runtime_error(e.what(), "Instruction Invokation Exception", __func__, typeid(e).name(), ip, thread_id, NULL, NULL, end-beg);
@@ -567,6 +561,13 @@ public:
     MMIOModule1->shutdown();
     MMIOModule2->shutdown();
     DiskModule->shutdown();
+    /*auto end_time = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<long double> elapsed = end_time - start_time;
+
+    long double ips = local_ip / elapsed.count();
+    std::cout << "Executed instructions: " << local_ip << "\n";
+    std::cout << "Elapsed time: " << elapsed.count() << " seconds\n";
+    std::cout << "VM speed: " << ips << " instructions/second\n";*/
   }
 
   uint64_t get_ip() override { return ip; }

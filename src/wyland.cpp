@@ -47,6 +47,9 @@
 #include "wyland.h"
 #include "wyland.hpp"
 #include "system.hpp"
+#include "security.hpp"
+#include "bios/bios.hpp"
+#include "bios/bios_backend.hpp"
 
 #include "filestream.hpp"
 
@@ -248,8 +251,12 @@ taskHandle infos = [](std::vector<std::string> &args) {
             << os.get_fmt_specs()
             << "===== RUNTIME =====\n"
                "runtime version:\t" << wyland_get_runtime_version() << "\n"
+               "runtime compiler:\t" << wyland_get_runtime_compiler() << "\n"
                "sizeof base-runtime:\t" << sizeof(core_base) << "\n"
                "sizeof wtarg64:\t\t" << sizeof(corewtarg64) << "\n"
+               "===== BIOS =====\n"
+               "BIOS version:\t" << wfloat_to_str(bios_backend_version()) << "\n" 
+
             << std::endl;
   
   std::string line;

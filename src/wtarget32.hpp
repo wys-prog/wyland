@@ -191,7 +191,7 @@ private:
     auto r1 = read();
     auto ad = read<uint32_t>();
 
-    if (ad >= SYSTEM_SEGMENT_START && !is_system) 
+    if (ad >= (SYSTEM_SEGMENT_START + SYSTEM_SEGMENT_SIZE) && !is_system) 
       throw std::runtime_error("Permission denied: Accessing system's segment.\n"
       "Thread: " + std::to_string(thread_id));
     
@@ -209,7 +209,7 @@ private:
     auto dst = read();
     auto at = read<uint32_t>(); /* This function will at memory[at]. */
     
-    if (at >= SYSTEM_SEGMENT_START && !is_system) 
+    if (at >= (SYSTEM_SEGMENT_START + SYSTEM_SEGMENT_SIZE) && !is_system) 
     throw std::runtime_error("Permission denied: Accessing system's segment.\n"
     "Thread: " + std::to_string(thread_id));
   

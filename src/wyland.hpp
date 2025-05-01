@@ -36,6 +36,7 @@
 #include "wmutiles.hpp"
 #include "disk.hpp"
 #include "security.hpp"
+#include "bios/bios.hpp"
 #include "wyland.h"
 
 WYLAND_BEGIN
@@ -256,6 +257,10 @@ void loadGraphicsModule(const std::string &path) {
   if (path == "console" || path == "consgraphs") {
     cache::GraphicsModulePtr = new WylandConsoleGraphicsModule();
     std::cout << "[i]: using built-in WylandConsoleGraphicsModule GPU" << std::endl;
+    return;
+  } else if (path == "horrible-built-in-gpu") {
+    cache::GraphicsModulePtr = new HorribleGraphicsModule();
+    std::cerr << "[w]: that's the worst GPU I ever seen..." << std::endl;
     return;
   }
 

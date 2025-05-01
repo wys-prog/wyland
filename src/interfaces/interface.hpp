@@ -12,6 +12,7 @@
 #include "../wyland-runtime/wylrt.h"
 #include "../wyland-runtime/wylrt.hpp"
 #include "../wyland-runtime/wfloats.h"
+#include "../wyland-runtime/wlongfloats.h"
 
 #include "../wmmbase.hpp"
 #include "../wmmio.hpp"
@@ -25,7 +26,7 @@ public:
   virtual ~IWylandGraphicsModule() {}
   virtual wbool init(wint, wint, const std::string &) { return wyland_true; }
   virtual void shutdown() {}
-  virtual void process(wfloat) {} // Godot style !
+  virtual void process(wlongfloat) {} // Godot style !
   virtual void render() {}
   virtual wbool should_close() { return wyland_false; }
   virtual std::string name() { return typeid(this).name(); }
@@ -38,5 +39,12 @@ public:
   {}
 };
 
+class HorribleGraphicsModule : public IWylandGraphicsModule {
+private:
+public:
+  void process(wlongfloat delta) override {
+    std::cout << "delta: " << longfloat_to_str(delta) << std::endl;
+  }
+};
 
 WYLAND_END
