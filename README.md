@@ -77,6 +77,7 @@ Here are all the commands available in Wyland:
 - `-check <file>`: Checks the specified disk file and prints its header information.
   - `--raw <file>`: Prints the raw content of the disk file.
   - `--spec <file>`: Prints the header specification of the disk file.
+  - `--libs <file>`: Prints the libraries linked in the disk file.
 - `-make-disk <disk> [options]`: Creates a new disk file with the specified name.
   - Options:
     - `-version <x>`: Sets the version of the disk.
@@ -100,6 +101,12 @@ Here are all the commands available in Wyland:
 - `-module1 <file>`, `-m1 <file>`: Specifies the path to the first MMIO module.
 - `-module2 <file>`, `-m2 <file>`: Specifies the path to the second MMIO module.
 - `-fmt-libs-false`, `-nofmtlibs`: Disables library name formatting.
+
+#### Additional Commands
+- `-libsof <file>`: Lists all libraries and their functions in the specified disk file.
+- `-look <file>`: Alias for `-check`.
+- `-no-init-out`: Suppresses initialization output.
+- `-memory:<size>`: Allocates the specified memory size for the virtual machine.
 
 ---
 
