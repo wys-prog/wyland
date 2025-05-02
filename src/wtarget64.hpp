@@ -495,7 +495,6 @@ public:
     auto start_time =  std::chrono::high_resolution_clock::now();
     auto last = start_time;
     static wuint key_counter = 0;
-    static wuint tick = 0;
 
     while (!halted) {
       if (ip < beg || ip >= end) 
@@ -541,14 +540,6 @@ public:
         std::cout << "0x" << std::setfill('0') << std::setw(16) << std::hex << ip << ":0x" << std::setw(2) << (int)fetched << std::endl;
         #endif
         (this->*set[fetched])();
-        if (++tick >= 1000) {
-          auto now = std::chrono::high_resolution_clock::now();
-          std::chrono::duration<long double> delta = now - last;
-          GraphicsModule->process(long_double_to_longfloat(delta.count()));
-          GraphicsModule->render();
-          last = now;
-          tick = 0;
-        }
         if (GraphicsModule->should_close()) halted = true;
       } catch (const std::exception &e) {
         throw runtime::wyland_runtime_error(e.what(), "Instruction Invokation Exception", __func__, typeid(e).name(), ip, thread_id, NULL, NULL, end-beg);

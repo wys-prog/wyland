@@ -10,7 +10,6 @@ minor = 4
 # read old counter or start at 0
 if infile.exists():
     try:
-        print("huh")
         build = int(infile.read_text().strip())
     except ValueError:
         build = 0

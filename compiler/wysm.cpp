@@ -156,7 +156,7 @@ public:
 		instructions[".jle"] = {"qword", {15}};
 		instructions[".jlg"] = {"qword", {16}};
 		instructions[".cmp"] = {"byte, byte", {17}};
-		instructions[".int"] = {"", {18}};
+		instructions[".int"] = {"dword", {18}};
 		instructions[".loadat"] = {"byte, qword", {19}};
 		instructions[".ret"] = {"", {20}};
 		instructions[".movad"] = {"byte, byte", {21}};

@@ -7,45 +7,12 @@
 
 main:     ; in memory: 0x00, in filedisk: _code_start + 0x00
 
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
-  .mov %qmm0, %qmm1
+  .lbyte %dmm0, byte(0x77)
+  .int dword(0x00)
+  .lbyte %dmm0, byte(0x6C)
+  .int dword(0x00)
+  .lbyte %dmm0, byte(0x66)
+  .int dword(0x00)
 
   .jmp qword(exit)
   

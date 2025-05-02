@@ -16,10 +16,6 @@ WYLAND_BEGIN
 
 class BIOS {
 private:
-  inline void write(wuint _c) {
-    bios_backend_write(_c);
-  }
-
 public:
 
   void interrupt(wint id, wyland_registers *regs) {
