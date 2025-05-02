@@ -13,5 +13,5 @@
 extern "C" {
   void bios_backend_interrupt(wuint id, wyland_registers *regs);
   void bios_backend_init(const std::vector<wylma::wyland::WylandMMIOModule*> &modules);
-  wfloat bios_backend_version();
+  long double bios_backend_version();
 }

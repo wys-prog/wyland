@@ -12,6 +12,15 @@
 
 #include "bios_backend.hpp"
 
+#warning ==========================================================================================
+#warning                                          TODO
+#warning - BIOS/GPU
+#warning - BIOS/Threading
+#warning - Core/Threading
+#warning - BIOS/StdIO
+#warning 
+#warning ========================================================================================== 
+
 WYLAND_BEGIN
 
 class BIOS {
@@ -26,7 +35,7 @@ public:
     bios_backend_init(modules);
   }
 
-  inline wfloat version() {
+  inline long double version() {
     return bios_backend_version();
   }
 };

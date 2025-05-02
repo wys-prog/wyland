@@ -257,7 +257,7 @@ taskHandle infos = [](std::vector<std::string> &args) {
                "sizeof base-runtime:\t" << sizeof(core_base) << "\n"
                "sizeof wtarg64:\t\t" << sizeof(corewtarg64) << "\n"
                "===== BIOS =====\n"
-               "BIOS version:\t" << wfloat_to_str(bios_backend_version()) << "\n" 
+               "BIOS version:\t" << (bios_backend_version()) << "\n" 
 
             << std::endl;
   
