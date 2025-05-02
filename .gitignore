@@ -6,6 +6,7 @@ wyland-runtime/
 wyland-godot/
 # compiler/
 debug/
+.vscode/
 
 # This is only for my fucking editor...
 boost/

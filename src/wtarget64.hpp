@@ -489,6 +489,7 @@ public:
     }
 
     security::SecurityAddModules({GraphicsModule, MMIOModule1, MMIOModule2, DiskModule});
+    std::cout.clear();
   }
   
   void run() override {
