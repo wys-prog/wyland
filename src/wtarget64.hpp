@@ -485,7 +485,7 @@ public:
         );
       } else std::cout << "[i]: GraphicsModule initialized: " << GraphicsModule->name() << std::endl;
 
-      Bios.init({MMIOModule1, MMIOModule2, DiskModule});
+      Bios.init({MMIOModule1, MMIOModule2, DiskModule}, GraphicsModule);
     }
 
     security::SecurityAddModules({GraphicsModule, MMIOModule1, MMIOModule2, DiskModule});

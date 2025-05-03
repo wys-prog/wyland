@@ -491,7 +491,7 @@ std::unordered_map<std::string, taskHandle> handles {
   {"-debug", debug},
   //{"-parse", parse},
   //{"-new-env", new_env},
-  // Future tasks (Maybe in the std:wy4 standard !)
+  // Future tasks (Maybe in the std:wy4 standard !) (absolutly not..)
   //{"-compile", compile},
   {"-libsof", libsof},
   //{"-api", api}

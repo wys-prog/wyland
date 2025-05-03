@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <stdexcept>
 
-#define WYLAND_BEGIN namespace wylma { namespace wyland {
+#define WYLAND_BEGIN namespace wylma { namespace wyland { 
 #define WYLAND_END   } }
 
 #define SYSTEM_SEGMENT_SIZE 12_MB

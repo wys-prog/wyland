@@ -8,6 +8,8 @@
 */
 
 #include <string>
+#include <sstream>
+#include <iostream>
 
 #include "../wyland-runtime/wylrt.h"
 #include "../wyland-runtime/wylrt.hpp"
@@ -30,12 +32,20 @@ public:
   virtual void render() {}
   virtual wbool should_close() { return wyland_false; }
   virtual std::string name() { return typeid(this).name(); }
+  virtual std::ostream *get_stream() { return &std::cout; }
 };
 
 class GraphicsModuleException : public runtime::wyland_runtime_error {
 public:
   GraphicsModuleException(const std::string &what, const std::string &from) 
     : runtime::wyland_runtime_error(what.c_str(), "GraphicsModule Exception", from.c_str(), typeid(this).name(), 0, 0, NULL, NULL, 0)
+  {}
+};
+
+class InvalidGraphicsModuleStreamException : public GraphicsModuleException {
+public:
+  InvalidGraphicsModuleStreamException(const std::string &what, const std::string &from) 
+    : GraphicsModuleException(what, from)
   {}
 };
 

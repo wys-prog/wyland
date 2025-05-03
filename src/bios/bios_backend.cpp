@@ -7,6 +7,7 @@
 
 #include "../wmmbase.hpp"
 #include "../wmmio.hpp"
+#include "../interfaces/interface.hpp"
 #include "../wyland-runtime/wylrt.h"
 #include "../wyland-runtime/wfloats.h"
 #include "../wyland-runtime/wylrt.hpp"
@@ -20,6 +21,10 @@ typedef void(*syscall_callable)(wyland_registers*);
 WYLAND_BEGIN
 
 namespace bios {
+  namespace handles {
+    IWylandGraphicsModule *GraphicsModule;
+  }
+
   class BiosException : public runtime::wyland_runtime_error {
   private:
   public:
@@ -28,8 +33,9 @@ namespace bios {
   };
 
   void bwrite(wyland_registers *regs) {
-    putc(*regs->r32[0], stdout);
-    fflush(stdout);
+    auto bin = to_bin(*regs->r32[0]);
+    (handles::GraphicsModule->get_stream()->write((char*)bin, sizeof(wuint)));
+    delete bin;
   }
 
   void bread(wyland_registers *regs) {
@@ -68,8 +74,8 @@ extern "C" {
       (*wylma::wyland::bios::syscall_table)(regs);
     }
   }
-  
-  void bios_backend_init(const std::vector<wylma::wyland::WylandMMIOModule*> &modules) {
+
+  void bios_backend_init(const std::vector<wylma::wyland::WylandMMIOModule*> &modules, wylma::wyland::IWylandGraphicsModule *gm) {
     std::cout << "[b]: BIOS version: " << (bios_backend_version()) << std::endl;
     
     for (const auto&module:modules) {
@@ -79,9 +85,11 @@ extern "C" {
         throw wylma::wyland::MMIOModuleException("Unable to initialize MMIO Module: " + module->name(), "BIOS/Backend/" + std::string(__func__));
       } else std::cout << "[SUCCESS]" << std::endl;
     }
+
+    wylma::wyland::bios::handles::GraphicsModule = gm;
   }
   
   long double bios_backend_version() { 
-    return (1.4);
+    return (1.43);
   } 
 }

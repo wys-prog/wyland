@@ -12,6 +12,7 @@
 
 #include "bios_backend.hpp"
 
+/*
 #warning ==========================================================================================
 #warning                                          TODO
 #warning - BIOS/GPU
@@ -20,6 +21,7 @@
 #warning - BIOS/StdIO
 #warning 
 #warning ========================================================================================== 
+*/
 
 WYLAND_BEGIN
 
@@ -31,8 +33,8 @@ public:
     bios_backend_interrupt(id, regs);
   }
 
-  void init(const std::vector<WylandMMIOModule*> &modules) {
-    bios_backend_init(modules);
+  void init(const std::vector<WylandMMIOModule*> &modules, IWylandGraphicsModule *gm) {
+    bios_backend_init(modules, gm);
   }
 
   inline long double version() {
