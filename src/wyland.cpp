@@ -20,10 +20,14 @@
 #include <mutex>
 #include <new>
 
+#ifdef WYLAND_STACKTRACE
 #include <boost/stacktrace.hpp>
+#endif // ? WYLAND_STACKTRACE
+
 #include <boost/container/flat_map.hpp>
 
 #include "data/wyland_version.h"
+#include "wyland_config.hpp"
 
 #include "wmutiles.hpp"
 
@@ -250,12 +254,12 @@ taskHandle infos = [](std::vector<std::string> &args) {
               "\t- wtargmarch\t(" << (wtargmarch) << ")\n" <<
               "\t- wtargfast\t(" << (wtargfast) << ")\n"
               "===== SYSTEM =====\n"
-            << os.get_fmt_specs()
-            << "===== RUNTIME =====\n"
-               "runtime version:\t" << wyland_get_runtime_version() << "\n"
-               "runtime compiler:\t" << wyland_get_runtime_compiler() << "\n"
-               "sizeof base-runtime:\t" << sizeof(core_base) << "\n"
-               "sizeof wtarg64:\t\t" << sizeof(corewtarg64) << "\n"
+              << os.get_fmt_specs()
+              << "===== RUNTIME =====\n"
+              "runtime version:\t" << wyland_get_runtime_version() << "\n"
+              "runtime compiler:\t" << wyland_get_runtime_compiler() << "\n"
+              "sizeof base-runtime:\t" << sizeof(core_base) << "\n"
+              "sizeof wtarg64:\t\t" << sizeof(corewtarg64) << "\n"
                "===== BIOS =====\n"
                "BIOS version:\t" << (bios_backend_version()) << "\n" 
 

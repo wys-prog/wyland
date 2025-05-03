@@ -39,7 +39,7 @@ namespace bios {
   }
 
   void bread(wyland_registers *regs) {
-    *regs->r32[0] = (wuint)getc(stdout);
+    *regs->r32[0] = (wuint)getc(stdin); // WAY !! STDOUT ????? NAAAAAA
   }
 
   void bgettime(wyland_registers *regs) {
@@ -90,6 +90,6 @@ extern "C" {
   }
   
   long double bios_backend_version() { 
-    return (1.43);
+    return (1.44);
   } 
 }
