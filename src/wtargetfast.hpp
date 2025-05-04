@@ -35,7 +35,7 @@ WYLAND_BEGIN
 #define NAME std::string(typeid(this).name() + "::"s + __func__).c_str()
 
 using namespace std::string_literals;
-class corewtargfast : public core_base {
+class corewtargfast : public core_base {/*
 public:
   using syscall_t = void(corewtargfast::*)();
   using setfunc_t = void(corewtargfast::*)();
@@ -239,7 +239,7 @@ public:
 
   void run() override {
     
-  }
+  }*/
 };
 
 WYLAND_END

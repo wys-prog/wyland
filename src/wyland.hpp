@@ -41,6 +41,7 @@
 #include "security.hpp"
 #include "bios/bios.hpp"
 #include "wyland_config.hpp"
+#include "updates/updater.hpp"
 #include "wyland.h"
 
 WYLAND_BEGIN

@@ -61,9 +61,11 @@
 
 #include "sock2.h"
 
+#include "updates/updater.hpp"
+
 WYLAND_BEGIN
 
-typedef void (*taskHandle)(std::vector<std::string>&);
+typedef void (*TaskHandle)(std::vector<std::string>&);
 
 typedef struct {
   wtarget     target;
@@ -207,32 +209,32 @@ void run_base_function(std::vector<std::string> &args, bool debug = false) {
   }
 }
 
-taskHandle name = [](std::vector<std::string>&) {
+TaskHandle name = [](std::vector<std::string>&) {
   std::cout << WYLAND_NAME << std::endl;
 };
 
-taskHandle version = [](std::vector<std::string>&) {
+TaskHandle version = [](std::vector<std::string>&) {
   std::cout << WYLAND_VERSION << std::endl;
 };
 
-taskHandle build = [](std::vector<std::string> &) {
+TaskHandle build = [](std::vector<std::string> &) {
   std::string string = WYLAND_BUILD_NAME;
   for (const auto&c:string) std::cout << c << swaiter{5ms} << std::flush;
   std::cout << std::endl;
 };
 
-taskHandle target = [](std::vector<std::string>&) {
+TaskHandle target = [](std::vector<std::string>&) {
   std::cout << wtarg64 << ": " << nameof(wtarg64) << std::endl;
 };
 
-taskHandle target_info = [](std::vector<std::string>&) {
+TaskHandle target_info = [](std::vector<std::string>&) {
   std::cout << wtarg64 << ": " << nameof(wtarg64) << " (implemented)" << std::endl;
   std::cout << wtarg32 << ": " << nameof(wtarg32) << " (working on)" << std::endl;
   std::cout << wtargmarch << ": " << nameof(wtargmarch) << " (working on)" << std::endl;
   std::cout << wtargfast << ": " << nameof(wtargfast) << " (working on)" << std::endl;
 };
 
-taskHandle infos = [](std::vector<std::string> &args) {
+TaskHandle infos = [](std::vector<std::string> &args) {
 
   // I added "swaiter{10ms}" just for make fun and a bit "old" style...
   // by doing --info --nw, wait time will set to 0
@@ -269,7 +271,7 @@ taskHandle infos = [](std::vector<std::string> &args) {
   while (std::getline(ss, line)) std::cout << line << wait << std::endl;
 };
 
-taskHandle set_target = [](std::vector<std::string> &args) {
+TaskHandle set_target = [](std::vector<std::string> &args) {
   if (args.size() == 0) {
     std::cerr << "[e]: " << std::invalid_argument("Expected <x> target after -target token.").what() << std::endl;
     wyland_exit(-1);
@@ -280,11 +282,11 @@ taskHandle set_target = [](std::vector<std::string> &args) {
   task.target = ofname(args[0].c_str());
 };
 
-taskHandle run = [](std::vector<std::string> &args) {
+TaskHandle run = [](std::vector<std::string> &args) {
   run_base_function(args, false);
 };
 
-taskHandle run_raw = [](std::vector<std::string> &args) {
+TaskHandle run_raw = [](std::vector<std::string> &args) {
   std::cerr << "[w]: Running -run-raw mode." << std::endl;
   if (args.size() == 0) {
     std::cerr << "[e]: " << std::invalid_argument("Expected <x> target after -target token.").what() << std::endl;
@@ -337,7 +339,7 @@ taskHandle run_raw = [](std::vector<std::string> &args) {
 };
 
 
-taskHandle make_disk = [](std::vector<std::string> &args) {
+TaskHandle make_disk = [](std::vector<std::string> &args) {
   if (args.size() == 0) {
     std::cerr << "[e]: " << std::invalid_argument("Excepted disk name.").what() << std::endl;
     wyland_exit(-1);
@@ -395,11 +397,11 @@ taskHandle make_disk = [](std::vector<std::string> &args) {
   std::cout << "Saved to: " << args[0] << std::endl;
 };
 
-taskHandle debug = [](std::vector<std::string> &args) {
+TaskHandle debug = [](std::vector<std::string> &args) {
   run_base_function(args, true);
 };
 
-taskHandle libsof = [](std::vector<std::string> &args) {
+TaskHandle libsof = [](std::vector<std::string> &args) {
   std::cout << "libsof" << std::endl;
   for (const auto &file:args) {
     std::fstream disk(file);
@@ -432,7 +434,7 @@ taskHandle libsof = [](std::vector<std::string> &args) {
   }
 };
 
-taskHandle check = [](std::vector<std::string> &args) {
+TaskHandle check = [](std::vector<std::string> &args) {
   for (size_t i = 0; i < args.size(); i++) {
     if (args[i] == "--raw") {
       std::ifstream disk(args[++i]);
@@ -474,7 +476,14 @@ taskHandle check = [](std::vector<std::string> &args) {
     delete block;
   }
 };
-std::unordered_map<std::string, taskHandle> handles {
+
+TaskHandle t_update = [](std::vector<std::string> &) {
+  std::cout << "[i]: updating Wyland..." << std::endl;
+  clear_ressources(); // if there was an execution before 
+  update(os.file_at_execution_path("updater"), os.file_at_execution_path("update_file"));
+};
+
+std::unordered_map<std::string, TaskHandle> handles {
   {"--v", version},
   {"--version", version},
   {"--n", name},
@@ -498,6 +507,7 @@ std::unordered_map<std::string, taskHandle> handles {
   // Future tasks (Maybe in the std:wy4 standard !) (absolutly not..)
   //{"-compile", compile},
   {"-libsof", libsof},
+  {"-update", t_update},
   //{"-api", api}
 };
 

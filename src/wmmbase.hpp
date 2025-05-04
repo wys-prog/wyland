@@ -43,6 +43,8 @@
 #endif // Is Windows ?
 
 #define mnameof(x) #x
+#define memberofstr std::string(typeid(this).name() + "::"s + __func__)
+#define memberofcstr (std::string(typeid(this).name() + "::"s + __func__).c_str())
 
 constexpr std::size_t operator""_MB(unsigned long long size) {
   return size * 1024 * 1024;
@@ -61,6 +63,8 @@ constexpr std::size_t operator""_B(unsigned long long size) {
 }
 
 WYLAND_BEGIN
+
+using namespace std::string_literals;
 
 uint8_t *memory;
 uint64_t code_start;
