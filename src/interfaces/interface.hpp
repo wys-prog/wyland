@@ -27,11 +27,11 @@ class IWylandGraphicsModule : public WylandMMIOModule {
 public:
   virtual ~IWylandGraphicsModule() {}
   virtual wbool init(wint, wint, const std::string &) { return wyland_true; }
-  virtual void shutdown() {}
+  virtual wbool init() override { return wyland_false; }
   virtual void process(wlongfloat) {} // Godot style !
   virtual void render() {}
   virtual wbool should_close() { return wyland_false; }
-  virtual std::string name() { return typeid(this).name(); }
+  std::string name() override { return typeid(this).name(); }
   virtual std::ostream *get_stream() { return &std::cout; }
 };
 

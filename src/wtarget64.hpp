@@ -493,9 +493,8 @@ public:
   }
   
   void run() override {
-    auto start_time =  std::chrono::high_resolution_clock::now();
-    auto last = start_time;
-    static wuint key_counter = 0;
+    //auto start_time =  std::chrono::high_resolution_clock::now();
+    wuint key_counter = 0;
 
     while (!halted) {
       if (ip < beg || ip >= end) 
