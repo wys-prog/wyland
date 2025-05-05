@@ -21,7 +21,7 @@
 #define WYLAND_NAME "Java Shit" 
 /* We're coding in JS, Not JavaScript, but Java Shit !! */
 #else
-#define WYLAND_NAME    "Wyland wy:2.6"
+#define WYLAND_NAME    "Wyland wy:2.7"
 #endif // Java ?
 #define WYLAND_BUILD_NAME "Wyland Build " WYLAND_VERSION_MAJOR_STR "." WYLAND_VERSION_MINOR_STR " - Sequoia - " COMPILER_NAME
 

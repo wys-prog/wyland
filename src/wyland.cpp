@@ -54,14 +54,11 @@
 #include "security.hpp"
 #include "bios/bios.hpp"
 #include "bios/bios_backend.hpp"
-
 #include "filestream.hpp"
-
 #include "parser.hpp"
-
 #include "sock2.h"
-
 #include "updates/updater.hpp"
+#include "compiler/iwysm.hpp"
 
 WYLAND_BEGIN
 
@@ -262,9 +259,10 @@ TaskHandle infos = [](std::vector<std::string> &args) {
               "runtime compiler:\t" << wyland_get_runtime_compiler() << "\n"
               "sizeof base-runtime:\t" << sizeof(core_base) << "\n"
               "sizeof wtarg64:\t\t" << sizeof(corewtarg64) << "\n"
-               "===== BIOS =====\n"
-               "BIOS version:\t" << (bios_backend_version()) << "\n" 
-
+              "===== BIOS =====\n"
+              "BIOS version:\t" << (bios_backend_version()) << "\n" 
+              "===== COMPILER =====\n" 
+              "Compiler version:\t" << wysm::WylandAssembler::version
             << std::endl;
   
   std::string line;
@@ -483,6 +481,10 @@ TaskHandle t_update = [](std::vector<std::string> &) {
   update(os.file_at_execution_path("updater"), os.file_at_execution_path("update_file"));
 };
 
+TaskHandle compile = [](std::vector<std::string> &args) {
+  wysm::compile(args);
+};
+
 std::unordered_map<std::string, TaskHandle> handles {
   {"--v", version},
   {"--version", version},
@@ -505,7 +507,8 @@ std::unordered_map<std::string, TaskHandle> handles {
   //{"-parse", parse},
   //{"-new-env", new_env},
   // Future tasks (Maybe in the std:wy4 standard !) (absolutly not..)
-  //{"-compile", compile},
+  {"-compile", compile},
+  {"-c", compile},
   {"-libsof", libsof},
   {"-update", t_update},
   //{"-api", api}
