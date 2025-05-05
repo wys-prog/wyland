@@ -71,7 +71,7 @@ Here are all the commands available in Wyland:
 - `--b`, `--build`: Prints the build name of Wyland.
 - `--target`: Prints the default target.
 - `--target-info`: Prints information about all available targets.
-- `--info`, `--i`: Prints detailed information about Wyland, including runtime and system details.
+- `--info`, `--i`: Prints detailed information about Wyland, including runtime, system, and compiler details.
 
 #### Disk and File Commands
 - `-check <file>`: Checks the specified disk file and prints its header information.
@@ -107,6 +107,8 @@ Here are all the commands available in Wyland:
 - `-look <file>`: Alias for `-check`.
 - `-no-init-out`: Suppresses initialization output.
 - `-memory:<size>`: Allocates the specified memory size for the virtual machine.
+- `-compile <files...>` or `-c <files...>`: Compiles the specified assembly files into a binary.
+- `-update`: Updates Wyland using the updater module.
 
 ---
 
