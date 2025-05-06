@@ -71,14 +71,14 @@ protected:
   
   uint8_t read() {
     if (ip + 1 >= end) throw std::out_of_range("The 'end' flag is reached.\n"
-      "Thread: " + std::to_string(thread_id));
+      "\tThread:\t" + std::to_string(thread_id) + "\n\tfrom read<u8>()\n\tip:\t" + std::to_string(ip) + "\n\t'end':\t" + std::to_string(end));
     return memory[ip++];
   }
 
   template <typename T>
   T read() {
     if (ip + sizeof(T) > end) throw std::out_of_range("The 'end' flag is reached\n"
-      "Thread: " + std::to_string(thread_id));
+      "\tThread: " + std::to_string(thread_id) + "\n\tfrom read<T>()");
 
     T value = 0;
     for (size_t i = 0; i < sizeof(T); i++) {
@@ -438,7 +438,14 @@ public:
     thread_id = _name;
     base_address = _memory_segment_begin;
     disk_base = _disk_relative;
-    if (_is_system) std::cout << "[i]: base disk address: 0x" << std::hex << std::setfill('0') << std::setw(16) << _disk_relative << std::endl;
+    if (_is_system) {
+      std::cout << "[i]: base disk address: 0x" << std::hex << std::setfill('0') << std::setw(16) << _disk_relative << std::endl;
+      std::cout << "[i]: 'beg' flag: 0x" << std::hex << std::setfill('0') << std::setw(16) << beg << std::endl;
+      std::cout << "[i]: 'end' flag: 0x" << std::hex << std::setfill('0') << std::setw(16) << end << std::endl;
+      std::cout << "[i]: 'ip' flag: 0x" << std::hex << std::setfill('0') << std::setw(16) << ip << std::endl;
+    }
+
+    std::cout.clear();
 
     if (table == nullptr) {
       throw std::runtime_error("linked_functions table is null.");
@@ -493,8 +500,7 @@ public:
   }
   
   void run() override {
-    //auto start_time =  std::chrono::high_resolution_clock::now();
-    wuint key_counter = 0;
+    auto start_time =  std::chrono::high_resolution_clock::now();
 
     while (!halted) {
       if (ip < beg || ip >= end) 
@@ -511,15 +517,10 @@ public:
       auto fetched = read();
       local_ip++;
 
-      if (fetched == 0xFF) { break; }
-      if (fetched == 0xFE) { continue; } /* Specific mark for labels. Used for debugging. */
-
-      if (++key_counter % 1000 == 0) {
-        wyland_uint key = get_key();
-        if (key) regs.set(REG_KEY, key);
-      }
-
       if (fetched >= sizeof(set) / sizeof(set[0])) {
+        if (fetched == 0xFF) { break; }
+        if (fetched == 0xFE) { continue; } /* Specific mark for labels. Used for debugging. */
+
         std::ostringstream oss;
         oss << "Invalid instruction: " << std::hex << std::setw(2) << std::setfill('0') << (int)fetched << "\n"
         "\tfetched:\t[" << (int)fetched<< "]\n"
@@ -540,7 +541,6 @@ public:
         std::cout << "0x" << std::setfill('0') << std::setw(16) << std::hex << ip << ":0x" << std::setw(2) << (int)fetched << std::endl;
         #endif
         (this->*set[fetched])();
-        if (GraphicsModule->should_close()) halted = true;
       } catch (const std::exception &e) {
         throw runtime::wyland_runtime_error(e.what(), "Instruction Invokation Exception", __func__, typeid(e).name(), ip, thread_id, NULL, NULL, end-beg);
       } catch (const runtime::wyland_runtime_error &e) {
@@ -552,13 +552,13 @@ public:
     MMIOModule1->shutdown();
     MMIOModule2->shutdown();
     DiskModule->shutdown();
-    /*auto end_time = std::chrono::high_resolution_clock::now();
+    auto end_time = std::chrono::high_resolution_clock::now();
     std::chrono::duration<long double> elapsed = end_time - start_time;
 
     long double ips = local_ip / elapsed.count();
     std::cout << "Executed instructions: " << local_ip << "\n";
     std::cout << "Elapsed time: " << elapsed.count() << " seconds\n";
-    std::cout << "VM speed: " << ips << " instructions/second\n";*/
+    std::cout << "VM speed: " << ips << " instructions/second\n";
   }
 
   uint64_t get_ip() override { return ip; }
