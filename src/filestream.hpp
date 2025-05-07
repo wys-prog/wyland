@@ -13,13 +13,13 @@
 namespace wylma {
   namespace wyland {
 
-    class fstream {
+    class w_dfstream {
     private:
       uint64_t base_address = 0;
       std::fstream &stream;
 
     public:
-      fstream(std::fstream &base_stream, uint64_t base = 0x0)
+      w_dfstream(std::fstream &base_stream, uint64_t base = 0x0)
         : base_address(base), stream(base_stream) { }
 
       void open(const std::string &path, std::ios::openmode mode) {

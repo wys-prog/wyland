@@ -303,7 +303,7 @@ WylandMMIOModule *loadMMIOModule(const std::string &path) {
   return new WylandMMIOModule();
 }
 
-void loadModules(const std::string &pathGraphics, const std::string &m1, const std::string &m2, fstream &stream) {
+void loadModules(const std::string &pathGraphics, const std::string &m1, const std::string &m2, w_dfstream &stream) {
   loadGraphicsModule(pathGraphics);
   cache::MMIOModule1Ptr = loadMMIOModule(m1);
   cache::MMIOModule2Ptr = loadMMIOModule(m2);

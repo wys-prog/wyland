@@ -7,6 +7,7 @@
 
 #include "../wmmbase.hpp"
 #include "../wmmio.hpp"
+#include "../filestream.hpp"
 #include "../interfaces/interface.hpp"
 #include "../wyland-runtime/wylrt.h"
 #include "../wyland-runtime/wfloats.h"
@@ -23,6 +24,7 @@ WYLAND_BEGIN
 namespace bios {
   namespace handles {
     IWylandGraphicsModule *GraphicsModule;
+    w_dfstream            *DiskPtr;
   }
 
   class BiosException : public runtime::wyland_runtime_error {
@@ -90,6 +92,6 @@ extern "C" {
   }
   
   long double bios_backend_version() { 
-    return (1.44);
+    return (1.5);
   } 
 }

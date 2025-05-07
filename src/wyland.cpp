@@ -164,7 +164,7 @@ void run_base_function(std::vector<std::string> &args, bool debug = false) {
     disk.read((char*)block->array, sizeof(block->array));
     auto header = wyland_files_make_header(block);
     delete block;
-    fstream stream(disk, header.data); // TODO: Adding enabling/disabling of "append/extend disk's size"
+    w_dfstream stream(disk, header.data); // TODO: Adding enabling/disabling of "append/extend disk's size"
     
     if (task.auto_targ) task.target = header.target;
     
@@ -297,7 +297,7 @@ TaskHandle run_raw = [](std::vector<std::string> &args) {
 
   for (const auto&file:files) {
     std::fstream disk(file);
-    fstream stream(disk, 0);
+    w_dfstream stream(disk, 0);
 
     if (!disk) {
       std::cerr << "[e]: Unable to open disk file: " << file << std::endl;
@@ -403,7 +403,7 @@ TaskHandle debug = [](std::vector<std::string> &args) {
 };
 
 TaskHandle libsof = [](std::vector<std::string> &args) {
-  std::cout << "libsof" << std::endl;
+  std::cout << "libsof():" << std::endl;
   for (const auto &file:args) {
     std::fstream disk(file);
     
@@ -564,7 +564,7 @@ WYLAND_END
 
 int main(int argc, char *const argv[]) {
 #ifdef _WIN32
-  std::cout << "[wyland]: running Wyland on Windows, some features can be cursed." << std::endl;
+  std::cout << "[w]: running Wyland on Windows, some features can be cursed. (Why still running code on Windows..?)" << std::endl;
 #endif // Windows ?
   return wylma::wyland::WylandMain(argc, argv);
 }

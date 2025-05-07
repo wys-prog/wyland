@@ -32,7 +32,7 @@ namespace cache {
 
 class IWylandDiskModule : public WylandMMIOModule {
 private:
-  fstream &handle;
+  w_dfstream &handle;
 
   void disk_error(const std::string &from, const std::string &what) {
     throw runtime::wyland_runtime_error(what.c_str(), "disk error", from.c_str(), typeid(this).name(), 0, 0, nullptr, nullptr, 0);
@@ -125,7 +125,7 @@ public:
     return result;
   }
 
-  IWylandDiskModule(fstream &streaaaammmm) : handle(streaaaammmm) {}
+  IWylandDiskModule(w_dfstream &streaaaammmm) : handle(streaaaammmm) {}
 };
 
 WYLAND_END
