@@ -38,6 +38,8 @@
 #include "security.hpp"
 #include "bios/bios.hpp"
 
+#include "wc++std.hpp"
+
 WYLAND_BEGIN
 
 class corewtarg64 : public core_base {
@@ -63,28 +65,24 @@ protected:
   WylandMMIOModule      *Modules[4];
   BIOS                   Bios = {};
 
-  /* Deprecated ! */
-  std::unordered_map<uint64_t, libcallc::DynamicLibrary> libs;
-  std::unordered_map<uint64_t, libcallc::DynamicLibrary::FunctionType> funcs;
-
   boost::container::flat_map<uint32_t, libcallc::DynamicLibrary::FunctionType> *linked_functions;
   
-  uint8_t read() {
-    if (ip + 1 >= end) throw std::out_of_range("The 'end' flag is reached.\n"
-      "\tThread:\t" + std::to_string(thread_id) + "\n\tfrom read<u8>()\n\tip:\t" + std::to_string(ip) + "\n\t'end':\t" + std::to_string(end));
+  inline uint8_t read() {
+    if (ip + 1 >= end) wthrow (std::out_of_range("The 'end' flag is reached.\n"
+        "\tThread:\t" + std::to_string(thread_id) + "\n\tfrom read<u8>()\n\tip:\t" + std::to_string(ip) + 
+        "\n\t'end':\t" + std::to_string(end) + "\n"
+        "\texecuted: " + std::to_string(local_ip)));
     return memory[ip++];
   }
 
   template <typename T>
-  T read() {
-    if (ip + sizeof(T) > end) throw std::out_of_range("The 'end' flag is reached\n"
-      "\tThread: " + std::to_string(thread_id) + "\n\tfrom read<T>()");
+  inline T read() {
+    if (ip + sizeof(T) > end) wthrow(std::out_of_range("End of segment reached (read_value).\n"
+      "\tThread:\t" + std::to_string(thread_id) + "\n\tIP:\t" + std::to_string(ip) + 
+      "\n\t'end':\t" + std::to_string(end) + "\n"));
 
-    T value = 0;
-    for (size_t i = 0; i < sizeof(T); i++) {
-      value |= static_cast<T>(memory[ip + i]) << ((sizeof(T) - 1 - i) * 8);
-    }
-
+    T value;
+    std::memcpy(&value, &memory[ip], sizeof(T));
     ip += sizeof(T);
     return value;
   }
@@ -176,12 +174,12 @@ protected:
       case 16: regs.set(r1, read<uint16_t>()); break;
       case 32: regs.set(r1, read<uint32_t>()); break;
       case 64: regs.set(r1, read<uint64_t>()); break;
-      default: throw std::invalid_argument("in iload(): Invalid size: " + std::to_string(size)
+      default: wthrow (std::invalid_argument("in iload(): Invalid size: " + std::to_string(size)
       + "\n\tfetched: [" + std::to_string((int)size) + "]"
         "\n\tThread:  " + std::to_string(thread_id) 
       + "\n\tIP:      " + std::to_string(ip)
       + "\n\tLIP:     " + std::to_string(local_ip)
-      + "\n\tARGS:    [" + std::to_string((int)size) + ", " + std::to_string((int)r1) + "]"); 
+      + "\n\tARGS:    [" + std::to_string((int)size) + ", " + std::to_string((int)r1) + "]")); 
       break;
     }
 
@@ -210,17 +208,17 @@ protected:
     auto ad = base_address + read<uint64_t>() - disk_base;
 
     if (ad <= (SYSTEM_SEGMENT_START + SYSTEM_SEGMENT_SIZE) && !is_system) 
-      throw std::runtime_error("Permission denied: Accessing system's segment.\n"
-      "Thread: " + std::to_string(thread_id));
+      wthrow (std::runtime_error("Permission denied: Accessing system's segment.\n"
+      "Thread: " + std::to_string(thread_id)));
     
     if (ad >= HARDWARE_SEGMENT_START) {
-      while (segments::keyboard_reserved);
-      segments::keyboard_reserved = true;
+      while (global::keyboard_reserved);
+      global::keyboard_reserved = true;
     }
     
     regs.set(r1, ad);
 
-    if (ad >= HARDWARE_SEGMENT_START) segments::keyboard_reserved = false;
+    if (ad >= HARDWARE_SEGMENT_START) global::keyboard_reserved = false;
   }
 
   void iloadat() {
@@ -228,17 +226,17 @@ protected:
     auto at = base_address + read<uint64_t>() - disk_base; /* This function will at memory[at]. */
     //                                                              ^^^^^^^^^^^^^^^ wtf ?
     if (at <= (SYSTEM_SEGMENT_START + SYSTEM_SEGMENT_SIZE) && !is_system) 
-    throw std::runtime_error("Permission denied: Accessing system's segment.\n"
-    "Thread: " + std::to_string(thread_id));
+    wthrow (std::runtime_error("Permission denied: Accessing system's segment.\n"
+    "Thread: " + std::to_string(thread_id)));
   
     if (at >= HARDWARE_SEGMENT_START) {
-      while (segments::keyboard_reserved);
-      segments::keyboard_reserved = true;
+      while (global::keyboard_reserved);
+      global::keyboard_reserved = true;
     }
     
     regs.set(dst, memory[at]);
 
-    if (at >= HARDWARE_SEGMENT_START) segments::keyboard_reserved = false;
+    if (at >= HARDWARE_SEGMENT_START) global::keyboard_reserved = false;
   }
 
   void iret() { ip = regs.get(R_RET); }
@@ -269,7 +267,7 @@ protected:
     }
 
     throw runtime::wyland_runtime_error(
-      STRDUP(what.c_str()), "wyland runtime error", "wyland:vm:iwthrow()", 
+      STRDUP(what.c_str()), "wyland runtime error", "wyland/vm/iwthrow()", 
       typeid(runtime::wyland_runtime_error).name(), ip, 
       thread_id, (uint64_t*)&memory[beg], 
       (uint64_t*)&memory[end], end - beg
@@ -295,7 +293,7 @@ protected:
       std::stringstream error;
       error << "linked function not found.\n"
                "\t\tcalling function: " << id << " but not found"; 
-      throw runtime::wyland_invalid_pointer_exception(error.str().c_str(), "invalid pointer", __func__, ip, thread_id, NULL, NULL, end - beg);
+      wthrow (runtime::wyland_invalid_pointer_exception(error.str().c_str(), "invalid pointer", __func__, ip, thread_id, NULL, NULL, end - beg));
     }
   }
 
@@ -303,14 +301,14 @@ protected:
     uint64_t address = regs.get(read()) - disk_base;
     uint8_t with = read();
 
-    if (address <= beg || address >= end) throw std::out_of_range(
+    if (address <= beg || address >= end) wthrow (std::out_of_range(
       "Reading out of the local segment.\n"
       "\tflag 'beg':\t" + std::to_string(beg) + "\n"
       "\tflag 'end':\t" + std::to_string(end) + "\n"
       "\tIP (global):\t" + std::to_string(ip) + "\n"
       "\tthread:\t\t" + std::to_string(thread_id)  + "\n"
       "\tlocal IP:\t" + std::to_string(local_ip) + "\n"
-      "\tfrom wtarg64::iemplace()"
+      "\tfrom wtarg64::iemplace()")
     );
 
     auto array = to_bin(regs.get(with));
@@ -325,7 +323,7 @@ protected:
     auto reg = read();
     auto bytes = regs.get(reg);
     if (index >= 4) {
-      throw std::runtime_error("somewhere::ipushmmio(): given index is invalid (from 0 to 3 only is valid): " + std::to_string(index));
+      wthrow (std::runtime_error("somewhere::ipushmmio(): given index is invalid (from 0 to 3 only is valid): " + std::to_string(index)));
     } else {
       Modules[index]->send_data(bytes);
     }
@@ -334,7 +332,7 @@ protected:
   void ipopmmio() { /* New in std:wy2.5 ! */
     auto index = read();
     if (index >= 4) {
-      throw std::runtime_error("somewhere::ipopmmio(): given index is invalid (from 0 to 3 only is valid): " + std::to_string(index));
+      wthrow (std::runtime_error("somewhere::ipopmmio(): given index is invalid (from 0 to 3 only is valid): " + std::to_string(index)));
     } else {
       regs.set(R_POP_MMIO, Modules[index]->receive_data());
     }
@@ -352,7 +350,7 @@ protected:
     }
 
     if (index >= 4) {
-      throw std::runtime_error("somewhere::iconnectmmio(): given index is invalid (from 0 to 3 only is valid): " + std::to_string(index));
+      wthrow (std::runtime_error("somewhere::iconnectmmio(): given index is invalid (from 0 to 3 only is valid): " + std::to_string(index)));
     } else {
       Modules[index] = loadIExternalMMIOModule(name);
     }
@@ -361,7 +359,7 @@ protected:
   void ideconnectmmio() { /* New in std:wy2.6 ! */
     auto index = read();
     if (index >= 4) {
-      throw std::runtime_error("somewhere::haha::ideconnectmmio(): given index is invalid (from 0 to 3 only is valid): " + std::to_string(index));
+      wthrow (std::runtime_error("somewhere::haha::ideconnectmmio(): given index is invalid (from 0 to 3 only is valid): " + std::to_string(index)));
     } else {
       Modules[index]->shutdown();
       Modules[index]->~WylandMMIOModule();
@@ -410,7 +408,7 @@ protected:
     set[set_wtarg64::movad]  = &corewtarg64::imovad;
     set[set_wtarg64::sal] = &corewtarg64::isal;
     set[set_wtarg64::sar] = &corewtarg64::isar;
-    set[set_wtarg64::wthrow] = &corewtarg64::iwthrow;
+    set[set_wtarg64::owthrow] = &corewtarg64::iwthrow;
     set[set_wtarg64::clfn] = &corewtarg64::iclfn;
     set[set_wtarg64::empl] = &corewtarg64::iemplace;
     set[set_wtarg64::push_mmio] = &corewtarg64::ipushmmio;
@@ -448,7 +446,7 @@ public:
     std::cout.clear();
 
     if (table == nullptr) {
-      throw std::runtime_error("linked_functions table is null.");
+      wthrow (std::runtime_error("linked_functions table is null."));
     }
 
     if (_GraphicsModule == nullptr) {
@@ -481,15 +479,15 @@ public:
     regs.set(0, 'A');
     regs.set(1, 1);
     regs.set(REG_KEY, 0x00);
-    regs.set(R_MEMORY_INF, segments::memory_size);
+    regs.set(R_MEMORY_INF, global::memory_size);
     regs.set(R_RELATIVE_N, base_address);
 
     if (is_system) {
       if (!GraphicsModule->init(800, 600, "Wyland")) {
         std::cerr << "[e]: unable to initialize <GraphicsModule*>" << std::endl;
-        throw GraphicsModuleException(
+        wthrow (GraphicsModuleException(
           "Unable to initialize <GraphicsModule*>", __func__ 
-        );
+        ));
       } else std::cout << "[i]: GraphicsModule initialized: " << GraphicsModule->name() << std::endl;
 
       Bios.init({MMIOModule1, MMIOModule2, DiskModule}, GraphicsModule);
@@ -503,16 +501,7 @@ public:
     auto start_time =  std::chrono::high_resolution_clock::now();
 
     while (!halted) {
-      if (ip < beg || ip >= end) 
-        throw std::out_of_range(
-          "Reading out of the local segment.\n"
-          "\tflag 'beg':\t" + std::to_string(beg) + "\n"
-          "\tflag 'end':\t" + std::to_string(end) + "\n"
-          "\tIP (global):\t" + std::to_string(ip) + "\n"
-          "\tthread:\t\t" + std::to_string(thread_id)  + "\n"
-          "\tlocal IP:\t" + std::to_string(local_ip) + "\n"
-          "\tfrom wtarg64::run()"
-        );
+      // if (ip < beg || ip >= end) {}
       
       auto fetched = read();
       local_ip++;
@@ -533,19 +522,20 @@ public:
         "\tbase.add:\t0x" << std::setw(16) << std::setfill('0') << std::hex << base_address << "\n"
         "\trel.add:\t0x"  << std::setw(16) << std::setfill('0') << std::hex << code_start << "\n"
         "\tThread:\t" << std::dec << thread_id;
-        throw std::runtime_error(oss.str());
+        wthrow (std::runtime_error(oss.str()));
       }
 
-      try {
+      /*try {
         #ifdef __WYLAND_DEBUG_PRINT_IP__
         std::cout << "0x" << std::setfill('0') << std::setw(16) << std::hex << ip << ":0x" << std::setw(2) << (int)fetched << std::endl;
-        #endif
+        #endif*/
         (this->*set[fetched])();
+        /*
       } catch (const std::exception &e) {
         throw runtime::wyland_runtime_error(e.what(), "Instruction Invokation Exception", __func__, typeid(e).name(), ip, thread_id, NULL, NULL, end-beg);
       } catch (const runtime::wyland_runtime_error &e) {
         throw runtime::wyland_runtime_error(e.what(), e.name(), e.caller(), typeid(e).name(), ip, thread_id, NULL, NULL, end-beg);
-      }
+      }*/
     }
 
     GraphicsModule->shutdown();
@@ -563,6 +553,7 @@ public:
 
   uint64_t get_ip() override { return ip; }
 
+/*
   #pragma region bad...
   void run_step() override {
     if (!halted) {
@@ -583,7 +574,7 @@ public:
       local_ip++;
 
       if (fetched == 0xFF) { halted = true; return; }
-      if (fetched == 0xFE) { return; } /* Specific mark for labels. Used for debugging. */
+      if (fetched == 0xFE) { return; } / * Specific mark for labels. Used for debugging. * /
 
       wyland_uint key = get_key();
       if (key)  {
@@ -633,6 +624,7 @@ public:
     }
   }
   #pragma endregion
+  */
 };
 
 WYLAND_END

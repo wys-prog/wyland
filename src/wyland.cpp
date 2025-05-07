@@ -59,6 +59,7 @@
 #include "sock2.h"
 #include "updates/updater.hpp"
 #include "compiler/iwysm.hpp"
+#include "wc++std.hpp"
 
 WYLAND_BEGIN
 
@@ -314,7 +315,9 @@ TaskHandle run_raw = [](std::vector<std::string> &args) {
       disk.read(buff, sizeof(buff));
       memory[SYSTEM_SEGMENT_START+i] = buff[0];
       i++;
+      std::cout << "[i]: loaded: " << std::dec << i << " bytes...\r" << std::flush;
     }
+    std::cout << "[i]: loaded: " << std::dec << i << " bytes" << std::endl;
 
     core_base *core = create_core_ptr(task.target);
 
@@ -514,7 +517,9 @@ std::unordered_map<std::string, TaskHandle> handles {
   //{"-api", api}
 };
 
-static int wylandMain(int argc, char *const argv[]) {
+static int WylandMain(int argc, char *const argv[]) {
+  std::set_terminate(wyland_terminate);
+
   if (argc - 1 == 0) {
     std::cerr << "[e]: Expected a task." << std::endl;
     return -1;
@@ -561,7 +566,7 @@ int main(int argc, char *const argv[]) {
 #ifdef _WIN32
   std::cout << "[wyland]: running Wyland on Windows, some features can be cursed." << std::endl;
 #endif // Windows ?
-  return wylma::wyland::wylandMain(argc, argv);
+  return wylma::wyland::WylandMain(argc, argv);
 }
 
 //#endif // ___WYLAND_STD_MAIN___

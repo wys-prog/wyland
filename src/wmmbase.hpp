@@ -7,6 +7,7 @@
 #include <vector>
 #include <cstdint>
 #include <stdexcept>
+#include <bit>
 
 #define WYLAND_BEGIN namespace wylma { namespace wyland { 
 #define WYLAND_END   } }
@@ -69,10 +70,11 @@ using namespace std::string_literals;
 uint8_t *memory;
 uint64_t code_start;
 
-namespace segments {
+namespace global {
   static bool keyboard_reserved;
   static uint64_t memory_size = WYLAND_MEMORY_MINIMUM;
 }
+
 
 namespace manager {
   /* Don't use this namespace ! */
@@ -127,8 +129,19 @@ inline uint8_t* to_bin(const T &__T) {
 
 template <typename T>
 inline std::vector<uint8_t> to_bin_v(const T &t) {
-  auto bytes = to_bin(t);
-  return std::vector<uint8_t>(bytes, bytes + sizeof(T));
+  static_assert(std::is_integral_v<T>, "T must be an integral type");
+
+    // Direct memory reinterpretation (no loop, no dynamic alloc)
+  const uint8_t *ptr = reinterpret_cast<const uint8_t*>(&t);
+
+    // Big-endian correction if necessary (assuming target is little-endian)
+  if constexpr (std::endian::native == std::endian::little) {
+    return std::vector<uint8_t>(ptr, ptr + sizeof(T));
+  } else {
+    // Reverse for big-endian targets
+    return std::vector<uint8_t>(std::make_reverse_iterator(ptr + sizeof(T)),
+                                std::make_reverse_iterator(ptr));
+  }
 }
 
 WYLAND_END

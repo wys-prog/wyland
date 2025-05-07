@@ -196,13 +196,13 @@ private:
       "Thread: " + std::to_string(thread_id));
     
     if (ad >= HARDWARE_SEGMENT_START) {
-      while (segments::keyboard_reserved);
-      segments::keyboard_reserved = true;
+      while (global::keyboard_reserved);
+      global::keyboard_reserved = true;
     }
     
     regs.set(r1, ad);
 
-    if (ad >= HARDWARE_SEGMENT_START) segments::keyboard_reserved = false;
+    if (ad >= HARDWARE_SEGMENT_START) global::keyboard_reserved = false;
   }
 
   void iloadat() {
@@ -214,13 +214,13 @@ private:
     "Thread: " + std::to_string(thread_id));
   
     if (at >= HARDWARE_SEGMENT_START) {
-      while (segments::keyboard_reserved);
-      segments::keyboard_reserved = true;
+      while (global::keyboard_reserved);
+      global::keyboard_reserved = true;
     }
     
     regs.set(dst, memory[at]);
 
-    if (at >= HARDWARE_SEGMENT_START) segments::keyboard_reserved = false;
+    if (at >= HARDWARE_SEGMENT_START) global::keyboard_reserved = false;
   }
 
   void iret() { ip = regs.get(63); }

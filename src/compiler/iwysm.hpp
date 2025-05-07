@@ -567,6 +567,8 @@ namespace wylma {
             }
           }
 
+          if (file_size % 2 != 0) out.write("\0", 1);
+
           return;
         }
 
@@ -645,7 +647,7 @@ namespace wylma {
             return;
           }
 
-          char buffer[128]{0};
+          char buffer[2]{0};
           while (input.read(buffer, sizeof(buffer))) {
             output.write(buffer, sizeof(buffer));
           }
@@ -658,7 +660,7 @@ namespace wylma {
 
       void compile(const std::vector<std::string> &args) {
         std::vector<std::string> inputs;
-        std::vector<std::string> outputs {"a.out"};
+        std::vector<std::string> outputs;
 
         bool verbose = false;
         bool include_table = false;
@@ -686,6 +688,7 @@ namespace wylma {
 
         WylandAssembler wysm;
         if (!verbose) std::cout.setstate(std::ios::failbit);
+        std::cout << "starting compilation" << std::endl;
 
         wysm.compile_file(input, output, linify(args), include_table);
         std::cout << "output size: ";
@@ -701,6 +704,7 @@ namespace wylma {
         }
 
         std::cout << std::endl;
+        copy_output_files(output, outputs, linify(args));
 
         std::cout.clear();
 

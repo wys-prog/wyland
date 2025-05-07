@@ -18,11 +18,16 @@
 #endif
 
 #ifdef JAVA
-#define WYLAND_NAME "Java Shit" 
+# define WYLAND_NAME "Java Shit" 
 /* We're coding in JS, Not JavaScript, but Java Shit !! */
 #else
-#define WYLAND_NAME    "Wyland wy:2.7"
+# ifdef __WYLAND_DEBUG__
+#  define WYLAND_NAME    "Wyland wy:2.7 Debug"
+# else
+#  define WYLAND_NAME    "Wyland wy:2.7"
+# endif // ? Debug ?
 #endif // Java ?
+
 #define WYLAND_BUILD_NAME "Wyland Build " WYLAND_VERSION_MAJOR_STR "." WYLAND_VERSION_MINOR_STR " - Sequoia - " COMPILER_NAME
 
 #ifndef WYLAND_VERSION_UINT32

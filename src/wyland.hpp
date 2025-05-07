@@ -91,6 +91,12 @@ void wyland_exit(int _code = 0) {
   exit(_code);
 }
 
+void wyland_terminate(void) {
+  std::cerr << "[e]: wyland_terminate called, terminating program. Ressources will be cleared." << std::endl;
+  clear_ressources();
+  exit(-1);
+}
+
 core_base *create_core_ptr(wtarget target) {
   if (target == wtarg64) {
     auto ptr = new corewtarg64();
@@ -117,7 +123,7 @@ bool allocate_memory(size_t size) {
 
     std::cout << "[i]: memory segment created at: 0x" << std::hex << std::uintptr_t(&memory) << std::endl;
     std::cout << "[i]: " << std::dec << size << " bytes allocated" << std::hex << std::endl;
-    segments::memory_size = size;
+    global::memory_size = size;
     return true;
   } catch (const std::bad_alloc &e) {
     std::cerr << "[e]: unable to allocate memory segment: " << e.what() << std::endl;

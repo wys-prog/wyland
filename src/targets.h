@@ -61,7 +61,7 @@ enum set_wtarg64 {
   movad, 
   sal, 
   sar, 
-  wthrow, 
+  owthrow, 
   clfn, // Call Linked Function, std:wy2.4
   empl,
   push_mmio, 
