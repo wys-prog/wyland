@@ -28,7 +28,7 @@ public:
   virtual ~WylandMMIOModule() {}
 };
 
-typedef wbool (*EMMIOFuncSingBool)(void);
+typedef wbool (*EMMIOFuncSignBool)(void);
 typedef void (*EMMIOFunc)(void);
 typedef const char *(*EMMIOFuncSignStr)(void);
 typedef void (*EMMIOFuncArgU64)(wulong);
@@ -39,7 +39,7 @@ typedef wbyte (*EMMIOFuncSignByte)(void);
 
 class IWylandMMIOExternalModule : public WylandMMIOModule {
 public:
-  EMMIOFuncSingBool Einit = nullptr;
+  EMMIOFuncSignBool Einit = nullptr;
   EMMIOFunc Eshutdown = nullptr;
   EMMIOFuncSignStr Ename = nullptr;
   EMMIOFuncArgU64 Esend_data = nullptr;
@@ -62,7 +62,7 @@ WylandMMIOModule *loadIExternalMMIOModule(const std::string &path) {
   }
 
   auto module = new IWylandMMIOExternalModule();
-  module->Einit = reinterpret_cast<EMMIOFuncSingBool>(DynamicLibraryFunc(handle, "Einit"));
+  module->Einit = reinterpret_cast<EMMIOFuncSignBool>(DynamicLibraryFunc(handle, "Einit"));
   module->Ename = reinterpret_cast<EMMIOFuncSignStr>(DynamicLibraryFunc(handle, "Ename"));
   module->Eshutdown = reinterpret_cast<EMMIOFunc>(DynamicLibraryFunc(handle, "Eshutdown"));
   module->Ereceive_data = reinterpret_cast<EMMIOFuncSignU64>(DynamicLibraryFunc(handle, "Ereceive_data"));
