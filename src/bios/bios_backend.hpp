@@ -13,6 +13,9 @@
 
 extern "C" {
   void bios_backend_interrupt(wuint id, wyland_registers *regs);
-  void bios_backend_init(const std::vector<wylma::wyland::WylandMMIOModule*> &modules, wylma::wyland::IWylandGraphicsModule *gm);
+  void bios_backend_init(const std::vector<wylma::wyland::WylandMMIOModule*> &modules, 
+                         wylma::wyland::IWylandGraphicsModule *gm, 
+                         uint8_t *mmptr, wylma::wyland::WylandMMIOModule *dsptr, 
+                         const std::vector<wylma::wyland::USBDrive*> &usbdrives);
   long double bios_backend_version();
 }

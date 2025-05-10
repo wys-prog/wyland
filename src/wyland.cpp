@@ -75,6 +75,7 @@ typedef struct {
   std::string Module2Path;
   int         max_cycles;
   bool        format_libs_name;
+  std::vector<std::string> usb_devices;
   /* In the future.. */
 } rt_task_t;
 
@@ -133,8 +134,11 @@ void handle_arguments(std::vector<std::string> args, std::vector<std::string> &f
       }
     } else if (args[i] == "-fmt-libs-false" || args[i] == "-nofmtlibs") {
       task.format_libs_name = false;
-    } else if (args[i] == "-no-init-out") {
+    } else if (args[i] == "-no-init-out" || args[i] == "--niout") {
       std::cout.setstate(std::ios_base::failbit);
+    } else if (args[i] == "-usb") {
+      if (args.size() <= i + 1) { std::cerr << "[e]: excepted argument after " << args[i] << std::endl; wyland_exit(-1); }
+      task.usb_devices.push_back(args[++i]);
     } else {
       files.push_back(args[i]);
     }
@@ -195,7 +199,7 @@ void run_base_function(std::vector<std::string> &args, bool debug = false) {
     core->init(
       SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START+SYSTEM_SEGMENT_SIZE, 
       true, 0, &cache::linked_funcs, SYSTEM_SEGMENT_START+code_start, cache::GraphicsModulePtr, 
-      cache::MMIOModule1Ptr, cache::MMIOModule2Ptr, cache::DiskModulePtr
+      cache::MMIOModule1Ptr, cache::MMIOModule2Ptr, cache::DiskModulePtr, cache::BiosPtr
     );
     
     run_core(core, debug, task.max_cycles);
@@ -331,8 +335,9 @@ TaskHandle run_raw = [](std::vector<std::string> &args) {
     core->init(
       SYSTEM_SEGMENT_START, SYSTEM_SEGMENT_START+SYSTEM_SEGMENT_SIZE, 
       true, 0, &cache::linked_funcs, SYSTEM_SEGMENT_START, cache::GraphicsModulePtr, 
-      cache::MMIOModule1Ptr, cache::MMIOModule2Ptr
+      cache::MMIOModule1Ptr, cache::DiskModulePtr, cache::MMIOModule2Ptr, cache::BiosPtr
     );
+
     run_core(core);
 
     delete core;

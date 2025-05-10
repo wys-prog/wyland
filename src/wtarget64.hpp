@@ -37,6 +37,7 @@
 #include "wmmio.hpp"
 #include "security.hpp"
 #include "bios/bios.hpp"
+#include "bios/bios_usb.hpp"
 
 #include "wc++std.hpp"
 
@@ -63,7 +64,7 @@ protected:
   WylandMMIOModule      *MMIOModule2;
   WylandMMIOModule      *DiskModule;
   WylandMMIOModule      *Modules[4];
-  BIOS                   Bios = {};
+  BIOS                   *Bios;
 
   boost::container::flat_map<uint32_t, libcallc::DynamicLibrary::FunctionType> *linked_functions;
   
@@ -198,7 +199,7 @@ protected:
 
   void ixint() {
     auto regs_ptr =  regs.wrap();
-    Bios.interrupt(read<wint>(), &regs_ptr);
+    Bios->interrupt(read<wint>(), &regs_ptr);
   };
 
   void nop() {};
@@ -420,6 +421,33 @@ protected:
     set[set_wtarg64::oxor] = &corewtarg64::ixor;
   }
 
+  void system_init() {
+    // We check 'is_system' here, to "add security".
+    if (is_system) {
+      if (!GraphicsModule->init(800, 600, "Wyland")) {
+        std::cerr << "[e]: unable to initialize <GraphicsModule*>" << std::endl;
+        wthrow (GraphicsModuleException(
+          "Unable to initialize <GraphicsModule*>", __func__ 
+        ));
+      } else std::cout << "[i]: GraphicsModule initialized: " << GraphicsModule->name() << std::endl;
+
+      Bios->init({MMIOModule1, MMIOModule2, DiskModule}, GraphicsModule, memory, DiskModule, cache::USBDevices);
+
+      security::SecurityAddModules({GraphicsModule, MMIOModule1, MMIOModule2, DiskModule});
+      std::cout.clear();
+    }
+  }
+
+  void registers_init() {
+    regs.set(R_ORG, beg);
+    regs.set(R_STACK_BASE, end - STACK_SIZE); // You can also put stack where ever you want...
+    regs.set(0, 'A');
+    regs.set(1, 1);
+    regs.set(REG_KEY, 0x00);
+    regs.set(R_MEMORY_INF, global::memory_size);
+    regs.set(R_RELATIVE_N, base_address);
+  }
+
 public:
   void init(uint64_t _memory_segment_begin, 
             uint64_t _memory_segment_end, 
@@ -428,7 +456,7 @@ public:
             linkedfn_array *table, 
             uint64_t _disk_relative, IWylandGraphicsModule *_GraphicsModule, 
             WylandMMIOModule *m1, WylandMMIOModule *m2, 
-            WylandMMIOModule *disk) override {
+            WylandMMIOModule *disk, BIOS *BiosPtr) override {
     beg = _memory_segment_begin;
     end = _memory_segment_end;
     ip  = beg;
@@ -436,6 +464,7 @@ public:
     thread_id = _name;
     base_address = _memory_segment_begin;
     disk_base = _disk_relative;
+    Bios = BiosPtr;
     if (_is_system) {
       std::cout << "[i]: base disk address: 0x" << std::hex << std::setfill('0') << std::setw(16) << _disk_relative << std::endl;
       std::cout << "[i]: 'beg' flag: 0x" << std::hex << std::setfill('0') << std::setw(16) << beg << std::endl;
@@ -474,27 +503,8 @@ public:
     init_set();
     /* Initialize the core, with some "basic" values. */
 
-    regs.set(R_ORG, beg);
-    regs.set(R_STACK_BASE, end - STACK_SIZE); // You can also put stack where ever you want...
-    regs.set(0, 'A');
-    regs.set(1, 1);
-    regs.set(REG_KEY, 0x00);
-    regs.set(R_MEMORY_INF, global::memory_size);
-    regs.set(R_RELATIVE_N, base_address);
-
-    if (is_system) {
-      if (!GraphicsModule->init(800, 600, "Wyland")) {
-        std::cerr << "[e]: unable to initialize <GraphicsModule*>" << std::endl;
-        wthrow (GraphicsModuleException(
-          "Unable to initialize <GraphicsModule*>", __func__ 
-        ));
-      } else std::cout << "[i]: GraphicsModule initialized: " << GraphicsModule->name() << std::endl;
-
-      Bios.init({MMIOModule1, MMIOModule2, DiskModule}, GraphicsModule);
-    }
-
-    security::SecurityAddModules({GraphicsModule, MMIOModule1, MMIOModule2, DiskModule});
-    std::cout.clear();
+    system_init();
+    registers_init();
   }
   
   void run() override {

@@ -15,16 +15,20 @@
 
 #include "bios_backend.hpp"
 #include "bios.hpp"
+#include "bios_disk.hpp"
+#include "bios_usb.hpp"
 
 typedef void(*syscall_callable)(wyland_registers*);
-
 
 WYLAND_BEGIN
 
 namespace bios {
   namespace handles {
     IWylandGraphicsModule *GraphicsModule;
-    w_dfstream            *DiskPtr;
+    WylandMMIOModule      *DiskPtr;
+    uint8_t               *Memory;
+    BiosDiskHandler       *DiskHandler;
+    std::vector<USBDrive*> USBDrives;
   }
 
   class BiosException : public runtime::wyland_runtime_error {
@@ -55,9 +59,28 @@ namespace bios {
     
     *regs->r64[0] = nanoseconds;
   }
+
+  void bgetdisk(wyland_registers *regs) {
+  }
+  
+  void busb_write_byte(wyland_registers *regs) {
+    handles::USBDrives[*(regs->r64[0])]->SendByte(*(regs->r8[0]));
+  }
+
+  void busb_read_byte(wyland_registers *regs) {
+    *(regs->r8[0]) = handles::USBDrives[*(regs->r64[0])]->ReceiveByte();
+  }
+
+  void busb_write_array(wyland_registers *regs) {
+    
+  }
+
+  void busb_read_array(wyland_registers *regs) {
+    
+  }
   
   syscall_callable syscall_table[] = {
-    &bwrite, &bread, &bgettime,
+    &bwrite, &bread, &bgettime, &bgetdisk,
   };
 
   const constexpr static auto max_syscalls = sizeof(wylma::wyland::bios::syscall_table) / sizeof(wylma::wyland::bios::syscall_table[0]);
@@ -77,7 +100,9 @@ extern "C" {
     }
   }
 
-  void bios_backend_init(const std::vector<wylma::wyland::WylandMMIOModule*> &modules, wylma::wyland::IWylandGraphicsModule *gm) {
+  void bios_backend_init(const std::vector<wylma::wyland::WylandMMIOModule*> &modules, 
+                         wylma::wyland::IWylandGraphicsModule *gm, uint8_t *mmptr, 
+                         wylma::wyland::WylandMMIOModule *dsptr, const std::vector<wylma::wyland::USBDrive*> &usbdrives) {
     std::cout << "[b]: BIOS version: " << (bios_backend_version()) << std::endl;
     
     for (const auto&module:modules) {
@@ -89,9 +114,12 @@ extern "C" {
     }
 
     wylma::wyland::bios::handles::GraphicsModule = gm;
+    wylma::wyland::bios::handles::Memory = mmptr;
+    wylma::wyland::bios::handles::DiskPtr = dsptr;
+    wylma::wyland::bios::handles::DiskHandler = new wylma::wyland::bios::BiosDiskHandler(dsptr);
   }
-  
+
   long double bios_backend_version() { 
-    return (1.5);
-  } 
+    return (1.7);
+  }
 }

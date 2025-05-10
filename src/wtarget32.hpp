@@ -28,6 +28,7 @@
 #include "wformat.hpp"
 #include "wtargb.hpp"
 
+#include "bios/bios.hpp"
 #include "interfaces/interface.hpp"
 
 WYLAND_BEGIN
@@ -240,7 +241,7 @@ public:
             linkedfn_array *, 
             uint64_t, IWylandGraphicsModule* = nullptr, 
             WylandMMIOModule* = nullptr, WylandMMIOModule* = nullptr, 
-            WylandMMIOModule* = nullptr) override {
+            WylandMMIOModule* = nullptr, BIOS* = nullptr) override {
     beg = _memory_segment_begin;
     end = _memory_segment_end;
     ip  = beg;

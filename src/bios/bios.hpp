@@ -33,8 +33,10 @@ public:
     bios_backend_interrupt(id, regs);
   }
 
-  void init(const std::vector<WylandMMIOModule*> &modules, IWylandGraphicsModule *gm) {
-    bios_backend_init(modules, gm);
+  void init(const std::vector<WylandMMIOModule*> &modules, 
+            IWylandGraphicsModule *gm, uint8_t *mmptr, WylandMMIOModule *dsptr, 
+            const std::vector<USBDrive*> &usbdrives) {
+    bios_backend_init(modules, gm, mmptr, dsptr, usbdrives);
   }
 
   inline long double version() {

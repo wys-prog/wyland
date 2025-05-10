@@ -32,7 +32,10 @@ typedef wbool (*EMMIOFuncSingBool)(void);
 typedef void (*EMMIOFunc)(void);
 typedef const char *(*EMMIOFuncSignStr)(void);
 typedef void (*EMMIOFuncArgU64)(wulong);
+typedef void (*EMMIOFuncArgByte)(wbyte);
 typedef wulong (*EMMIOFuncSignU64)(void);
+typedef wuint (*EMMIOFuncSignU32)(void);
+typedef wbyte (*EMMIOFuncSignByte)(void);
 
 class IWylandMMIOExternalModule : public WylandMMIOModule {
 public:

@@ -40,6 +40,7 @@
 #include "disk.hpp"
 #include "security.hpp"
 #include "bios/bios.hpp"
+#include "bios/bios_usb.hpp"
 #include "wyland_config.hpp"
 #include "updates/updater.hpp"
 #include "wyland.h"
@@ -56,11 +57,13 @@ typedef struct {
 
 namespace cache {
   boost::container::flat_map<uint32_t, libcallc::DynamicLibrary::FunctionType> linked_funcs{};
-  std::vector<libcallc::DynamicLibrary> libraries{};
-  IWylandGraphicsModule *GraphicsModulePtr = nullptr;
-  WylandMMIOModule      *MMIOModule1Ptr = nullptr;
-  WylandMMIOModule      *MMIOModule2Ptr = nullptr;
-  IWylandDiskModule     *DiskModulePtr = nullptr;
+  std::vector<libcallc::DynamicLibrary> libraries     = {};
+  IWylandGraphicsModule *GraphicsModulePtr            = nullptr;
+  WylandMMIOModule      *MMIOModule1Ptr               = nullptr;
+  WylandMMIOModule      *MMIOModule2Ptr               = nullptr;
+  IWylandDiskModule     *DiskModulePtr                = nullptr;
+  BIOS                  *BiosPtr                      = nullptr;
+  std::vector<USBDrive*> USBDevices                   = {};
 }
 
 void clear_ressources() {
@@ -82,6 +85,7 @@ void clear_ressources() {
   cache::MMIOModule1Ptr = nullptr;
   cache::MMIOModule2Ptr = nullptr;
   cache::DiskModulePtr = nullptr;
+  cache::BiosPtr = nullptr;
   cache::ReadBlockIndex = 0;
 }
 
@@ -303,11 +307,22 @@ WylandMMIOModule *loadMMIOModule(const std::string &path) {
   return new WylandMMIOModule();
 }
 
+void loadUSBDevices(const std::vector<std::string> &devices) {
+  for (const auto &device:devices) {
+    if (device.starts_with("_w")) {
+      // Built-in USB drive
+    } else {
+      
+    }
+  }
+}
+
 void loadModules(const std::string &pathGraphics, const std::string &m1, const std::string &m2, w_dfstream &stream) {
   loadGraphicsModule(pathGraphics);
   cache::MMIOModule1Ptr = loadMMIOModule(m1);
   cache::MMIOModule2Ptr = loadMMIOModule(m2);
   cache::DiskModulePtr = new IWylandDiskModule(stream);
+  cache::BiosPtr = new BIOS();
 }
 
 void run_core(core_base *base, bool debug = false, int max = -1) {
