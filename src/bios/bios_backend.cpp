@@ -71,11 +71,11 @@ namespace bios {
     *(regs->r8[0]) = handles::USBDrives[*(regs->r64[0])]->ReceiveByte();
   }
 
-  void busb_write_array(wyland_registers *regs) {
+  void busb_write_array(wyland_registers *) {
     
   }
 
-  void busb_read_array(wyland_registers *regs) {
+  void busb_read_array(wyland_registers *) {
     
   }
   

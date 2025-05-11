@@ -38,7 +38,7 @@ namespace bios {
     };*/
 
   public:
-    BiosDiskHandler(WylandMMIOModule *DiskPtr) /*: Disk(DiskPtr) */ {
+    BiosDiskHandler(WylandMMIOModule *) /*: Disk(DiskPtr) */ {
       //Disk->name();
     }
     /*

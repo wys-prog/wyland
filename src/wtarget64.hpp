@@ -64,7 +64,7 @@ protected:
   WylandMMIOModule      *MMIOModule2;
   WylandMMIOModule      *DiskModule;
   WylandMMIOModule      *Modules[4];
-  BIOS                   *Bios;
+  BIOS                  *Bios;
 
   boost::container::flat_map<uint32_t, libcallc::DynamicLibrary::FunctionType> *linked_functions;
   
@@ -381,7 +381,7 @@ protected:
     auto r1 = read(), r2 = read();
     regs.set(regs.get(r1), regs.get(r1) & regs.get(r2));
   }
-
+#ifndef ___WYLAND_SWITCH_INSTRUCTIONS___
   setfunc_t set[34];
 
   void init_set() {
@@ -420,6 +420,9 @@ protected:
     set[set_wtarg64::oor] = &corewtarg64::ior;
     set[set_wtarg64::oxor] = &corewtarg64::ixor;
   }
+#else
+  void init_set() {}
+#endif //___WYLAND_SWITCH_INSTRUCTIONS___
 
   void system_init() {
     // We check 'is_system' here, to "add security".
@@ -515,7 +518,7 @@ public:
       
       auto fetched = read();
       local_ip++;
-
+#ifndef ___WYLAND_SWITCH_INSTRUCTIONS___
       if (fetched >= sizeof(set) / sizeof(set[0])) {
         if (fetched == 0xFF) { break; }
         if (fetched == 0xFE) { continue; } /* Specific mark for labels. Used for debugging. */
@@ -535,17 +538,16 @@ public:
         wthrow (std::runtime_error(oss.str()));
       }
 
-      /*try {
-        #ifdef __WYLAND_DEBUG_PRINT_IP__
-        std::cout << "0x" << std::setfill('0') << std::setw(16) << std::hex << ip << ":0x" << std::setw(2) << (int)fetched << std::endl;
-        #endif*/
+      try {
         (this->*set[fetched])();
-        /*
       } catch (const std::exception &e) {
-        throw runtime::wyland_runtime_error(e.what(), "Instruction Invokation Exception", __func__, typeid(e).name(), ip, thread_id, NULL, NULL, end-beg);
+        throw runtime::wyland_runtime_error(e.what(), "Instruction Invokation Exception", memberofcstr, typeid(e).name(), ip, thread_id, NULL, NULL, end-beg);
       } catch (const runtime::wyland_runtime_error &e) {
         throw runtime::wyland_runtime_error(e.what(), e.name(), e.caller(), typeid(e).name(), ip, thread_id, NULL, NULL, end-beg);
-      }*/
+      }
+#else
+      _switch_instruction(fetched);
+#endif // ? ___WYLAND_SWITCH_INSTRUCTIONS___
     }
 
     GraphicsModule->shutdown();
@@ -562,6 +564,52 @@ public:
   }
 
   uint64_t get_ip() override { return ip; }
+
+#ifdef ___WYLAND_SWITCH_INSTRUCTIONS___
+  void _switch_instruction(uint8_t op) {
+    switch (op) {
+      case set_wtarg64::nop: nop(); break;
+      case set_wtarg64::lea: ilea(); break;
+      case set_wtarg64::load: iload(); break;
+      case set_wtarg64::store: istore(); break;
+      case set_wtarg64::mov: imov(); break;
+      case set_wtarg64::add: iadd(); break;
+      case set_wtarg64::sub: isub(); break;
+      case set_wtarg64::mul: imul(); break;
+      case set_wtarg64::odiv: idiv(); break;
+      case set_wtarg64::mod: imod(); break;
+      case set_wtarg64::jmp: ijmp(); break;
+      case set_wtarg64::je: ije(); break;
+      case set_wtarg64::jne: ijne(); break;
+      case set_wtarg64::jl: ijl(); break;
+      case set_wtarg64::jg: ijg(); break;
+      case set_wtarg64::jle: ijle(); break;
+      case set_wtarg64::jge: ijge(); break;
+      case set_wtarg64::cmp: icmp(); break;
+      case set_wtarg64::xint: ixint(); break;
+      case set_wtarg64::loadat: iloadat(); break;
+      case set_wtarg64::ret: iret(); break;
+      case set_wtarg64::movad: imovad(); break;
+      case set_wtarg64::sal: isal(); break;
+      case set_wtarg64::sar: isar(); break;
+      case set_wtarg64::owthrow: iwthrow(); break;
+      case set_wtarg64::clfn: iclfn(); break;
+      case set_wtarg64::empl: iemplace(); break;
+      case set_wtarg64::push_mmio: ipushmmio(); break;
+      case set_wtarg64::pop_mmio: ipopmmio(); break;
+      case set_wtarg64::connect_mmio: iconnectmmio(); break;
+      case set_wtarg64::deconnect_mmio: ideconnectmmio(); break;
+      case set_wtarg64::oand: iand(); break;
+      case set_wtarg64::oor: ior(); break;
+      case set_wtarg64::oxor: ixor(); break;
+      case 0xFF: halted = true; break;
+      case 0xFE: break;
+      default:
+        wthrow(std::runtime_error("Invalid instruction opcode: " + std::to_string(op)));
+        break;
+    }
+  }
+#endif 
 
 /*
   #pragma region bad...

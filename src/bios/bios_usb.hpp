@@ -70,6 +70,8 @@ public:
       .Len = 1
     };
 
+    packet.Bytes[0] = byte;
+
     SendData(packet);
   }
 
@@ -154,8 +156,8 @@ public:
     return Ename();
   }
 
-  void SendData(const USBPacket& packet) override {
-    
+  void SendData(const USBPacket &) override {
+    // TODO
   }
 
   USBPacket ReceiveData() override {
