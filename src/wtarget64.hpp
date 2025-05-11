@@ -381,8 +381,19 @@ protected:
     auto r1 = read(), r2 = read();
     regs.set(regs.get(r1), regs.get(r1) & regs.get(r2));
   }
+
+  void iinc() { /* New in std:wy2.7 ! */
+    auto r1 = read();
+    regs.set((r1), regs.get(r1)+1);
+  }
+
+  void idec() { /* New in std:wy2.7 ! */
+    auto r1 = read();
+    regs.set((r1), regs.get(r1)+1);
+  }
+
 #ifndef ___WYLAND_SWITCH_INSTRUCTIONS___
-  setfunc_t set[34];
+  setfunc_t set[36];
 
   void init_set() {
     set[set_wtarg64::nop] = &corewtarg64::nop;
@@ -419,6 +430,8 @@ protected:
     set[set_wtarg64::oand] = &corewtarg64::iand;
     set[set_wtarg64::oor] = &corewtarg64::ior;
     set[set_wtarg64::oxor] = &corewtarg64::ixor;
+    set[set_wtarg64::dec] = &corewtarg64::idec;
+    set[set_wtarg64::inc] = &corewtarg64::iinc;
   }
 #else
   void init_set() {}
@@ -602,6 +615,8 @@ public:
       case set_wtarg64::oand: iand(); break;
       case set_wtarg64::oor: ior(); break;
       case set_wtarg64::oxor: ixor(); break;
+      case set_wtarg64::inc: iinc(); break;
+      case set_wtarg64::dec: idec(); break;
       case 0xFF: halted = true; break;
       case 0xFE: break;
       default:

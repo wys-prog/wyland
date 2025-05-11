@@ -71,6 +71,8 @@ enum set_wtarg64 {
   oxor, 
   oor, 
   oand,
+  inc, 
+  dec
 };
 
 enum set_wtargmarch {

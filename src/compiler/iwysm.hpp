@@ -192,6 +192,8 @@ namespace wylma {
           instructions[".dw"] = {"word", {}};
           instructions[".dd"] = {"dword", {}};
           instructions[".dq"] = {"qword", {}};
+          instructions[".inc"] = {"byte", {34}};
+          instructions[".dec"] = {"byte", {35}};
           instructions[".header"] = {"word, dword, qword, qword, qword", {0x77, 0x6C, 0x66}};
           // Define registers (idk why, some of them didn't work..)
           macros["%bmm0"] = "byte(0x00)";
