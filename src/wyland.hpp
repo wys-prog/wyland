@@ -41,6 +41,8 @@
 #include "security.hpp"
 #include "bios/bios.hpp"
 #include "bios/bios_usb.hpp"
+#include "bios/bios_disk.hpp"
+#include "bios/stdusb/stdusb.hpp"
 #include "wyland_config.hpp"
 #include "updates/updater.hpp"
 #include "wyland.h"
@@ -63,7 +65,6 @@ namespace cache {
   WylandMMIOModule      *MMIOModule2Ptr               = nullptr;
   IWylandDiskModule     *DiskModulePtr                = nullptr;
   BIOS                  *BiosPtr                      = nullptr;
-  std::vector<USBDrive*> USBDevices                   = {};
 }
 
 void clear_ressources() {
@@ -87,6 +88,11 @@ void clear_ressources() {
   cache::DiskModulePtr = nullptr;
   cache::BiosPtr = nullptr;
   cache::ReadBlockIndex = 0;
+  for (const auto&usb:cache::USBDrivePointersCache) {
+    delete usb;
+  }
+  destroy(cache::USBDevices);
+  destroy(cache::USBDrivePointersCache);
 }
 
 void wyland_exit(int _code = 0) {
@@ -309,10 +315,20 @@ WylandMMIOModule *loadMMIOModule(const std::string &path) {
 
 void loadUSBDevices(const std::vector<std::string> &devices) {
   for (const auto &device:devices) {
-    if (device.starts_with("_w")) {
-      // Built-in USB drive
+    std::string dname = "", dargs = "";
+    if (device.contains(':')) {
+      dname = device.substr(0, device.find(':'));
+      dargs = device.substr(device.find(':'));
     } else {
-      
+      dname = device;
+    }
+
+    if (dname.starts_with("_w") && stdusb_devices.find(dname) != stdusb_devices.end()) {
+      // Built-in USB drive
+      cache::USBDevices.push_back(stdusb_devices[dname].Instantiate(dargs));
+    } else {
+      IExternalUSBDrive Base;
+      cache::USBDevices.push_back(Base.Instantiate(dargs));
     }
   }
 }

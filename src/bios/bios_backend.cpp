@@ -113,13 +113,21 @@ extern "C" {
       } else std::cout << "[SUCCESS]" << std::endl;
     }
 
+    for (const auto&drive:usbdrives) {
+      std::cout << "[b]: initializing module " << drive->name() << ":\t" << std::flush;
+      if (!drive->init()) {
+        std::cout << "[FAILLURE]" << std::endl;
+        throw wylma::wyland::USBException("Unable to initialize MMIO Module: " + drive->name(), "BIOS/Backend/" + std::string(__func__));
+      } else std::cout << "[SUCCESS]" << std::endl;
+    }
+
     wylma::wyland::bios::handles::GraphicsModule = gm;
     wylma::wyland::bios::handles::Memory = mmptr;
     wylma::wyland::bios::handles::DiskPtr = dsptr;
     wylma::wyland::bios::handles::DiskHandler = new wylma::wyland::bios::BiosDiskHandler(dsptr);
   }
 
-  long double bios_backend_version() { 
-    return (1.7);
+  long double bios_backend_version() {
+    return (1.8);
   }
 }

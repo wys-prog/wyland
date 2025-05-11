@@ -1,5 +1,4 @@
 #pragma once
-#pragma once
 
 #include <vector>
 #include <string>
@@ -21,12 +20,12 @@
 
 WYLAND_BEGIN
 
-class USBException : public runtime::wyland_runtime_error {
-public:
-  USBException(const std::string &what, const std::string &from) 
-  : runtime::wyland_runtime_error(what.c_str(), "USB Exception", from.c_str(), typeid(this).name(), 0, 0, nullptr, nullptr, 0) 
-  {}
-};
+class USBDrive;
+
+namespace cache {
+  std::vector<USBDrive*> USBDrivePointersCache;
+  std::vector<USBDrive*> USBDevices = {};
+}
 
 // USB exception
 class USBException : public runtime::wyland_runtime_error {
@@ -88,6 +87,11 @@ public:
   virtual std::string name() override { return typeid(this).name(); }
   virtual wbool init() override { return wyland_true; }
   virtual void shutdown() override {}
+  virtual USBDrive *Instantiate(const std::string &) { 
+    USBDrive *Ptr = new USBDrive();
+    cache::USBDrivePointersCache.push_back(Ptr);
+    return Ptr;
+  }
 };
 
 typedef USBPacket (*USBExternalHandleSignPacket)(void);
@@ -177,6 +181,13 @@ public:
 
   wuint GetDeviceDescriptor() override {
     return (Eget_device_descriptor());
+  }
+
+  USBDrive *Instantiate(const std::string &_Args) override {
+    IExternalUSBDrive *IEUSBD = new IExternalUSBDrive();
+    cache::USBDrivePointersCache.push_back(IEUSBD);
+    IEUSBD->Load(_Args);
+    return IEUSBD;
   }
 };
 

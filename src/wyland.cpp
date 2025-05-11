@@ -61,6 +61,11 @@
 #include "compiler/iwysm.hpp"
 #include "wc++std.hpp"
 
+#include "bios/bios.hpp"
+#include "bios/bios_usb.hpp"
+#include "bios/bios_disk.hpp"
+#include "bios/stdusb/stdusb.hpp"
+
 WYLAND_BEGIN
 
 typedef void (*TaskHandle)(std::vector<std::string>&);
@@ -76,6 +81,7 @@ typedef struct {
   int         max_cycles;
   bool        format_libs_name;
   std::vector<std::string> usb_devices;
+  wuint       usb_ports;
   /* In the future.. */
 } rt_task_t;
 
@@ -89,6 +95,8 @@ rt_task_t task {
   .Module2Path = "",
   .max_cycles = -1,
   .format_libs_name = true,
+  .usb_devices{}, 
+  .usb_ports = WYLAND_STD_USB_PORTSC
 };
 
 /* This is idk (for fun) */
@@ -102,6 +110,15 @@ template <typename Rep, typename Period>
 std::ostream &operator<<(std::ostream &os, const swaiter<Rep, Period> &w) {
   std::this_thread::sleep_for(w.duration);
   return os;
+}
+
+wuint towuint(const std::string &str, wuint default_value = 0) {
+  try {
+    return std::stoul(str);
+  } catch (const std::exception &e) {
+    std::cerr << "[e]: towuint(): failled: " << e.what() << " [with str:" << str << "]" << std::endl;
+    return default_value;
+  }
 }
 
 void handle_arguments(std::vector<std::string> args, std::vector<std::string> &files) {
@@ -139,10 +156,14 @@ void handle_arguments(std::vector<std::string> args, std::vector<std::string> &f
     } else if (args[i] == "-usb") {
       if (args.size() <= i + 1) { std::cerr << "[e]: excepted argument after " << args[i] << std::endl; wyland_exit(-1); }
       task.usb_devices.push_back(args[++i]);
+    } else if (args[i].starts_with("-usb-ports:")) {
+      size_t beg = args[i].find("-usb-ports:");
+      task.usb_ports = towuint(args[i].substr(beg + 11), WYLAND_STD_USB_PORTSC);
     } else {
       files.push_back(args[i]);
     }
   }
+  for (wuint i = 0; i < task.usb_ports; i++) task.usb_devices.push_back("_wdefault");
 }
 
 void run_base_function(std::vector<std::string> &args, bool debug = false) {
@@ -184,6 +205,7 @@ void run_base_function(std::vector<std::string> &args, bool debug = false) {
     core_base *core = create_core_ptr(task.target);
     allocate_memory(task.memory);
     loadModules(task.GraphicsModulePath, task.Module1Path, task.Module2Path, stream);
+    loadUSBDevices(task.usb_devices);
     
     if (!load_file(disk, header)) {
       delete core;
@@ -312,6 +334,7 @@ TaskHandle run_raw = [](std::vector<std::string> &args) {
 
     allocate_memory(task.memory);
     loadModules(task.GraphicsModulePath, task.Module1Path, task.Module2Path, stream);
+    loadUSBDevices(task.usb_devices);
 
     size_t i = 0;
     while (!disk.eof() && i < SYSTEM_SEGMENT_SIZE) {

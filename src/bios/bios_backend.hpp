@@ -10,6 +10,7 @@
 #include "../wyland-runtime/wylrt.h"
 #include "../wyland-runtime/wfloats.h"
 #include "../wyland-runtime/wylrt.hpp"
+#include "bios_usb.hpp"
 
 extern "C" {
   void bios_backend_interrupt(wuint id, wyland_registers *regs);
