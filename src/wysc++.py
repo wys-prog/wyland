@@ -5,10 +5,8 @@ import sys
 import subprocess
 from pathlib import Path
 
-# === Détection de l'OS ===
 platform = None
 
-# Option forcer l'OS via arguments
 args = sys.argv[1:]
 force_os = None
 
@@ -21,7 +19,6 @@ if '--os' in args:
         args.remove(args[os_index - 1])  # remove --os argument
 
 if force_os:
-    # Forcer l'OS spécifié par l'utilisateur
     platform = force_os
 elif sys.platform == "darwin":
     platform = "mac"
@@ -36,14 +33,13 @@ mingw64 = "x86_64-w64-mingw32-gcc-14.2.0"
 
 # === Docker for Linux ===
 docker_image = "debian:bookworm"
+container_name = ''
 
-# Chemins de fichiers
 infile = Path('/Users/wys/Documents/wyland/src/data/build_id.txt')
 outfile = Path('/Users/wys/Documents/wyland/src/data/wyland_version.h')
 
 major = 1
 
-# Lire le compteur ou commencer à 0
 if infile.exists():
     try:
         build = int(infile.read_text().strip())
@@ -82,7 +78,7 @@ debug_dir = f'{out_base}/debug'
 os.makedirs(release_dir, exist_ok=True)
 os.makedirs(debug_dir, exist_ok=True)
 
-# Compilateurs
+# Compilers
 cxxclang = 'clang++'
 ccclang = 'clang'
 cxxgnu = 'g++-14 -D_Alignof=alignof -D___WYLAND_GNU_USE_FLOAT128___ -lquadmath'
@@ -207,14 +203,28 @@ for arg in args:
         print(f"Unknown argument: {arg}")
         sys.exit(1)
 
-# === Build execution ===
+# === Check if Docker container exists ===
+def check_and_create_docker_container():
+    container_name = "wyland-dev-container"
+    
+    result = subprocess.run(["docker", "ps", "-a", "--filter", f"name={container_name}"], capture_output=True, text=True)
+    if container_name not in result.stdout:
+        print("Creating a new Docker container with necessary tools...")
+        
+        subprocess.run(f"docker run -d --name {container_name} {docker_image} bash -c "
+                       "'apt update && apt install -y gcc g++ make curl git build-essential'", shell=True)
+    else:
+        print(f"Using existing Docker container: {container_name}")
+
+# Create and install tools in Docker container
+check_and_create_docker_container()
+
+# === Execute builds in Docker container ===
 for build_type in selected_types:
     for target in selected_targets:
         if platform == "linux":
-            # Build avec Docker pour Linux
-            cmd = f"docker run --rm -v $(pwd):/project -w /project debian:bookworm bash -c 'g++ {target} {build_map[target](build_type)}'"
+            cmd = f"docker exec {container_name} bash -c 'g++ {build_map[target](build_type)}'"
         else:
-            # Compile normalement
             cmd = build_map[target](build_type)
         
         print(f"[{build_type.upper()}] Building {target}")

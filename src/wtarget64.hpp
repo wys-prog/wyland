@@ -68,7 +68,7 @@ protected:
   WylandMMIOModule      *MMIOModule2;
   WylandMMIOModule      *DiskModule;
   WylandMMIOModule      *Modules[4];
-  BIOS                  *Bios;
+  BIOS                  *Bios;       
 
   boost::container::flat_map<uint32_t, libcallc::DynamicLibrary::FunctionType> *linked_functions;
   
@@ -187,7 +187,6 @@ protected:
       + "\n\tARGS:    [" + std::to_string((int)size) + ", " + std::to_string((int)r1) + "]")); 
       break;
     }
-
   }
 
   void istore() {
@@ -620,7 +619,7 @@ public:
       case 0xFF: halted = true; break;
       case 0xFE: break;
       default:
-        wthrow(std::runtime_error("Invalid instruction opcode: " + std::to_string(op)));
+        wthrow(std::runtime_error(memberofstr + "():""Invalid instruction opcode: " + std::to_string(op)));
         break;
     }
   }

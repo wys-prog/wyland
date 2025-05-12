@@ -15,9 +15,9 @@
 #include <mutex>
 #include <new>
 
-#ifdef WYLAND_STACKTRACE
+#ifdef ___WYLAND_STACKTRACE___
 #include "boost/stacktrace.hpp"
-#endif // ? WYLAND_STACKTRACE
+#endif // ? ___WYLAND_STACKTRACE___
 
 #include "boost/container/flat_map.hpp"
 

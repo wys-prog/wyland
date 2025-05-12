@@ -66,7 +66,7 @@ namespace wylma {
         reg.r64 = reinterpret_cast<uint64_t(*)[32]>(&this->r64);
         reg.r128 = reinterpret_cast<__uint128_t(*)[32]>(&this->r128); // Wrap 128-bit registers
         return reg;
-      }
+      } 
 
       static constexpr uint8_t get_len(uint8_t of) {
         if (of >= 96) { // Updated range check
