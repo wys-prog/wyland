@@ -77,6 +77,20 @@ namespace global {
 }
 
 
+#ifdef ___WYLAND_GNU_USE_FLOAT128___
+typedef __float128 __wyland_long_float;
+#include <quadmath.h>
+
+inline std::ostream& operator<<(std::ostream& os, __float128 value) {
+  char buffer[128];
+  quadmath_snprintf(buffer, sizeof(buffer), "%.36Qg", value);
+  os << buffer;
+  return os;
+}
+#else 
+typedef long double __wyland_long_float;
+#endif // ? ___WYLAND_GNU_USE_FLOAT128___
+
 namespace manager {
   /* Don't use this namespace ! */
   namespace _ {

@@ -25,7 +25,6 @@ src/Makefile
 src/bin
 src/interfaces/SDL2
 src/updates
-wysc++.py
 
 # Ignore other temporary files
 *.o

@@ -41,7 +41,7 @@ namespace bios {
   void bwrite(wyland_registers *regs) {
     auto bin = to_bin(*regs->r32[0]);
     (handles::GraphicsModule->get_stream()->write((char*)bin, sizeof(wuint)));
-    delete bin;
+    delete[] bin;
   }
 
   void bread(wyland_registers *regs) {

@@ -41,6 +41,10 @@
 
 #include "wc++std.hpp"
 
+#ifdef ___WYLAND_GNU_USE_FLOAT128___
+#include <quadmath.h>
+#endif // ? ___WYLAND_GNU_USE_FLOAT128___
+
 WYLAND_BEGIN
 
 class corewtarg64 : public core_base {
@@ -566,10 +570,10 @@ public:
     auto end_time = std::chrono::high_resolution_clock::now();
     std::chrono::duration<long double> elapsed = end_time - start_time;
 
-    long double ips = local_ip / elapsed.count();
+    __wyland_long_float ips = local_ip / elapsed.count();
     std::cout << "Executed instructions: " << local_ip << "\n";
-    std::cout << "Elapsed time: " << elapsed.count() << " seconds\n";
-    std::cout << "VM speed: " << ips << " instructions/second\n";
+    std::cout << "Elapsed time: " << std::fixed << std::setprecision(8) << elapsed.count() << " seconds\n";
+    std::cout << "VM speed: " << std::fixed << std::setprecision(2) << ips << " instructions/second\n";
   }
 
   uint64_t get_ip() override { return ip; }
