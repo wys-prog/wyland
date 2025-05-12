@@ -179,6 +179,7 @@ protected:
       case 16: regs.set(r1, read<uint16_t>()); break;
       case 32: regs.set(r1, read<uint32_t>()); break;
       case 64: regs.set(r1, read<uint64_t>()); break;
+      case 128: regs.set(r1, read<__uint128_t>(), 0); break;
       default: wthrow (std::invalid_argument("in iload(): Invalid size: " + std::to_string(size)
       + "\n\tfetched: [" + std::to_string((int)size) + "]"
         "\n\tThread:  " + std::to_string(thread_id) 

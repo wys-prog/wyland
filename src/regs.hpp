@@ -12,6 +12,8 @@
 #include "wyland-runtime/wylrt.hpp"
 #include "wc++std.hpp"
 
+#include "sock2.h"
+
 namespace wylma {
   namespace wyland {
     class reg_t {
@@ -34,17 +36,30 @@ namespace wylma {
     public:
       inline constexpr void set(uint8_t to, uint64_t u) {
         switch (len_table[to]) {
-          case 1: r8[to] = static_cast<uint8_t>(u); break;
-          case 2: r16[to - 16] = static_cast<uint16_t>(u); break;
-          case 4: r32[to - 32] = static_cast<uint32_t>(u); break;
+            /* This is one of the rare parts I'll explain in detail.
+             Essentially, we cannot assume the host's byte order. However, our VM ALWAYS uses big-endian.
+             The issue arises when casting, for example, a uint64_t to a uint16_t. The value may differ between platforms.
+             To address this, whenever we perform a cast, we invoke the 'correct_byte_order_x' macro.
+             Note: 'correct_byte_order_8(x)' does nothing on any platform, but I included it just for fun! :) */
+          case 1: r8[to] = correct_byte_order_8(u); break;
+          case 2: r16[to - 16] = correct_byte_order_16(u); break;
+          case 4: r32[to - 32] = correct_byte_order_32(u); break;
           case 8: r64[to - 48] = u; break;
-          case 16: r128[to - 80] = static_cast<__uint128_t>(u); break; // Handle 128-bit registers
+          case 16: r128[to - 80] = correct_byte_order_128(u); break; // Handle 128-bit registers
           default:
           std::string buff = "Unexpected register index: " + std::to_string(to);
-          wthrow (runtime::wyland_out_of_range(buff.c_str(), "out of range", "reg_t::set(...)", 0, 0, nullptr, nullptr, 0));
+          wthrow (runtime::wyland_out_of_range(buff.c_str(), "out of range", memberofcstr, 0, 0, nullptr, nullptr, 0));
         }
       }
 
+      inline constexpr void set(uint8_t to, __uint128_t u, char) {
+        if (to < 80 || to >= 96) {
+          std::string buff = "Unexpected register index: " + std::to_string(to);
+          wthrow(runtime::wyland_out_of_range(buff.c_str(), "out of range", memberofcstr, 0, 0, nullptr, nullptr, 0));
+        }
+        r128[to - 80] = (u); // Handle 128-bit registers
+      }
+      
       inline constexpr uint64_t get(uint8_t who) const {
         switch (len_table[who]) {
           case 1: return r8[who];
@@ -54,10 +69,10 @@ namespace wylma {
           case 16: return static_cast<uint64_t>(r128[who - 80]); // Handle 128-bit registers (lower 64 bits)
           default:
           std::string buff = "Unexpected register index: " + std::to_string(who);
-          wthrow (runtime::wyland_out_of_range(buff.c_str(), "out of range", "reg_t::get(...)", 0, 0, nullptr, nullptr, 0));
+          wthrow (runtime::wyland_out_of_range(buff.c_str(), "out of range", memberofcstr, 0, 0, nullptr, nullptr, 0));
         }
       }
-
+#warning regs::get() didn't works for 128 registers...
       wyland_registers wrap() {
         wyland_registers reg;
         reg.r8  = reinterpret_cast<uint8_t(*)[16]>(&this->r8);

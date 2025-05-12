@@ -30,5 +30,53 @@ uint64_t swap64(uint64_t val) {
            (val >> 56);
 }
 
+#define SWAP16(x) ((uint16_t)((((x) & 0x00FF) << 8) | \
+                              (((x) & 0xFF00) >> 8)))
+
+#define SWAP32(x) ((uint32_t)((((x) & 0x000000FF) << 24) | \
+                              (((x) & 0x0000FF00) << 8)  | \
+                              (((x) & 0x00FF0000) >> 8)  | \
+                              (((x) & 0xFF000000) >> 24)))
+
+#define SWAP64(x) ((uint64_t)((((x) & 0x00000000000000FF) << 56) | \
+                              (((x) & 0x000000000000FF00) << 40) | \
+                              (((x) & 0x0000000000FF0000) << 24) | \
+                              (((x) & 0x00000000FF000000) << 8)  | \
+                              (((x) & 0x000000FF00000000) >> 8)  | \
+                              (((x) & 0x0000FF0000000000) >> 24) | \
+                              (((x) & 0x00FF000000000000) >> 40) | \
+                              (((x) & 0xFF00000000000000) >> 56)))
+
+#define SWAP128(x) ((__uint128_t)(SWAP64((uint64_t)(x)) << 64 | \
+                                 SWAP64((uint64_t)((x) >> 64))))
+
+// Detect endianness at compile-time
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+    #define IS_BIG_ENDIAN 1
+#elif defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+    #define IS_LITTLE_ENDIAN 1
+#elif defined(_WIN32)
+    // Windows is always little-endian
+    #define IS_LITTLE_ENDIAN 1
+#elif defined(__APPLE__) && defined(__MACH__)
+    // macOS is always little-endian (Intel and ARM)
+    #define IS_LITTLE_ENDIAN 1
+#else
+    #error "Unable to determine endianness for this platform"
+#endif
+
+#if IS_BIG_ENDIAN
+#define correct_byte_order_8(x)              x
+#define correct_byte_order_16(x)             x
+#define correct_byte_order_32(x)             x
+#define correct_byte_order_64(x)             x
+#define correct_byte_order_128(x)            x
+#else
+#define correct_byte_order_8(x)              (x)
+#define correct_byte_order_16(x)             (SWAP16(x))
+#define correct_byte_order_32(x)             (SWAP32(x))
+#define correct_byte_order_64(x)             (SWAP64(x))
+#define correct_byte_order_128(x)            (SWAP128(x))
+#endif // ? BIG ENDIAN ?
 
 #endif
