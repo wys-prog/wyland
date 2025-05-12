@@ -9,31 +9,15 @@
 
 typedef void (*lambda)();
 
-typedef struct {
-  int64_t integer;
-  uint64_t floating;
-} _march_floatr_t;
-
-typedef int32_t _march_exp_t;
-
-typedef struct {
-  int64_t integer;
-  uint64_t floating;
-  _march_exp_t exponent;
-} _march_rprecision_t;
-
-/* in the future ! */
-
-#define MARCH_STACK_SIZE 512
-
-typedef struct {
-  int32_t id;
-  uint64_t object;
-} _march_task_t;
-
-typedef struct {
-  _march_task_t tasks[MARCH_STACK_SIZE];
-  uint16_t      pos;
-} _march_stack_task_t;
+typedef __int8_t              wi8;
+typedef __int16_t             wi16;
+typedef __int32_t             wi32;
+typedef __int64_t             wi64;
+typedef __int128_t            wi128;
+typedef __uint8_t             wui8;
+typedef __uint16_t            wui16;
+typedef __uint32_t            wui32;
+typedef __uint64_t            wui64;
+typedef __uint128_t           wui128;
 
 #endif // ___WYLAND_TYPES_H___

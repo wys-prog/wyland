@@ -197,10 +197,15 @@ for arg in args:
         cc = ccgnu
     elif arg.lower() == 'cxx=g++':
         cxx = cxxgnu
+    elif arg.lower() == 'cxx=win32':
+        cc = mingw32
+    elif arg.lower() == 'cxx=win64':
+        cxx = mingw64
+    elif arg.lower() == 'stack':
+        enable_stacktrace = True
     else:
         print(f"Unknown argument: {arg}")
         sys.exit(1)
-
 
 # === Build execution ===
 for build_type in selected_types:
