@@ -88,6 +88,7 @@ protected:
 
     T value;
     std::memcpy(&value, &memory[ip], sizeof(T));
+    value = SWAP64(value);
     ip += sizeof(T);
     return value;
   }

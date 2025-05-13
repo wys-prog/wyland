@@ -38,17 +38,17 @@ uint64_t swap64(uint64_t val) {
                               (((x) & 0x00FF0000) >> 8)  | \
                               (((x) & 0xFF000000) >> 24)))
 
-#define SWAP64(x) ((uint64_t)((((x) & 0x00000000000000FF) << 56) | \
-                              (((x) & 0x000000000000FF00) << 40) | \
-                              (((x) & 0x0000000000FF0000) << 24) | \
-                              (((x) & 0x00000000FF000000) << 8)  | \
-                              (((x) & 0x000000FF00000000) >> 8)  | \
-                              (((x) & 0x0000FF0000000000) >> 24) | \
-                              (((x) & 0x00FF000000000000) >> 40) | \
-                              (((x) & 0xFF00000000000000) >> 56)))
+#define SWAP64(x) __builtin_bswap64(x)
 
-#define SWAP128(x) ((__uint128_t)(SWAP64((uint64_t)(x)) << 64 | \
-                                 SWAP64((uint64_t)((x) >> 64))))
+#define SWAP128(x) __wyland_swap128(x)
+
+inline __uint128_t __wyland_swap128(__uint128_t x) {
+    uint64_t lo = (uint64_t)x;
+    uint64_t hi = (uint64_t)(x >> 64);
+    lo = __builtin_bswap64(lo);
+    hi = __builtin_bswap64(hi);
+    return ((__uint128_t)lo << 64) | hi;
+}
 
 // Detect endianness at compile-time
 #if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
