@@ -11,6 +11,9 @@
 
 #define WYLAND_BEGIN namespace wylma { namespace wyland { 
 #define WYLAND_END   } }
+#define ARCH_BACK(n) namespace n  {
+#define ARCH_BACK_V(v) namespace v {
+#define ARCH_END }
 
 #define SYSTEM_SEGMENT_SIZE 12_MB
 

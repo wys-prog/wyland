@@ -162,7 +162,7 @@ wheader_t wyland_files_basic_header() {
   header.code = 0x00000000000000FF;
   header.data = 0x0000000000FFFFFF;
   header.lib  = 0x0000000010AAEEEE;
-  header.target = wtarg64;
+  header.target = warch64;
   header.version = WYLAND_VERSION_UINT32;
 
   return header;

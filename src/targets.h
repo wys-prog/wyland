@@ -8,35 +8,38 @@
 #include <stdint.h>
 #include <string.h>
 
-typedef int16_t wtarget;
+typedef int16_t warch_t;
 
-const wtarget wtarg64    = 0xA64;
-const wtarget wtarg32    = 0xA32; /* Not implemented */
-const wtarget wtargmarch = 0xA + (0x13)*'m'+'a'+'t'+'h' + 2; /* These numbers are just 'random'. */
-const wtarget wtargfast  = 0xAFA; /* Deprecated, not implemented */
-const wtarget wdebugger  = 0xA6D;
+const warch_t warch64    = 0xA64;
+const warch_t warch128   = 0xA128;
+const warch_t wtarg32    = 0xA32; /* Not implemented */
+const warch_t wtargmarch = 0xA + (0x13)*'m'+'a'+'t'+'h' + 2; /* These numbers are just 'random'. */
+const warch_t wtargfast  = 0xAFA; /* Deprecated, not implemented */
+const warch_t wdebugger  = 0xA6D;
 
-const char *nameof(wtarget tar) {
+const char *nameof(warch_t tar) {
   switch (tar) {
-    case wtarg64: return "wtarg64"; break;
+    case warch64: return "warch64"; break;
     case wtarg32: return "wtarg32"; break;
     case wtargmarch: return "wtargmarch"; break;
     case wtargfast: return "wtargfast"; break;
     case wdebugger: return "wdebugger"; break;
+    case warch128: return "warch128"; break;
     default: return "unknown"; break;
   }
 }
 
-wtarget ofname(const char *name) {
-  if (strcmp(name, nameof(wtarg64)) == 0) return wtarg64;
+warch_t ofname(const char *name) {
+  if (strcmp(name, nameof(warch64)) == 0) return warch64;
   else if (strcmp(name, nameof(wtarg32)) == 0) return wtarg32;
   else if (strcmp(name, nameof(wtargmarch)) == 0) return wtargmarch;
   else if (strcmp(name, nameof(wtargfast)) == 0) return wtargfast;
   else if (strcmp(name, nameof(wdebugger)) == 0) return wdebugger;
+  else if (strcmp(name, nameof(warch128)) == 0) return warch128;
   else return strlen(name); /* This can create errors... BUT WHY SET TO AN UNKNOWN TARGET ? */
 }
 
-enum set_wtarg64 {
+enum set_arch64 {
   nop, 
   lea,
   load, 

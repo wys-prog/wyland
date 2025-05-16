@@ -72,7 +72,7 @@ namespace wylma {
           wthrow (runtime::wyland_out_of_range(buff.c_str(), "out of range", memberofcstr, 0, 0, nullptr, nullptr, 0));
         }
       }
-#warning regs::get() didn't works for 128 registers...
+
       wyland_registers wrap() {
         wyland_registers reg;
         reg.r8  = reinterpret_cast<uint8_t(*)[16]>(&this->r8);

@@ -71,7 +71,7 @@ WYLAND_BEGIN
 typedef void (*TaskHandle)(std::vector<std::string>&);
 
 typedef struct {
-  wtarget     target;
+  warch_t     target;
   uint32_t    version;
   bool        auto_targ;
   uint64_t    memory;
@@ -86,7 +86,7 @@ typedef struct {
 } rt_task_t;
 
 rt_task_t task {
-  .target = wtarg64, 
+  .target = warch64, 
   .version = WYLAND_VERSION_UINT32, 
   .auto_targ = false, 
   .memory = WYLAND_MEMORY_MINIMUM,
@@ -248,11 +248,11 @@ TaskHandle build = [](std::vector<std::string> &) {
 };
 
 TaskHandle target = [](std::vector<std::string>&) {
-  std::cout << wtarg64 << ": " << nameof(wtarg64) << std::endl;
+  std::cout << warch64 << ": " << nameof(warch64) << std::endl;
 };
 
 TaskHandle target_info = [](std::vector<std::string>&) {
-  std::cout << wtarg64 << ": " << nameof(wtarg64) << " (implemented)" << std::endl;
+  std::cout << warch64 << ": " << nameof(warch64) << " (implemented)" << std::endl;
   std::cout << wtarg32 << ": " << nameof(wtarg32) << " (working on)" << std::endl;
   std::cout << wtargmarch << ": " << nameof(wtargmarch) << " (working on)" << std::endl;
   std::cout << wtargfast << ": " << nameof(wtargfast) << " (working on)" << std::endl;
@@ -275,7 +275,7 @@ TaskHandle infos = [](std::vector<std::string> &args) {
             << "version:\t" << WYLAND_VERSION "(" << WYLAND_VERSION_UINT32 << ")\n" << swaiter{10ns}
             << "build:\t\t" << WYLAND_BUILD_NAME << "\n"  
             << "targets:\t\n"  <<
-              "\t- wtarg64\t(" << (wtarg64) << ")\n"  <<
+              "\t- warch64\t(" << (warch64) << ")\n"  <<
               "\t- wtarg32\t(" << (wtarg32) << ")\n"  <<
               "\t- wtargmarch\t(" << (wtargmarch) << ")\n" <<
               "\t- wtargfast\t(" << (wtargfast) << ")\n"
@@ -285,7 +285,7 @@ TaskHandle infos = [](std::vector<std::string> &args) {
               "runtime version:\t" << wyland_get_runtime_version() << "\n"
               "runtime compiler:\t" << wyland_get_runtime_compiler() << "\n"
               "sizeof base-runtime:\t" << sizeof(core_base) << "\n"
-              "sizeof wtarg64:\t\t" << sizeof(corewtarg64) << "\n"
+              "sizeof warch64:\t\t" << sizeof(corewtarg64) << "\n"
               "===== BIOS =====\n"
               "BIOS version:\t" << (bios_backend_version()) << "\n" 
               "===== COMPILER =====\n" 
@@ -619,7 +619,7 @@ int main(int argc, char *const argv[]) {
   -api <lib>:      tries to load <lib> as library
 
   --- targets ---
-  wtarg64: Basic Target 
+  warch64: Basic Target 
   wtarg32: Basic Target in 32 bits mode
   wtargmarch: Target built for Mathematics Operations, and big floats.
   wtargfast: NON-STANDARD ! The fastest (jumps are limited to: jmp, je, jg and jl)

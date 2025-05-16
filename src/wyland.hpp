@@ -107,8 +107,8 @@ void wyland_terminate(void) {
   exit(-1);
 }
 
-core_base *create_core_ptr(wtarget target) {
-  if (target == wtarg64) {
+core_base *create_core_ptr(warch_t target) {
+  if (target == warch64) {
     auto ptr = new corewtarg64();
 
     std::cout << "[i]: object " << typeid(*ptr).name() << " created at " 

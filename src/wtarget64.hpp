@@ -301,7 +301,7 @@ protected:
       "\tIP (global):\t" + std::to_string(ip) + "\n"
       "\tthread:\t\t" + std::to_string(thread_id)  + "\n"
       "\tlocal IP:\t" + std::to_string(local_ip) + "\n"
-      "\tfrom wtarg64::iemplace()")
+      "\tfrom warch64::iemplace()")
     );
 
     auto array = to_bin(regs.get(with));
@@ -388,42 +388,42 @@ protected:
   setfunc_t set[36];
 
   void init_set() {
-    set[set_wtarg64::nop] = &corewtarg64::nop;
-    set[set_wtarg64::lea] = &corewtarg64::ilea; 
-    set[set_wtarg64::load] = &corewtarg64::iload;
-    set[set_wtarg64::store] = &corewtarg64::istore;
-    set[set_wtarg64::mov] = &corewtarg64::imov;
-    set[set_wtarg64::add] = &corewtarg64::iadd;
-    set[set_wtarg64::sub] = &corewtarg64::isub;
-    set[set_wtarg64::mul] = &corewtarg64::imul;
-    set[set_wtarg64::odiv] = &corewtarg64::idiv;
-    set[set_wtarg64::mod] = &corewtarg64::imov;
-    set[set_wtarg64::jmp] = &corewtarg64::ijmp;
-    set[set_wtarg64::je] = &corewtarg64::ije;
-    set[set_wtarg64::jne] = &corewtarg64::ijne;
-    set[set_wtarg64::jl] = &corewtarg64::ijl;
-    set[set_wtarg64::jg] = &corewtarg64::ijg;
-    set[set_wtarg64::jle] = &corewtarg64::ijle;
-    set[set_wtarg64::jge] = &corewtarg64::ijge;
-    set[set_wtarg64::cmp] = &corewtarg64::icmp;
-    set[set_wtarg64::xint] = &corewtarg64::ixint;
-    set[set_wtarg64::loadat] = &corewtarg64::iloadat;
-    set[set_wtarg64::ret]    = &corewtarg64::iret;
-    set[set_wtarg64::movad]  = &corewtarg64::imovad;
-    set[set_wtarg64::sal] = &corewtarg64::isal;
-    set[set_wtarg64::sar] = &corewtarg64::isar;
-    set[set_wtarg64::owthrow] = &corewtarg64::iwthrow;
-    set[set_wtarg64::clfn] = &corewtarg64::iclfn;
-    set[set_wtarg64::empl] = &corewtarg64::iemplace;
-    set[set_wtarg64::push_mmio] = &corewtarg64::ipushmmio;
-    set[set_wtarg64::pop_mmio] = &corewtarg64::ipopmmio;
-    set[set_wtarg64::connect_mmio] = &corewtarg64::iconnectmmio;
-    set[set_wtarg64::deconnect_mmio] = &corewtarg64::ideconnectmmio;
-    set[set_wtarg64::oand] = &corewtarg64::iand;
-    set[set_wtarg64::oor] = &corewtarg64::ior;
-    set[set_wtarg64::oxor] = &corewtarg64::ixor;
-    set[set_wtarg64::dec] = &corewtarg64::idec;
-    set[set_wtarg64::inc] = &corewtarg64::iinc;
+    set[set_arch64::nop] = &corewtarg64::nop;
+    set[set_arch64::lea] = &corewtarg64::ilea; 
+    set[set_arch64::load] = &corewtarg64::iload;
+    set[set_arch64::store] = &corewtarg64::istore;
+    set[set_arch64::mov] = &corewtarg64::imov;
+    set[set_arch64::add] = &corewtarg64::iadd;
+    set[set_arch64::sub] = &corewtarg64::isub;
+    set[set_arch64::mul] = &corewtarg64::imul;
+    set[set_arch64::odiv] = &corewtarg64::idiv;
+    set[set_arch64::mod] = &corewtarg64::imov;
+    set[set_arch64::jmp] = &corewtarg64::ijmp;
+    set[set_arch64::je] = &corewtarg64::ije;
+    set[set_arch64::jne] = &corewtarg64::ijne;
+    set[set_arch64::jl] = &corewtarg64::ijl;
+    set[set_arch64::jg] = &corewtarg64::ijg;
+    set[set_arch64::jle] = &corewtarg64::ijle;
+    set[set_arch64::jge] = &corewtarg64::ijge;
+    set[set_arch64::cmp] = &corewtarg64::icmp;
+    set[set_arch64::xint] = &corewtarg64::ixint;
+    set[set_arch64::loadat] = &corewtarg64::iloadat;
+    set[set_arch64::ret]    = &corewtarg64::iret;
+    set[set_arch64::movad]  = &corewtarg64::imovad;
+    set[set_arch64::sal] = &corewtarg64::isal;
+    set[set_arch64::sar] = &corewtarg64::isar;
+    set[set_arch64::owthrow] = &corewtarg64::iwthrow;
+    set[set_arch64::clfn] = &corewtarg64::iclfn;
+    set[set_arch64::empl] = &corewtarg64::iemplace;
+    set[set_arch64::push_mmio] = &corewtarg64::ipushmmio;
+    set[set_arch64::pop_mmio] = &corewtarg64::ipopmmio;
+    set[set_arch64::connect_mmio] = &corewtarg64::iconnectmmio;
+    set[set_arch64::deconnect_mmio] = &corewtarg64::ideconnectmmio;
+    set[set_arch64::oand] = &corewtarg64::iand;
+    set[set_arch64::oor] = &corewtarg64::ior;
+    set[set_arch64::oxor] = &corewtarg64::ixor;
+    set[set_arch64::dec] = &corewtarg64::idec;
+    set[set_arch64::inc] = &corewtarg64::iinc;
   }
 #else
   void init_set() {}
@@ -582,42 +582,42 @@ public:
 #ifdef ___WYLAND_SWITCH_INSTRUCTIONS___
   void _switch_instruction(uint8_t op) {
     switch (op) {
-      case set_wtarg64::nop: nop(); break;
-      case set_wtarg64::lea: ilea(); break;
-      case set_wtarg64::load: iload(); break;
-      case set_wtarg64::store: istore(); break;
-      case set_wtarg64::mov: imov(); break;
-      case set_wtarg64::add: iadd(); break;
-      case set_wtarg64::sub: isub(); break;
-      case set_wtarg64::mul: imul(); break;
-      case set_wtarg64::odiv: idiv(); break;
-      case set_wtarg64::mod: imod(); break;
-      case set_wtarg64::jmp: ijmp(); break;
-      case set_wtarg64::je: ije(); break;
-      case set_wtarg64::jne: ijne(); break;
-      case set_wtarg64::jl: ijl(); break;
-      case set_wtarg64::jg: ijg(); break;
-      case set_wtarg64::jle: ijle(); break;
-      case set_wtarg64::jge: ijge(); break;
-      case set_wtarg64::cmp: icmp(); break;
-      case set_wtarg64::xint: ixint(); break;
-      case set_wtarg64::loadat: iloadat(); break;
-      case set_wtarg64::ret: iret(); break;
-      case set_wtarg64::movad: imovad(); break;
-      case set_wtarg64::sal: isal(); break;
-      case set_wtarg64::sar: isar(); break;
-      case set_wtarg64::owthrow: iwthrow(); break;
-      case set_wtarg64::clfn: iclfn(); break;
-      case set_wtarg64::empl: iemplace(); break;
-      case set_wtarg64::push_mmio: ipushmmio(); break;
-      case set_wtarg64::pop_mmio: ipopmmio(); break;
-      case set_wtarg64::connect_mmio: iconnectmmio(); break;
-      case set_wtarg64::deconnect_mmio: ideconnectmmio(); break;
-      case set_wtarg64::oand: iand(); break;
-      case set_wtarg64::oor: ior(); break;
-      case set_wtarg64::oxor: ixor(); break;
-      case set_wtarg64::inc: iinc(); break;
-      case set_wtarg64::dec: idec(); break;
+      case set_arch64::nop: nop(); break;
+      case set_arch64::lea: ilea(); break;
+      case set_arch64::load: iload(); break;
+      case set_arch64::store: istore(); break;
+      case set_arch64::mov: imov(); break;
+      case set_arch64::add: iadd(); break;
+      case set_arch64::sub: isub(); break;
+      case set_arch64::mul: imul(); break;
+      case set_arch64::odiv: idiv(); break;
+      case set_arch64::mod: imod(); break;
+      case set_arch64::jmp: ijmp(); break;
+      case set_arch64::je: ije(); break;
+      case set_arch64::jne: ijne(); break;
+      case set_arch64::jl: ijl(); break;
+      case set_arch64::jg: ijg(); break;
+      case set_arch64::jle: ijle(); break;
+      case set_arch64::jge: ijge(); break;
+      case set_arch64::cmp: icmp(); break;
+      case set_arch64::xint: ixint(); break;
+      case set_arch64::loadat: iloadat(); break;
+      case set_arch64::ret: iret(); break;
+      case set_arch64::movad: imovad(); break;
+      case set_arch64::sal: isal(); break;
+      case set_arch64::sar: isar(); break;
+      case set_arch64::owthrow: iwthrow(); break;
+      case set_arch64::clfn: iclfn(); break;
+      case set_arch64::empl: iemplace(); break;
+      case set_arch64::push_mmio: ipushmmio(); break;
+      case set_arch64::pop_mmio: ipopmmio(); break;
+      case set_arch64::connect_mmio: iconnectmmio(); break;
+      case set_arch64::deconnect_mmio: ideconnectmmio(); break;
+      case set_arch64::oand: iand(); break;
+      case set_arch64::oor: ior(); break;
+      case set_arch64::oxor: ixor(); break;
+      case set_arch64::inc: iinc(); break;
+      case set_arch64::dec: idec(); break;
       case 0xFF: halted = true; break;
       case 0xFE: break;
       default:
@@ -641,7 +641,7 @@ public:
         "\tthread:\t\t" + std::to_string(thread_id)  + "\n"
         "\tlocal IP:\t" + std::to_string(local_ip) + "\n"
         "\tglob.relat:\t" + std::to_string(code_start) + "(use it as base address for disk-file)\n"
-        "\tfrom wtarg64::run()"
+        "\tfrom warch64::run()"
       );
       
       auto fetched = read();

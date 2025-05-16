@@ -248,28 +248,28 @@ public:
     is_system = _is_system;
     thread_id = _name;
 
-    set[set_wtarg64::nop] = &corewtarg32::nop; /* Instruction set is the same. Only OP's size changes.*/
-    set[set_wtarg64::lea] = &corewtarg32::ilea; 
-    set[set_wtarg64::load] = &corewtarg32::iload;
-    set[set_wtarg64::store] = &corewtarg32::istore;
-    set[set_wtarg64::mov] = &corewtarg32::imov;
-    set[set_wtarg64::add] = &corewtarg32::iadd;
-    set[set_wtarg64::sub] = &corewtarg32::isub;
-    set[set_wtarg64::mul] = &corewtarg32::imul;
-    set[set_wtarg64::odiv] = &corewtarg32::idiv;
-    set[set_wtarg64::mod] = &corewtarg32::imov;
-    set[set_wtarg64::jmp] = &corewtarg32::ijmp;
-    set[set_wtarg64::je] = &corewtarg32::ije;
-    set[set_wtarg64::jne] = &corewtarg32::ijne;
-    set[set_wtarg64::jl] = &corewtarg32::ijl;
-    set[set_wtarg64::jg] = &corewtarg32::ijg;
-    set[set_wtarg64::jle] = &corewtarg32::ijle;
-    set[set_wtarg64::jge] = &corewtarg32::ijge;
-    set[set_wtarg64::cmp] = &corewtarg32::icmp;
-    set[set_wtarg64::xint] = &corewtarg32::ixint;
-    set[set_wtarg64::loadat] = &corewtarg32::iloadat;
-    set[set_wtarg64::ret]    = &corewtarg32::iret;
-    set[set_wtarg64::movad]  = &corewtarg32::imovad;
+    set[set_arch64::nop] = &corewtarg32::nop; /* Instruction set is the same. Only OP's size changes.*/
+    set[set_arch64::lea] = &corewtarg32::ilea; 
+    set[set_arch64::load] = &corewtarg32::iload;
+    set[set_arch64::store] = &corewtarg32::istore;
+    set[set_arch64::mov] = &corewtarg32::imov;
+    set[set_arch64::add] = &corewtarg32::iadd;
+    set[set_arch64::sub] = &corewtarg32::isub;
+    set[set_arch64::mul] = &corewtarg32::imul;
+    set[set_arch64::odiv] = &corewtarg32::idiv;
+    set[set_arch64::mod] = &corewtarg32::imov;
+    set[set_arch64::jmp] = &corewtarg32::ijmp;
+    set[set_arch64::je] = &corewtarg32::ije;
+    set[set_arch64::jne] = &corewtarg32::ijne;
+    set[set_arch64::jl] = &corewtarg32::ijl;
+    set[set_arch64::jg] = &corewtarg32::ijg;
+    set[set_arch64::jle] = &corewtarg32::ijle;
+    set[set_arch64::jge] = &corewtarg32::ijge;
+    set[set_arch64::cmp] = &corewtarg32::icmp;
+    set[set_arch64::xint] = &corewtarg32::ixint;
+    set[set_arch64::loadat] = &corewtarg32::iloadat;
+    set[set_arch64::ret]    = &corewtarg32::iret;
+    set[set_arch64::movad]  = &corewtarg32::imovad;
   }
 
   void run() override {
