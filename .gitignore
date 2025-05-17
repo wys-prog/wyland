@@ -1,7 +1,6 @@
 # Godot 4+ specific ignores
 .godot/
 /android/
-*.DS_Store
 wyland-runtime/
 wyland-godot/
 # compiler/
@@ -38,7 +37,6 @@ src/updates
 *.lib
 
 # Ignore IDE specific files
-.vscode/
 .idea/
 *.suo
 *.user
@@ -46,4 +44,5 @@ src/updates
 *.sln
 *.swp
 *.DS_Store
-.DS_Store
+*.clang-tidy
+.run

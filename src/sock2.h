@@ -50,6 +50,28 @@ inline __uint128_t __wyland_swap128(__uint128_t x) {
     return ((__uint128_t)lo << 64) | hi;
 }
 
+template <typename T>
+inline T swap(const T &__t) {
+    std::cout << "little: " << __t << std::endl;
+    T result;
+    const char *src = reinterpret_cast<const char *>(&__t);
+    char *dest = reinterpret_cast<char *>(&result);
+    for (size_t i = 0; i < sizeof(T); ++i) {
+        dest[i] = src[sizeof(T) - 1 - i];
+    }
+    std::cout << "big: " << result << std::endl;
+    return result;
+}
+
+template <typename T>
+inline T correct_byte_order(const T &__t) {
+#if IS_LITTLE_ENDIAN
+    return swap<T>(__t);
+#else
+    return __t;
+#endif
+}
+
 // Detect endianness at compile-time
 #if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
     #define IS_BIG_ENDIAN 1

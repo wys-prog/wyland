@@ -593,7 +593,7 @@ WYLAND_END
 int main(int argc, char *const argv[]) {
 #ifdef _WIN32
   std::cout << "[w]: running Wyland on Windows, some features can be cursed. (Why still running code on Windows..?)" << std::endl;
-#endif // Windows ?
+#endif // _WIN32 ?
   return wylma::wyland::WylandMain(argc, argv);
 }
 

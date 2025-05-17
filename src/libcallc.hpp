@@ -22,7 +22,6 @@
   #endif
 #endif
 
-#include "regs.hpp"
 #include "wyland-runtime/wylrt.h"
 
 #include <boost/container/flat_map.hpp>

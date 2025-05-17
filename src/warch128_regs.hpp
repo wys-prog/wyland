@@ -49,7 +49,7 @@
 
 WYLAND_BEGIN
 
-ARCH_BACK(warch128_backend) 
+ARCH_BACK(arch_x87_128) 
 ARCH_BACK_V(V1)
 
 class register_index_error : runtime::wyland_runtime_error {

@@ -26,13 +26,7 @@
             "cStandard": "c23",
             "intelliSenseMode": "windows-gcc-x64",
             "cppStandard": "gnu++23",
-            "compilerPathInCppPropertiesJson": "C:/ProgramData/mingw64/mingw64/bin/g++.exe",
             "mergeConfigurations": false,
-            "recursiveIncludes": {
-                "reduce": "default",
-                "priority": "afterSystemIncludes",
-                "order": "depthFirst"
-            },
             "browse": {
                 "limitSymbolsToIncludedHeaders": true
             }

@@ -46,10 +46,12 @@
 #endif // ? ___WYLAND_GNU_USE_FLOAT128___
 
 WYLAND_BEGIN
+ARCH_BACK(arch_x87_64)
+ARCH_BACK_V(V1)
 
-class corewtarg64 : public core_base {
-  using syscall_t = void(corewtarg64::*)();
-  using setfunc_t = void(corewtarg64::*)();
+class corewtarg64_backend : public core_base {
+  using syscall_t = void(corewtarg64_backend::*)();
+  using setfunc_t = void(corewtarg64_backend::*)();
 
 protected:
   uint64_t beg           = 0x0000000000000000;
@@ -88,7 +90,7 @@ protected:
 
     T value;
     std::memcpy(&value, &memory[ip], sizeof(T));
-    value = SWAP64(value);
+    value = correct_byte_order<T>(value);
     ip += sizeof(T);
     return value;
   }
@@ -388,42 +390,42 @@ protected:
   setfunc_t set[36];
 
   void init_set() {
-    set[set_arch64::nop] = &corewtarg64::nop;
-    set[set_arch64::lea] = &corewtarg64::ilea; 
-    set[set_arch64::load] = &corewtarg64::iload;
-    set[set_arch64::store] = &corewtarg64::istore;
-    set[set_arch64::mov] = &corewtarg64::imov;
-    set[set_arch64::add] = &corewtarg64::iadd;
-    set[set_arch64::sub] = &corewtarg64::isub;
-    set[set_arch64::mul] = &corewtarg64::imul;
-    set[set_arch64::odiv] = &corewtarg64::idiv;
-    set[set_arch64::mod] = &corewtarg64::imov;
-    set[set_arch64::jmp] = &corewtarg64::ijmp;
-    set[set_arch64::je] = &corewtarg64::ije;
-    set[set_arch64::jne] = &corewtarg64::ijne;
-    set[set_arch64::jl] = &corewtarg64::ijl;
-    set[set_arch64::jg] = &corewtarg64::ijg;
-    set[set_arch64::jle] = &corewtarg64::ijle;
-    set[set_arch64::jge] = &corewtarg64::ijge;
-    set[set_arch64::cmp] = &corewtarg64::icmp;
-    set[set_arch64::xint] = &corewtarg64::ixint;
-    set[set_arch64::loadat] = &corewtarg64::iloadat;
-    set[set_arch64::ret]    = &corewtarg64::iret;
-    set[set_arch64::movad]  = &corewtarg64::imovad;
-    set[set_arch64::sal] = &corewtarg64::isal;
-    set[set_arch64::sar] = &corewtarg64::isar;
-    set[set_arch64::owthrow] = &corewtarg64::iwthrow;
-    set[set_arch64::clfn] = &corewtarg64::iclfn;
-    set[set_arch64::empl] = &corewtarg64::iemplace;
-    set[set_arch64::push_mmio] = &corewtarg64::ipushmmio;
-    set[set_arch64::pop_mmio] = &corewtarg64::ipopmmio;
-    set[set_arch64::connect_mmio] = &corewtarg64::iconnectmmio;
-    set[set_arch64::deconnect_mmio] = &corewtarg64::ideconnectmmio;
-    set[set_arch64::oand] = &corewtarg64::iand;
-    set[set_arch64::oor] = &corewtarg64::ior;
-    set[set_arch64::oxor] = &corewtarg64::ixor;
-    set[set_arch64::dec] = &corewtarg64::idec;
-    set[set_arch64::inc] = &corewtarg64::iinc;
+    set[set_arch64::nop] = &corewtarg64_backend::nop;
+    set[set_arch64::lea] = &corewtarg64_backend::ilea; 
+    set[set_arch64::load] = &corewtarg64_backend::iload;
+    set[set_arch64::store] = &corewtarg64_backend::istore;
+    set[set_arch64::mov] = &corewtarg64_backend::imov;
+    set[set_arch64::add] = &corewtarg64_backend::iadd;
+    set[set_arch64::sub] = &corewtarg64_backend::isub;
+    set[set_arch64::mul] = &corewtarg64_backend::imul;
+    set[set_arch64::odiv] = &corewtarg64_backend::idiv;
+    set[set_arch64::mod] = &corewtarg64_backend::imov;
+    set[set_arch64::jmp] = &corewtarg64_backend::ijmp;
+    set[set_arch64::je] = &corewtarg64_backend::ije;
+    set[set_arch64::jne] = &corewtarg64_backend::ijne;
+    set[set_arch64::jl] = &corewtarg64_backend::ijl;
+    set[set_arch64::jg] = &corewtarg64_backend::ijg;
+    set[set_arch64::jle] = &corewtarg64_backend::ijle;
+    set[set_arch64::jge] = &corewtarg64_backend::ijge;
+    set[set_arch64::cmp] = &corewtarg64_backend::icmp;
+    set[set_arch64::xint] = &corewtarg64_backend::ixint;
+    set[set_arch64::loadat] = &corewtarg64_backend::iloadat;
+    set[set_arch64::ret]    = &corewtarg64_backend::iret;
+    set[set_arch64::movad]  = &corewtarg64_backend::imovad;
+    set[set_arch64::sal] = &corewtarg64_backend::isal;
+    set[set_arch64::sar] = &corewtarg64_backend::isar;
+    set[set_arch64::owthrow] = &corewtarg64_backend::iwthrow;
+    set[set_arch64::clfn] = &corewtarg64_backend::iclfn;
+    set[set_arch64::empl] = &corewtarg64_backend::iemplace;
+    set[set_arch64::push_mmio] = &corewtarg64_backend::ipushmmio;
+    set[set_arch64::pop_mmio] = &corewtarg64_backend::ipopmmio;
+    set[set_arch64::connect_mmio] = &corewtarg64_backend::iconnectmmio;
+    set[set_arch64::deconnect_mmio] = &corewtarg64_backend::ideconnectmmio;
+    set[set_arch64::oand] = &corewtarg64_backend::iand;
+    set[set_arch64::oor] = &corewtarg64_backend::ior;
+    set[set_arch64::oxor] = &corewtarg64_backend::ixor;
+    set[set_arch64::dec] = &corewtarg64_backend::idec;
+    set[set_arch64::inc] = &corewtarg64_backend::iinc;
   }
 #else
   void init_set() {}
@@ -700,5 +702,13 @@ public:
   #pragma endregion
   */
 };
+
+ARCH_END
+ARCH_END
+
+#ifndef ___WYLAND_USE_NOT_V1___
+typedef wylma::wyland::arch_x87_64::V1::corewtarg64_backend corewtarg64;
+#endif // ___WYLAND_USE_NOT_V1___
+
 
 WYLAND_END

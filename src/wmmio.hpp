@@ -7,7 +7,7 @@
 #include <string>
 
 #include "wmmbase.hpp"
-#include "wyland-runtime/wylrt.h"
+#include "wyland-runtime/wylrt.hpp"
 
 #include "libcallc.hpp"
 
