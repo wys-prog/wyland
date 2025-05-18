@@ -27,7 +27,7 @@ class IWylandGraphicsModule : public WylandMMIOModule {
 public:
   virtual ~IWylandGraphicsModule() {}
   virtual wbool init(wint, wint, const std::string &) { return wyland_true; }
-  virtual wbool init() override { return wyland_false; }
+  virtual wbool init() override { return wyland_true; }
   virtual void process(wlongfloat) {} // Godot style !
   virtual void render() {}
   virtual wbool should_close() { return wyland_false; }

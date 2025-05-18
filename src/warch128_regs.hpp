@@ -59,13 +59,13 @@ public:
   {}
 };
 
-class warch128_regs {
+class wArch128Registers {
 private:
   wui8    bmmx[16];
   wui16   wmmx[16];
   wui32   dmmx[16];
   wui64   qmmx[32];
-  wui128  dqmmx[16];
+  wui128  dqmmx[32];
 
 public:
   wui8 get8(wui8 i) {
@@ -102,7 +102,7 @@ public:
 
   wui128 get128(wui8 i) {
     if (i >= 16) {
-      wthrow register_index_error("too big index (max 16 for dqmmX registers)", memberofstr);
+      wthrow register_index_error("too big index (max 32 for dqmmX registers)", memberofstr);
     }
 
     return dqmmx[i];
@@ -142,10 +142,20 @@ public:
 
   void set128(wui8 i, wui128 value) {
     if (i >= 16) {
-      wthrow register_index_error("too big index (max 16 for dqmmX registers)", memberofstr);
+      wthrow register_index_error("too big index (max 32 for dqmmX registers)", memberofstr);
     }
 
     dqmmx[i] = value;
+  }
+
+  wyland_registers swap() {
+    wyland_registers regs;
+    regs.r8   = reinterpret_cast<wui8(*)[16]>(&bmmx);
+    regs.r16  = reinterpret_cast<wui16(*)[16]>(&wmmx);
+    regs.r32  = reinterpret_cast<wui32(*)[16]>(&dmmx);
+    regs.r64  = reinterpret_cast<wui64(*)[32]>(&qmmx);
+    regs.r128 = reinterpret_cast<__uint128_t(*)[32]>(&dqmmx);
+    return regs;
   }
 };
 

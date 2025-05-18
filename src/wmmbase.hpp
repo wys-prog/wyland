@@ -71,14 +71,18 @@ WYLAND_BEGIN
 
 using namespace std::string_literals;
 
-uint8_t *memory;
-uint64_t code_start;
+__unused uint8_t *memory;
+__unused uint64_t code_start;
 
 namespace global {
-  static bool keyboard_reserved;
-  static uint64_t memory_size = WYLAND_MEMORY_MINIMUM;
+  __unused static bool keyboard_reserved;
+  __unused static uint64_t memory_size = WYLAND_MEMORY_MINIMUM;
 }
 
+class GlobalSettings {
+public:
+  static bool print_specs;
+};
 
 #ifdef ___WYLAND_GNU_USE_FLOAT128___
 typedef __float128 __wyland_long_float;

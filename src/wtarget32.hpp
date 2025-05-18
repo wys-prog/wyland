@@ -33,7 +33,7 @@
 
 WYLAND_BEGIN
 
-class corewtarg32 : public core_base {
+class corewtarg32 : public wyland_base_core {
   using syscall_t = void(corewtarg32::*)();
   using setfunc_t = void(corewtarg32::*)();
 

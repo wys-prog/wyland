@@ -7,6 +7,21 @@
 
 #include <stdint.h>
 
+// Detect endianness at compile-time
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+    #define IS_BIG_ENDIAN 1
+#elif defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+    #define IS_LITTLE_ENDIAN 1
+#elif defined(_WIN32)
+    // Windows is always little-endian
+    #define IS_LITTLE_ENDIAN 1
+#elif defined(__APPLE__) && defined(__MACH__)
+    // macOS is always little-endian (Intel and ARM)
+    #define IS_LITTLE_ENDIAN 1
+#else
+    #error "Unable to determine endianness for this platform"
+#endif
+
 // Swap functions
 uint16_t swap16(uint16_t val) {
     return (val << 8) | (val >> 8);
@@ -52,40 +67,25 @@ inline __uint128_t __wyland_swap128(__uint128_t x) {
 
 template <typename T>
 inline T swap(const T &__t) {
-    std::cout << "little: " << __t << std::endl;
+
     T result;
     const char *src = reinterpret_cast<const char *>(&__t);
     char *dest = reinterpret_cast<char *>(&result);
     for (size_t i = 0; i < sizeof(T); ++i) {
         dest[i] = src[sizeof(T) - 1 - i];
     }
-    std::cout << "big: " << result << std::endl;
+
     return result;
 }
 
 template <typename T>
 inline T correct_byte_order(const T &__t) {
-#if IS_LITTLE_ENDIAN
+#if defined(IS_LITTLE_ENDIAN) && IS_LITTLE_ENDIAN == 1
     return swap<T>(__t);
 #else
     return __t;
 #endif
 }
-
-// Detect endianness at compile-time
-#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-    #define IS_BIG_ENDIAN 1
-#elif defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-    #define IS_LITTLE_ENDIAN 1
-#elif defined(_WIN32)
-    // Windows is always little-endian
-    #define IS_LITTLE_ENDIAN 1
-#elif defined(__APPLE__) && defined(__MACH__)
-    // macOS is always little-endian (Intel and ARM)
-    #define IS_LITTLE_ENDIAN 1
-#else
-    #error "Unable to determine endianness for this platform"
-#endif
 
 #if IS_BIG_ENDIAN
 #define correct_byte_order_8(x)              x

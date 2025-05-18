@@ -27,6 +27,8 @@
 #include "libcallc.hpp"
 #include "targets.h"
 #include "wtarget64.hpp"
+#include "warch128.hpp"
+#include "warch128_regs.hpp"
 #include "wtarget32.hpp"
 #include "wformat.hpp"
 #include "wmmbase.hpp"
@@ -107,7 +109,7 @@ void wyland_terminate(void) {
   exit(-1);
 }
 
-core_base *create_core_ptr(warch_t target) {
+wyland_base_core *create_core_ptr(warch_t target) {
   if (target == warch64) {
     auto ptr = new corewtarg64();
 
@@ -116,7 +118,14 @@ core_base *create_core_ptr(warch_t target) {
 
     return ptr;
   } else if (target == wtarg32) {
-    auto ptr = new corewtarg32;
+    auto ptr = new corewtarg32();
+
+    std::cout << "[i]: object " << typeid(*ptr).name() << " created at " 
+    << "0x" << std::hex << reinterpret_cast<uintptr_t>(ptr) << std::endl;
+
+    return ptr;
+  } else if (target == warch128) {
+    auto ptr = new core_warch128();
 
     std::cout << "[i]: object " << typeid(*ptr).name() << " created at " 
     << "0x" << std::hex << reinterpret_cast<uintptr_t>(ptr) << std::endl;
@@ -341,7 +350,7 @@ void loadModules(const std::string &pathGraphics, const std::string &m1, const s
   cache::BiosPtr = new BIOS();
 }
 
-void run_core(core_base *base, bool debug = false, int max = -1) {
+void run_core(wyland_base_core *base, bool debug = false, int max = -1) {
   if (base == nullptr) {
     std::cerr << "[e]: running with <base*> as invalid pointer." << std::endl;
     exit(-400);

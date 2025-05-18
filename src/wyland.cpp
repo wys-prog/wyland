@@ -125,10 +125,10 @@ void handle_arguments(std::vector<std::string> args, std::vector<std::string> &f
   for (size_t i = 0; i < args.size(); i++) {
     args[i] = trim(args[i]);
     if (args[i] == "-auto") task.auto_targ = true;
-    else if (args[i] == "-target") {
+    else if (args[i] == "-target" || args[i] == "-arch") {
       if (args.size() <= i + 1) { std::cerr << "[e]: excepted argument after " << args[i] << std::endl; wyland_exit(-1); }
       task.target = ofname(args[++i].c_str());
-      std::cout << "[i]: target set to: " << task.target << " (" << args[i] << ")" << std::endl;
+      std::cout << "[i]: arch. set to: " << task.target << " (" << args[i] << ")" << std::endl;
     } else if (args[i].starts_with("-memory:")) {
       task.memory = get_to_alloc(args[i]);
     } else if (args[i] == "-GraphicsModule" || args[i] == "-gm") {
@@ -202,7 +202,7 @@ void run_base_function(std::vector<std::string> &args, bool debug = false) {
     
     load_libs(disk, header.data, header, task.format_libs_name);
     
-    core_base *core = create_core_ptr(task.target);
+    wyland_base_core *core = create_core_ptr(task.target);
     allocate_memory(task.memory);
     loadModules(task.GraphicsModulePath, task.Module1Path, task.Module2Path, stream);
     loadUSBDevices(task.usb_devices);
@@ -284,8 +284,9 @@ TaskHandle infos = [](std::vector<std::string> &args) {
               << "===== RUNTIME =====\n"
               "runtime version:\t" << wyland_get_runtime_version() << "\n"
               "runtime compiler:\t" << wyland_get_runtime_compiler() << "\n"
-              "sizeof base-runtime:\t" << sizeof(core_base) << "\n"
+              "sizeof base-runtime:\t" << sizeof(wyland_base_core) << "\n"
               "sizeof warch64:\t\t" << sizeof(corewtarg64) << "\n"
+              "sizeof warch128:\t" << sizeof(core_warch128) << "\n"
               "===== BIOS =====\n"
               "BIOS version:\t" << (bios_backend_version()) << "\n" 
               "===== COMPILER =====\n" 
@@ -346,7 +347,7 @@ TaskHandle run_raw = [](std::vector<std::string> &args) {
     }
     std::cout << "[i]: loaded: " << std::dec << i << " bytes" << std::endl;
 
-    core_base *core = create_core_ptr(task.target);
+    wyland_base_core *core = create_core_ptr(task.target);
 
     if (core == nullptr) {
       std::cerr << "[e]: *core is a bad pointer." << std::endl;
@@ -524,6 +525,7 @@ std::unordered_map<std::string, TaskHandle> handles {
   {"--b", build},
   {"--build", build},
   {"--target", target},
+  {"--arch", target},
   {"--target-info", target_info},
   {"--info", infos}, 
   {"--i", infos},

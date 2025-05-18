@@ -60,7 +60,7 @@ namespace bios {
     *regs->r64[0] = nanoseconds;
   }
 
-  void bgetdisk(wyland_registers *regs) {
+  void bgetdisk(wyland_registers *) {
   }
   
   void busb_write_byte(wyland_registers *regs) {

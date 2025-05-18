@@ -11,7 +11,7 @@
 namespace wylma {
   namespace wyland {
 
-    class core_base {
+    class wyland_base_core {
     private:
     public:
       virtual void init(uint64_t, uint64_t, bool, uint64_t, linkedfn_array*, uint64_t, 
@@ -22,7 +22,7 @@ namespace wylma {
       virtual void run_step() { }
       virtual void step_break_point() { } /* Will read until he don't finds '0xFE' */
       virtual void run_debug(int) { }
-      virtual ~core_base() { /* Mouehehehehehehhehhehe destroy... This. */ }
+      virtual ~wyland_base_core() { /* Mouehehehehehehhehhehe destroy... This. */ }
     };
   }
   }

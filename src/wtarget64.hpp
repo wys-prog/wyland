@@ -49,7 +49,7 @@ WYLAND_BEGIN
 ARCH_BACK(arch_x87_64)
 ARCH_BACK_V(V1)
 
-class corewtarg64_backend : public core_base {
+class corewtarg64_backend : public wyland_base_core {
   using syscall_t = void(corewtarg64_backend::*)();
   using setfunc_t = void(corewtarg64_backend::*)();
 
@@ -482,8 +482,6 @@ public:
       std::cout << "[i]: 'ip' flag: 0x" << std::hex << std::setfill('0') << std::setw(16) << ip << std::endl;
     }
 
-    std::cout.clear();
-
     if (table == nullptr) {
       wthrow (std::runtime_error(memberofstr + "(): ""linked_functions table is null."));
     }
@@ -584,7 +582,7 @@ public:
 #ifdef ___WYLAND_SWITCH_INSTRUCTIONS___
   void _switch_instruction(uint8_t op) {
     switch (op) {
-      case set_arch64::nop: nop(); break;
+      case set_arch64::nop: /*nop();*/ break;
       case set_arch64::lea: ilea(); break;
       case set_arch64::load: iload(); break;
       case set_arch64::store: istore(); break;
