@@ -50,7 +50,7 @@
 WYLAND_BEGIN
 
 ARCH_BACK(arch_x87_128) 
-ARCH_BACK_V(V1)
+ARCH_BACK_V(V1s)
 
 class register_index_error : runtime::wyland_runtime_error {
 public:
@@ -69,7 +69,7 @@ private:
 
 public:
   wui8 get8(wui8 i) {
-    if (i < 16) {
+    if (i >= 16) {
       wthrow register_index_error("too big index (max 16 for bmmX registers)", memberofstr);
     }
 

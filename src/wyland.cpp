@@ -151,7 +151,7 @@ void handle_arguments(std::vector<std::string> args, std::vector<std::string> &f
       }
     } else if (args[i] == "-fmt-libs-false" || args[i] == "-nofmtlibs") {
       task.format_libs_name = false;
-    } else if (args[i] == "-no-init-out" || args[i] == "--niout") {
+    } else if (args[i] == "-no-init-out" || args[i] == "-niout" || args[i] == "-no-v") {
       std::cout.setstate(std::ios_base::failbit);
     } else if (args[i] == "-usb") {
       if (args.size() <= i + 1) { std::cerr << "[e]: excepted argument after " << args[i] << std::endl; wyland_exit(-1); }

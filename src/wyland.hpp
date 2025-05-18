@@ -106,6 +106,11 @@ void wyland_exit(int _code = 0) {
 void wyland_terminate(void) {
   std::cerr << "[e]: wyland_terminate called, terminating program. Ressources will be cleared." << std::endl;
   clear_ressources();
+
+  for (const auto &callable : wyland_terminate_data::end_callables) {
+    callable();
+  }
+
   exit(-1);
 }
 
@@ -398,14 +403,14 @@ void run_core(wyland_base_core *base, bool debug = false, int max = -1) {
   } catch (const runtime::wyland_runtime_error &e) {
     std::cerr << "[e]: wyland error caught at address 0x"
               << std::hex << reinterpret_cast<uintptr_t>(base) 
-              << "\n\twhat(): " << e.fmterr("\t")
+              << "\n\twhat(): " << e.fmterr("\n\t")
               << "\n\tstacktrace:\n" << WYLAND_GET_STACKTRACE
               << std::endl;
   } catch (const wylrterror &e) {
     runtime::wyland_runtime_error error(e);
     std::cerr << "[e]: wyland (C) error caught at address 0x" 
               << std::hex << reinterpret_cast<uintptr_t>(base) 
-              << "\n\twhat(): " << error.fmterr("\t")
+              << "\n\twhat(): " << error.fmterr("\n\t")
               << "\n\tstacktrace:\n" << WYLAND_GET_STACKTRACE
               << std::endl;
   } catch (...) {

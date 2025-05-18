@@ -74,6 +74,7 @@ namespace wylma {
       };
 
       class WylandAssembler {
+        std::string Arch;
         uint64_t current_address = 0;
         std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> instructions;
         std::unordered_map<std::string, uint64_t> symbols;
@@ -142,8 +143,7 @@ namespace wylma {
           return result;
         }
         
-      public:
-        WylandAssembler() {
+        void init_table_x64() {
           // Define instruction format and opcode (1 byte)
           instructions[".nop"] = {"", {0x00}};
           instructions[".lea"] = {"byte, qword", {0x01}};
@@ -276,6 +276,156 @@ namespace wylma {
           macros["%qmm29"] = "byte(0x4d)";
           macros["%qmm30"] = "byte(0x4e)";
           macros["%qmm31"] = "byte(0x4f)";
+        }
+
+        void init_table_x128() {
+          std::cout << "using x128 arch." << std::endl;
+          // Instructions (voir switch dans warch128.hpp)
+          instructions[".nop"] = {"", {0x00}};
+          instructions[".lea"] = {"byte, qword", {0x01}};
+          instructions[".mov"] = {"byte, byte, byte", {0x01}};
+          instructions[".add"] = {"byte, byte, byte", {0x02}};
+          instructions[".sub"] = {"byte, byte, byte", {0x03}};
+          instructions[".mul"] = {"byte, byte, byte", {0x04}};
+          instructions[".div"] = {"byte, byte, byte", {0x05}};
+          instructions[".mod"] = {"byte, byte, byte", {0x06}};
+          instructions[".cmp"] = {"byte, byte, byte", {0x07}};
+          instructions[".jmp"] = {"qword", {0x08}};
+          instructions[".je"] = {"qword", {0x09}};
+          instructions[".jne"] = {"qword", {0x0A}};
+          instructions[".jl"] = {"qword", {0x0B}};
+          instructions[".jle"] = {"qword", {0x0C}};
+          instructions[".jg"] = {"qword", {0x0D}};
+          instructions[".jge"] = {"qword", {0x0E}};
+          instructions[".ijmprgs"] = {"byte, byte", {0x0F}};
+          instructions[".jergs"] = {"byte, byte", {0x10}};
+          instructions[".jnergs"] = {"byte, byte", {0x11}};
+          instructions[".jlregs"] = {"byte, byte", {0x12}};
+          instructions[".jlergs"] = {"byte, byte", {0x13}};
+          instructions[".jgrgs"] = {"byte, byte", {0x14}};
+          instructions[".jgergs"] = {"byte, byte", {0x15}};
+          instructions[".throw"] = {"", {0x16}};
+          instructions[".int"] = {"dword", {0x17}};
+          instructions[".movis"] = {"byte", {0x18}};
+          instructions[".addis"] = {"byte", {0x19}};
+          instructions[".subis"] = {"byte", {0x1A}};
+          instructions[".mulis"] = {"byte", {0x1B}};
+          instructions[".divis"] = {"byte", {0x1C}};
+          instructions[".modis"] = {"byte", {0x1D}};
+          instructions[".sal"] = {"byte, byte", {0x1E}};
+          instructions[".sar"] = {"byte, byte", {0x1F}};
+          instructions[".salis"] = {"byte", {0x20}};
+          instructions[".saris"] = {"byte", {0x21}};
+          instructions[".dec"] = {"byte, byte", {0x22}};
+          instructions[".inc"] = {"byte, byte", {0x23}};
+          instructions[".and"] = {"byte, byte, byte", {0x24}};
+          instructions[".xor"] = {"byte, byte, byte", {0x25}};
+          instructions[".or"] = {"byte, byte, byte", {0x26}};
+          instructions[".andis"] = {"byte", {0x27}};
+          instructions[".xoris"] = {"byte", {0x28}};
+          instructions[".oris"] = {"byte", {0x29}};
+          instructions[".call-c"] = {"dword", {0x2A}};
+          instructions[".dbgfalg"] = {"", {0xFE}};
+          instructions[".halt"] = {"", {0xFF}};
+
+          instructions[".mov-byte"] = {"byte, byte", {0x01, 8}};
+            // mov, add, sub, mul, div, mod, cmp, sal, sar, and, or, xor for all sizes
+            instructions[".mov-byte"] = {"byte, byte", {0x01, 8}};
+            instructions[".mov-word"] = {"byte, word", {0x01, 16}};
+            instructions[".mov-dword"] = {"byte, dword", {0x01, 32}};
+            instructions[".mov-qword"] = {"byte, qword", {0x01, 64}};
+            instructions[".mov-dqword"] = {"byte, dqword", {0x01, 128}};
+
+            instructions[".add-byte"] = {"byte, byte", {0x02, 8}};
+            instructions[".add-word"] = {"byte, word", {0x02, 16}};
+            instructions[".add-dword"] = {"byte, dword", {0x02, 32}};
+            instructions[".add-qword"] = {"byte, qword", {0x02, 64}};
+            instructions[".add-dqword"] = {"byte, dqword", {0x02, 128}};
+
+            instructions[".sub-byte"] = {"byte, byte", {0x03, 8}};
+            instructions[".sub-word"] = {"byte, word", {0x03, 16}};
+            instructions[".sub-dword"] = {"byte, dword", {0x03, 32}};
+            instructions[".sub-qword"] = {"byte, qword", {0x03, 64}};
+            instructions[".sub-dqword"] = {"byte, dqword", {0x03, 128}};
+
+            instructions[".mul-byte"] = {"byte, byte", {0x04, 8}};
+            instructions[".mul-word"] = {"byte, word", {0x04, 16}};
+            instructions[".mul-dword"] = {"byte, dword", {0x04, 32}};
+            instructions[".mul-qword"] = {"byte, qword", {0x04, 64}};
+            instructions[".mul-dqword"] = {"byte, dqword", {0x04, 128}};
+
+            instructions[".div-byte"] = {"byte, byte", {0x05, 8}};
+            instructions[".div-word"] = {"byte, word", {0x05, 16}};
+            instructions[".div-dword"] = {"byte, dword", {0x05, 32}};
+            instructions[".div-qword"] = {"byte, qword", {0x05, 64}};
+            instructions[".div-dqword"] = {"byte, dqword", {0x05, 128}};
+
+            instructions[".mod-byte"] = {"byte, byte", {0x06, 8}};
+            instructions[".mod-word"] = {"byte, word", {0x06, 16}};
+            instructions[".mod-dword"] = {"byte, dword", {0x06, 32}};
+            instructions[".mod-qword"] = {"byte, qword", {0x06, 64}};
+            instructions[".mod-dqword"] = {"byte, dqword", {0x06, 128}};
+
+            instructions[".cmp-byte"] = {"byte, byte", {0x07, 8}};
+            instructions[".cmp-word"] = {"byte, word", {0x07, 16}};
+            instructions[".cmp-dword"] = {"byte, dword", {0x07, 32}};
+            instructions[".cmp-qword"] = {"byte, qword", {0x07, 64}};
+            instructions[".cmp-dqword"] = {"byte, dqword", {0x07, 128}};
+
+            instructions[".sal-byte"] = {"byte, byte", {0x1E, 8}};
+            instructions[".sal-word"] = {"byte, word", {0x1E, 16}};
+            instructions[".sal-dword"] = {"byte, dword", {0x1E, 32}};
+            instructions[".sal-qword"] = {"byte, qword", {0x1E, 64}};
+            instructions[".sal-dqword"] = {"byte, dqword", {0x1E, 128}};
+
+            instructions[".sar-byte"] = {"byte, byte", {0x1F, 8}};
+            instructions[".sar-word"] = {"byte, word", {0x1F, 16}};
+            instructions[".sar-dword"] = {"byte, dword", {0x1F, 32}};
+            instructions[".sar-qword"] = {"byte, qword", {0x1F, 64}};
+            instructions[".sar-dqword"] = {"byte, dqword", {0x1F, 128}};
+
+            instructions[".and-byte"] = {"byte, byte, byte", {0x24, 8}};
+            instructions[".and-word"] = {"byte, word, word", {0x24, 16}};
+            instructions[".and-dword"] = {"byte, dword, dword", {0x24, 32}};
+            instructions[".and-qword"] = {"byte, qword, qword", {0x24, 64}};
+            instructions[".and-dqword"] = {"byte, dqword, dqword", {0x24, 128}};
+
+            instructions[".or-byte"] = {"byte, byte, byte", {0x26, 8}};
+            instructions[".or-word"] = {"byte, word, word", {0x26, 16}};
+            instructions[".or-dword"] = {"byte, dword, dword", {0x26, 32}};
+            instructions[".or-qword"] = {"byte, qword, qword", {0x26, 64}};
+            instructions[".or-dqword"] = {"byte, dqword, dqword", {0x26, 128}};
+
+            instructions[".xor-byte"] = {"byte, byte, byte", {0x25, 8}};
+            instructions[".xor-word"] = {"byte, word, word", {0x25, 16}};
+            instructions[".xor-dword"] = {"byte, dword, dword", {0x25, 32}};
+            instructions[".xor-qword"] = {"byte, qword, qword", {0x25, 64}};
+            instructions[".xor-dqword"] = {"byte, dqword, dqword", {0x25, 128}};
+
+          // Data
+          instructions[".db"] = {"byte", {}};
+          instructions[".dw"] = {"word", {}};
+          instructions[".dd"] = {"dword", {}};
+          instructions[".dq"] = {"qword", {}};
+          instructions[".dq128"] = {"dqword", {}};
+
+          // Macros pour les registres (voir warch128_regs.hpp)
+          // bmmx, wmmx, dmmx: 0-15
+          for (int i = 0; i < 16; ++i) {
+            macros["%bmm" + std::to_string(i)] = "byte("s + std::to_string(i) + ")";
+            macros["%wmm" + std::to_string(i)] = "byte("s + std::to_string(i) + ")";
+            macros["%dmm" + std::to_string(i)] = "byte("s + std::to_string(i) + ")";
+          }
+          // qmmx, dqmmx: 0-31
+          for (int i = 0; i < 32; ++i) {
+            macros["%qmm" + std::to_string(i)] = "byte("s + std::to_string(i) + ")";
+            macros["%dqmm" + std::to_string(i)] = "byte("s + std::to_string(i) + ")";
+          }
+        }
+
+      public:
+        WylandAssembler() {
+
         }
 
         std::vector<uint8_t> compile_line(const std::string &line_raw, size_t line_number) {
@@ -468,6 +618,9 @@ namespace wylma {
               result.insert(result.end(), b.begin(), b.end());
               //if (!is_ref_def) unresolved_references[value_str].back().filepos += 8;
               current_address += 8;
+            } else if (type == "dqword") {
+              auto b = wysm_binof<__uint128_t>(value);
+              result.insert(result.end(), b.begin(), b.end());
             } else {
               generate_error("Unsupported type", line_raw, line_number, type);
               return {};
@@ -521,7 +674,12 @@ namespace wylma {
           unresolved_references.erase(refname);
         }
 
-        void compile_file(const std::string &filename, const std::string &outputfile,  const std::string &strarv, bool table = false) {
+        void compile_file(const std::string &filename, const std::string &outputfile,  const std::string &strarv, bool table = false, const std::string &arch = "") {
+          Arch = arch;
+          
+          if (Arch == "x64") init_table_x64();
+          else if (Arch == "x128") init_table_x128();
+          // Else, dont init hahahhahahah
           std::ifstream in(filename);
           if (!in) {
             generate_error(("cannot open file " + filename), ("<argv>: " + strarv), 0, filename);
@@ -663,6 +821,7 @@ namespace wylma {
       void compile(const std::vector<std::string> &args) {
         std::vector<std::string> inputs;
         std::vector<std::string> outputs;
+        std::string Arch = "";
 
         bool verbose = false;
         bool include_table = false;
@@ -671,8 +830,12 @@ namespace wylma {
           if (args[i] == "-v" || args[i] == "--verbose") verbose = true;
           else if (args[i] == "-table" ) include_table = true;
           else if (args[i] == "-o") {
+            if (i + 1 >= args.size()) throw std::out_of_range("excepted argument after '-o'");
             auto out = args[++i];
             outputs.push_back(out);
+          } else if (args[i] == "-arch") {
+            if (i + 1 >= args.size()) throw std::out_of_range("excepted argument after '-arch'");
+            Arch = args[++i];
           } else {
             inputs.push_back(args[i]);
           }
@@ -692,17 +855,17 @@ namespace wylma {
         if (!verbose) std::cout.setstate(std::ios::failbit);
         std::cout << "starting compilation" << std::endl;
 
-        wysm.compile_file(input, output, linify(args), include_table);
+        wysm.compile_file(input, output, linify(args), include_table, Arch);
         std::cout << "output size: ";
 
         if (wysm.file_size < 1_KB) {
-          std::cout << wysm.file_size << "b";
+          std::cout << std::dec << wysm.file_size << "b";
         } else if (wysm.file_size > 1_KB) {
-          std::cout << wysm.file_size / 1_KB << "Kb";
+          std::cout << std::dec << wysm.file_size / 1_KB << "Kb";
         } else if (wysm.file_size > 1_MB) {
-          std::cout << wysm.file_size / 1_MB << "Mb";
+          std::cout << std::dec << wysm.file_size / 1_MB << "Mb";
         } else if (wysm.file_size > 1_GB) {
-          std::cout << wysm.file_size / 1_GB << "Gb";
+          std::cout << std::dec << wysm.file_size / 1_GB << "Gb";
         }
 
         std::cout << std::endl;
