@@ -867,7 +867,7 @@ protected:
     oss << "VM speed: " << std::fixed << std::setprecision(1) << (ips / 1'000'000.0) << " MIPS\n";
     /*if (GlobalSettings::print_specs)*/ std::cout << oss.str() << std::flush;
 
-    Tracer.WriteToStream(std::cout);
+    //Tracer.WriteToStream(std::cout);
   }
 
 public:
@@ -924,7 +924,9 @@ public:
     if (!disk) disk = new WylandMMIOModule();
     
     init_modules({_GraphicsModule, m1, m2, disk}, memberofstr);
+    Tracer.TraceFunctionCalling(typeid(BiosPtr).name() + "::"s + "*(init)", {"-- Bios --"});
     BiosPtr->init({_GraphicsModule, m1, m2, disk}, _GraphicsModule, &memory[0], disk, cache::USBDevices);
+    Tracer.TraceGoBack(typeid(BiosPtr).name() + "::"s + "*(init)", memberofstr);
     Tracer.TraceGoBack(memberofstr, "<@main> (unknown function)");
   }
 };

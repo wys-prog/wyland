@@ -46,3 +46,5 @@ src/updates
 *.DS_Store
 *.clang-tidy
 .run
+python
+.DS_Store

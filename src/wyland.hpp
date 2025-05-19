@@ -69,6 +69,14 @@ namespace cache {
   BIOS                  *BiosPtr                      = nullptr;
 }
 
+namespace _wyland_loc {
+  bool can_destroy_memory = false;
+  bool can_destroy_gmptr  = false;
+  bool can_destroy_mmio1  = false;
+  bool can_destroy_mmio2  = false;
+  bool can_destroy_bios   = false;
+}
+
 void clear_ressources() {
   security::SecurityShutDownModules();
   destroy(cache::SecurityMMIOPointers);
@@ -83,6 +91,7 @@ void clear_ressources() {
   delete cache::MMIOModule1Ptr;
   delete cache::MMIOModule2Ptr;
   delete cache::DiskModulePtr;
+  delete cache::BiosPtr;
   memory = nullptr;
   cache::GraphicsModulePtr = nullptr;
   cache::MMIOModule1Ptr = nullptr;
@@ -90,9 +99,7 @@ void clear_ressources() {
   cache::DiskModulePtr = nullptr;
   cache::BiosPtr = nullptr;
   cache::ReadBlockIndex = 0;
-  for (const auto&usb:cache::USBDrivePointersCache) {
-    delete usb;
-  }
+  
   destroy(cache::USBDevices);
   destroy(cache::USBDrivePointersCache);
 }
