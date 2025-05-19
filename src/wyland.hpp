@@ -86,12 +86,12 @@ void clear_ressources() {
   destroy(cache::WylandMMIOModuleHandles);
   destroy(cache::WylandDiskModuleBuffer);
   cache::ReadBlockBuffer.fill(0x00000000);
-  delete memory;
-  delete cache::GraphicsModulePtr;
-  delete cache::MMIOModule1Ptr;
-  delete cache::MMIOModule2Ptr;
-  delete cache::DiskModulePtr;
-  delete cache::BiosPtr;
+  if (memory) delete[] memory;
+  if (cache::GraphicsModulePtr) delete cache::GraphicsModulePtr;
+  if (cache::MMIOModule1Ptr) delete cache::MMIOModule1Ptr;
+  if (cache::MMIOModule2Ptr) delete cache::MMIOModule2Ptr;
+  if (cache::DiskModulePtr) delete cache::DiskModulePtr;
+  if (cache::BiosPtr) delete cache::BiosPtr;
   memory = nullptr;
   cache::GraphicsModulePtr = nullptr;
   cache::MMIOModule1Ptr = nullptr;
@@ -102,6 +102,11 @@ void clear_ressources() {
   
   destroy(cache::USBDevices);
   destroy(cache::USBDrivePointersCache);
+  _wyland_loc::can_destroy_memory = false;
+  _wyland_loc::can_destroy_gmptr  = false;
+  _wyland_loc::can_destroy_mmio1  = false;
+  _wyland_loc::can_destroy_mmio2  = false;
+  _wyland_loc::can_destroy_bios   = false;
 }
 
 void wyland_exit(int _code = 0) {
@@ -363,6 +368,11 @@ void loadModules(const std::string &pathGraphics, const std::string &m1, const s
 }
 
 void run_core(wyland_base_core *base, bool debug = false, int max = -1) {
+  _wyland_loc::can_destroy_memory = true;
+  _wyland_loc::can_destroy_gmptr  = true;
+  _wyland_loc::can_destroy_mmio1  = true;
+  _wyland_loc::can_destroy_mmio2  = true;
+  _wyland_loc::can_destroy_bios   = true;
   if (base == nullptr) {
     std::cerr << "[e]: running with <base*> as invalid pointer." << std::endl;
     exit(-400);
