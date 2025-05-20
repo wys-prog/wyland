@@ -35,8 +35,8 @@ mingw64 = "x86_64-w64-mingw32-gcc-14.2.0"
 docker_image = "debian:bookworm"
 container_name = ''
 
-infile = Path('/Users/wys/Documents/wyland/src/data/build_id.txt')
-outfile = Path('/Users/wys/Documents/wyland/src/data/wyland_version.h')
+infile = Path('./data/build_id.txt')
+outfile = Path('./data/wyland_version.h')
 
 major = 1
 
@@ -96,7 +96,7 @@ shared_flags = "-shared -fPIC"
 cpp_std = "-std=c++23"
 c_std = "-std=c17"
 flags_stacktrace = "-D_GNU_SOURCE -DWYLAND_STACKTRACE"
-debug_flag = f'-g -D__WYLAND_DEBUG__ {flags_stacktrace}'
+debug_flag = f'-g -D__WYLAND_DEBUG__ {flags_stacktrace} -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer'
 includes = f"-I{project_root}"
 flags_switch = '-D___WYLAND_SWITCH_INSTRUCTIONS___'
 use_switch = False

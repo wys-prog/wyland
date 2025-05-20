@@ -70,6 +70,10 @@ WYLAND_BEGIN
 
 typedef void (*TaskHandle)(std::vector<std::string>&);
 
+
+[[maybe_unused]] uint8_t *memory;
+
+
 typedef struct {
   warch_t     target;
   uint32_t    version;
