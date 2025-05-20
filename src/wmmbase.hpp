@@ -72,7 +72,7 @@ WYLAND_BEGIN
 using namespace std::string_literals;
 
 
-#ifdef ___WYLAND_CORE_FILE___
+#ifndef ___WYLAND_NOT_MAIN_BUILD___
 
 [[maybe_unused]] extern uint8_t *memory;
 [[maybe_unused]] extern uint64_t code_start;
@@ -82,7 +82,7 @@ namespace global {
   [[maybe_unused]] static uint64_t memory_size = WYLAND_MEMORY_MINIMUM;
 }
 
-#endif // ___WYLAND_CORE_FILE___
+#endif // ___WYLAND_NOT_MAIN_BUILD___
 class GlobalSettings {
 public:
   static bool print_specs;

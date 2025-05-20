@@ -13,9 +13,13 @@
 
 WYLAND_BEGIN
 
+#ifndef ___WYLAND_NOT_MAIN_BUILD___
+
 namespace cache {
   std::vector<DynamicLibraryHandle> WylandMMIOModuleHandles{};
 }
+
+#endif // ___WYLAND_NOT_MAIN_BUILD___
 
 class WylandMMIOModule {
 private: /* NOTHING ! HAHAHAHAHA */

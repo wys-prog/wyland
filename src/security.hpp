@@ -11,9 +11,13 @@ WYLAND_BEGIN
 
 /* Naming convention with `security` elements: FunctionName() { body...; } */
 
+#ifndef ___WYLAND_NOT_MAIN_BUILD___
+
 namespace cache {
   std::vector<WylandMMIOModule*> SecurityMMIOPointers;
 }
+
+#endif // ___WYLAND_NOT_MAIN_BUILD___
 
 namespace security {
   

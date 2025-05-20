@@ -102,11 +102,11 @@ flags_switch = '-D___WYLAND_SWITCH_INSTRUCTIONS___'
 use_switch = False
 
 # Source files
-bios_src = f"{project_root}/bios/bios_backend.cpp"
-bindings_src = f"{project_root}/wyland-runtime/bindings.cpp"
-runtime_src = f"{project_root}/wyland-runtime/wylrt.c"
-wyland_src = f"{project_root}/wyland.cpp -D___WYLAND_CORE_FILE___"
-updater_src = f"{project_root}/updates/update.cpp"
+bios_src = f"{project_root}/bios/bios_backend.cpp -D___WYLAND_NOT_MAIN_BUILD___"
+bindings_src = f"{project_root}/wyland-runtime/bindings.cpp -D___WYLAND_NOT_MAIN_BUILD___"
+runtime_src = f"{project_root}/wyland-runtime/wylrt.c -D___WYLAND_NOT_MAIN_BUILD___"
+wyland_src = f"{project_root}/wyland.cpp"
+updater_src = f"{project_root}/updates/update.cpp -D___WYLAND_NOT_MAIN_BUILD___"
 
 # === Configuration ===
 

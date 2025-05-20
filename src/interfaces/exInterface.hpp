@@ -30,9 +30,13 @@ typedef wbool (*IEGMFuncInit)(wint, wint, const char*);
 typedef const char *(*IEGMFuncName)();
 typedef wystream *(*IEGMFuncGetStream)();
 
+#ifndef ___WYLAND_NOT_MAIN_BUILD___
+
 namespace cache {
   std::vector<DynamicLibraryHandle> IExternalGraphicsModuleHandles{};
 }
+
+#endif // ___WYLAND_NOT_MAIN_BUILD___
 
 class IExternalGraphicsModule : public IWylandGraphicsModule {
 public:

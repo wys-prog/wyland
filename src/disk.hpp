@@ -19,6 +19,8 @@
 
 WYLAND_BEGIN
 
+#ifndef ___WYLAND_NOT_MAIN_BUILD___
+
 namespace cache {
   // Each blocks are 4096 bytes, so our array contains 1024 bytes (4096 / sizeof(wuint))
   constexpr size_t BLOCK_SIZE_BYTES = 4096;
@@ -29,6 +31,8 @@ namespace cache {
   size_t ReadBlockIndex = 0;
   size_t ReadBlockSize = 0;
 }
+
+#endif // ___WYLAND_NOT_MAIN_BUILD___
 
 class IWylandDiskModule : public WylandMMIOModule {
 private:
