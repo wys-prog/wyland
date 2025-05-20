@@ -69,7 +69,7 @@ with open(outfile, 'w') as f:
     f.write(f'#endif\n')
 
 # === CONFIGURATION ===
-project_root = '/Users/wys/Documents/wyland/src'
+project_root = './'
 out_base = f'{project_root}/bin'
 
 release_dir = f'{out_base}/release'
@@ -105,7 +105,7 @@ use_switch = False
 bios_src = f"{project_root}/bios/bios_backend.cpp"
 bindings_src = f"{project_root}/wyland-runtime/bindings.cpp"
 runtime_src = f"{project_root}/wyland-runtime/wylrt.c"
-wyland_src = f"{project_root}/wyland.cpp"
+wyland_src = f"{project_root}/wyland.cpp -D___WYLAND_CORE_FILE___"
 updater_src = f"{project_root}/updates/update.cpp"
 
 # === Configuration ===

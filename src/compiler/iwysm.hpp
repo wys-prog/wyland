@@ -61,7 +61,7 @@ namespace wylma {
 
       bool is_numeric_string(const std::string &string) {
         for (const auto&c:string) {
-          if (!ishexnumber(c)) return false;
+          if (!isxdigit(c)) return false;
         }
         return true;
       }
