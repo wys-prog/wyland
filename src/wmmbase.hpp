@@ -102,6 +102,8 @@ inline std::ostream& operator<<(std::ostream& os, __float128 value) {
 typedef long double __wyland_long_float;
 #endif // ? ___WYLAND_GNU_USE_FLOAT128___
 
+#ifdef ___WYLAND_CORE_FILE___
+
 namespace wyland_terminate_data {
   typedef void(*wyscppecllb)(void);
   std::vector<wyscppecllb> end_callables;
@@ -144,6 +146,8 @@ namespace manager {
   }
 
 }
+
+#endif // ___WYLAND_CORE_FILE___
 
 template <typename T>
 inline uint8_t* to_bin(const T &__T) {
