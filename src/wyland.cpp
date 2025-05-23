@@ -60,6 +60,7 @@
 #include "updates/updater.hpp"
 #include "compiler/iwysm.hpp"
 #include "wc++std.hpp"
+#include "cache.hpp"
 
 #include "bios/bios.hpp"
 #include "bios/bios_usb.hpp"
@@ -69,11 +70,6 @@
 WYLAND_BEGIN
 
 typedef void (*TaskHandle)(std::vector<std::string>&);
-
-
-[[maybe_unused]] uint8_t *memory;
-[[maybe_unused]] uint64_t code_start;
-
 
 typedef struct {
   warch_t     target;

@@ -21,6 +21,8 @@
 
 #include "interface.hpp"
 
+#include "cache.hpp"
+
 WYLAND_BEGIN
 
 typedef void (*IEGMFunc)(void);
@@ -32,9 +34,9 @@ typedef wystream *(*IEGMFuncGetStream)();
 
 #ifndef ___WYLAND_NOT_MAIN_BUILD___
 
-namespace cache {
-  std::vector<DynamicLibraryHandle> IExternalGraphicsModuleHandles{};
-}
+/*namespace cache {
+  extern std::vector<DynamicLibraryHandle> IExternalGraphicsModuleHandles{};
+}*/
 
 #endif // ___WYLAND_NOT_MAIN_BUILD___
 

@@ -11,26 +11,12 @@
 
 #include "libcallc.hpp"
 
+#include "cache.hpp"
+#include "def/wiodef.hpp"
+
 WYLAND_BEGIN
 
-#ifndef ___WYLAND_NOT_MAIN_BUILD___
-
-namespace cache {
-  std::vector<DynamicLibraryHandle> WylandMMIOModuleHandles{};
-}
-
-#endif // ___WYLAND_NOT_MAIN_BUILD___
-
-class WylandMMIOModule {
-private: /* NOTHING ! HAHAHAHAHA */
-public:
-  virtual wbool init() { return true; }
-  virtual void shutdown() {}
-  virtual std::string name() { return typeid(this).name(); }
-  virtual void send_data(wulong) {} /* Only 64 bits/call. */
-  virtual wulong receive_data() { return -1; }
-  virtual ~WylandMMIOModule() {}
-};
+class WylandMMIOModule;
 
 typedef wbool (*EMMIOFuncSignBool)(void);
 typedef void (*EMMIOFunc)(void);

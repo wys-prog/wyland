@@ -12,17 +12,6 @@
 
 #include "bios_backend.hpp"
 
-/*
-#warning ==========================================================================================
-#warning                                          TODO
-#warning - BIOS/GPU
-#warning - BIOS/Threading
-#warning - Core/Threading
-#warning - BIOS/StdIO
-#warning 
-#warning ========================================================================================== 
-*/
-
 WYLAND_BEGIN
 
 class BIOS {

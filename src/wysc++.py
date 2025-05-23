@@ -2,7 +2,6 @@
 
 import os
 import sys
-import subprocess
 from pathlib import Path
 
 platform = None
@@ -79,8 +78,8 @@ os.makedirs(release_dir, exist_ok=True)
 os.makedirs(debug_dir, exist_ok=True)
 
 # Compilers
-cxxclang = 'clang++'
-ccclang = 'clang'
+cxxclang = 'g++'
+ccclang = 'gcc'
 cxxgnu = 'g++-14 -D_Alignof=alignof -D___WYLAND_GNU_USE_FLOAT128___ -lquadmath'
 ccgnu = 'gcc-14 -D_Alignof=alignof -D___WYLAND_GNU_USE_FLOAT128___ -lquadmath'
 cxx = ''
@@ -96,7 +95,8 @@ shared_flags = "-shared -fPIC"
 cpp_std = "-std=c++23"
 c_std = "-std=c17"
 flags_stacktrace = "-D_GNU_SOURCE -DWYLAND_STACKTRACE"
-debug_flag = f'-g -D__WYLAND_DEBUG__ {flags_stacktrace} -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer'
+asan = "-fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer"
+debug_flag = f'-g -D__WYLAND_DEBUG__ {flags_stacktrace}'
 includes = f"-I{project_root}"
 flags_switch = '-D___WYLAND_SWITCH_INSTRUCTIONS___'
 use_switch = False
@@ -105,7 +105,7 @@ use_switch = False
 bios_src = f"{project_root}/bios/bios_backend.cpp -D___WYLAND_NOT_MAIN_BUILD___"
 bindings_src = f"{project_root}/wyland-runtime/bindings.cpp -D___WYLAND_NOT_MAIN_BUILD___"
 runtime_src = f"{project_root}/wyland-runtime/wylrt.c -D___WYLAND_NOT_MAIN_BUILD___"
-wyland_src = f"{project_root}/wyland.cpp"
+wyland_src = f"{project_root}/wyland.cpp {project_root}/externdef.cpp"
 updater_src = f"{project_root}/updates/update.cpp -D___WYLAND_NOT_MAIN_BUILD___"
 
 # === Configuration ===
@@ -203,29 +203,10 @@ for arg in args:
         print(f"Unknown argument: {arg}")
         sys.exit(1)
 
-# === Check if Docker container exists ===
-def check_and_create_docker_container():
-    container_name = "wyland-dev-container"
-    
-    result = subprocess.run(["docker", "ps", "-a", "--filter", f"name={container_name}"], capture_output=True, text=True)
-    if container_name not in result.stdout:
-        print("Creating a new Docker container with necessary tools...")
-        
-        subprocess.run(f"docker run -d --name {container_name} {docker_image} bash -c "
-                       "'apt update && apt install -y gcc g++ make curl git build-essential'", shell=True)
-    else:
-        print(f"Using existing Docker container: {container_name}")
-
-# Create and install tools in Docker container
-check_and_create_docker_container()
-
 # === Execute builds in Docker container ===
 for build_type in selected_types:
     for target in selected_targets:
-        if platform == "linux":
-            cmd = f"docker exec {container_name} bash -c 'g++ {build_map[target](build_type)}'"
-        else:
-            cmd = build_map[target](build_type)
+        cmd = build_map[target](build_type)
         
         print(f"[{build_type.upper()}] Building {target}")
         ret = os.system(cmd)

@@ -4,6 +4,7 @@
 #include <windows.h>
 #endif 
 
+#include <iostream>
 #include <vector>
 #include <cstdint>
 #include <stdexcept>
@@ -102,12 +103,14 @@ inline std::ostream& operator<<(std::ostream& os, __float128 value) {
 typedef long double __wyland_long_float;
 #endif // ? ___WYLAND_GNU_USE_FLOAT128___
 
-#ifdef ___WYLAND_CORE_FILE___
+
 
 namespace wyland_terminate_data {
   typedef void(*wyscppecllb)(void);
-  std::vector<wyscppecllb> end_callables;
+  extern std::vector<wyscppecllb> end_callables;
 }
+
+#ifdef ___NO___
 
 namespace manager {
   /* Don't use this namespace ! */
@@ -147,7 +150,7 @@ namespace manager {
 
 }
 
-#endif // ___WYLAND_CORE_FILE___
+#endif // ___NO___
 
 template <typename T>
 inline uint8_t* to_bin(const T &__T) {

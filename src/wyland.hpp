@@ -49,6 +49,8 @@
 #include "updates/updater.hpp"
 #include "wyland.h"
 
+#include "cache.hpp"
+
 WYLAND_BEGIN
 
 using namespace std::string_literals;
@@ -59,22 +61,22 @@ typedef struct {
   std::vector<std::pair<uint32_t, std::string>> funcs;
 } rawlib;
 
-namespace cache {
-  boost::container::flat_map<uint32_t, libcallc::DynamicLibrary::FunctionType> linked_funcs{};
-  std::vector<libcallc::DynamicLibrary> libraries     = {};
-  IWylandGraphicsModule *GraphicsModulePtr            = nullptr;
-  WylandMMIOModule      *MMIOModule1Ptr               = nullptr;
-  WylandMMIOModule      *MMIOModule2Ptr               = nullptr;
-  IWylandDiskModule     *DiskModulePtr                = nullptr;
-  BIOS                  *BiosPtr                      = nullptr;
-}
+/*namespace cache {
+  extern boost::container::flat_map<uint32_t, libcallc::DynamicLibrary::FunctionType> linked_funcs;
+  extern std::vector<libcallc::DynamicLibrary> libraries;
+  extern IWylandGraphicsModule *GraphicsModulePtr;
+  extern WylandMMIOModule      *MMIOModule1Ptr;
+  extern WylandMMIOModule      *MMIOModule2Ptr;
+  extern IWylandDiskModule     *DiskModulePtr;
+  extern BIOS                  *BiosPtr;
+}*/
 
 namespace _wyland_loc {
-  bool can_destroy_memory = false;
-  bool can_destroy_gmptr  = false;
-  bool can_destroy_mmio1  = false;
-  bool can_destroy_mmio2  = false;
-  bool can_destroy_bios   = false;
+  static bool can_destroy_memory = false;
+  static bool can_destroy_gmptr  = false;
+  static bool can_destroy_mmio1  = false;
+  static bool can_destroy_mmio2  = false;
+  static bool can_destroy_bios   = false;
 }
 
 void clear_ressources() {
