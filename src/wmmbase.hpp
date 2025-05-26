@@ -42,11 +42,14 @@
 #define LARGER (1)
 #define LESSER (2)
 
+#define BLOCK_SIZE_BYTES (4096)
+#define WUINTS_PER_BLOCK (BLOCK_SIZE_BYTES / sizeof(wuint))
+
 #ifdef _WIN32
 #define STRDUP(x) _strdup(x)
 #else 
 #define STRDUP(x) strdup(x)
-#endif // Is Windows ?
+#endif // _WIN32
 
 #define mnameof(x) #x
 #define memberofstr std::string(typeid(this).name() + "::"s + __func__)
@@ -73,8 +76,6 @@ WYLAND_BEGIN
 using namespace std::string_literals;
 
 
-#ifndef ___WYLAND_NOT_MAIN_BUILD___
-
 [[maybe_unused]] extern uint8_t *memory;
 [[maybe_unused]] extern uint64_t code_start;
 
@@ -83,7 +84,6 @@ namespace global {
   [[maybe_unused]] static uint64_t memory_size = WYLAND_MEMORY_MINIMUM;
 }
 
-#endif // ___WYLAND_NOT_MAIN_BUILD___
 class GlobalSettings {
 public:
   static bool print_specs;
@@ -153,13 +153,13 @@ namespace manager {
 #endif // ___NO___
 
 template <typename T>
-inline uint8_t* to_bin(const T &__T) {
+inline uint8_t* to_bin(const T &obj) {
   static_assert(std::is_integral_v<T>, "T must be an integral type");
 
   uint8_t *buff = new uint8_t[sizeof(T)];
 
   for (size_t i = 0; i < sizeof(T); i++) {
-    buff[i] = (__T >> ((sizeof(T) - 1 - i) * 8)) & 0xFF;
+    buff[i] = (obj >> ((sizeof(T) - 1 - i) * 8)) & 0xFF;
   }
 
   return buff;
@@ -170,11 +170,11 @@ inline std::vector<uint8_t> to_bin_v(const T &t) {
   static_assert(std::is_integral_v<T>, "T must be an integral type");
 
     // Direct memory reinterpretation (no loop, no dynamic alloc)
-  const uint8_t *ptr = reinterpret_cast<const uint8_t*>(&t);
+  const auto *ptr = reinterpret_cast<const uint8_t*>(&t);
 
     // Big-endian correction if necessary (assuming target is little-endian)
   if constexpr (std::endian::native == std::endian::little) {
-    return std::vector<uint8_t>(ptr, ptr + sizeof(T));
+    return {ptr, ptr + sizeof(T)};
   } else {
     // Reverse for big-endian targets
     return std::vector<uint8_t>(std::make_reverse_iterator(ptr + sizeof(T)),

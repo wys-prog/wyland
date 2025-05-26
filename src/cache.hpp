@@ -4,6 +4,7 @@
 
 #include "libcallc.hpp"
 #include "wmmbase.hpp"
+#include "icache.hpp"
 
 WYLAND_BEGIN
 
@@ -24,9 +25,6 @@ public:
   static BIOS                  *BiosPtr;
 
   static std::vector<WylandMMIOModule*> SecurityMMIOPointers;
-
-  static const constexpr size_t BLOCK_SIZE_BYTES = 4096;
-  static const constexpr size_t WUINTS_PER_BLOCK = BLOCK_SIZE_BYTES / sizeof(wuint);
   
   static std::vector<wuint> WylandDiskModuleBuffer;
   static std::array<wuint, WUINTS_PER_BLOCK> ReadBlockBuffer;
@@ -39,6 +37,23 @@ public:
 
   static std::vector<USBDrive*> USBDrivePointersCache;
   static std::vector<USBDrive*> USBDevices;
+
+  static void init_cache() {
+    GraphicsModulePtr = GetGraphicsModulePointer();
+    MMIOModule1Ptr = GetMMIOModule1Pointer();
+    MMIOModule2Ptr = GetMMIOModule2Pointer();
+    DiskModulePtr = GetDiskModulePointer();
+    BiosPtr = GetBiosPointer();
+    SecurityMMIOPointers = *GetSecurityMMIOPointers();
+    WylandDiskModuleBuffer = *GetWylandDiskModuleBuffer();
+    ReadBlockBuffer = *GetReadBlockBuffer();
+    IExternalGraphicsModuleHandles = *GetIExternalGraphicsModuleHandles();
+    WylandMMIOModuleHandles = *GetWylandMMIOModuleHandles();
+    USBDrivePointersCache = *GetUSBDrivePointersCache();
+    USBDevices = *GetUSBDevices();
+    linked_funcs = *GetLinkedFuncs();
+    libraries = *GetLibraries();
+  }
 };
 
 

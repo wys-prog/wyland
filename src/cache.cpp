@@ -2,6 +2,7 @@
 
 #include "libcallc.hpp"
 #include "wmmbase.hpp"
+#include "wmutiles.hpp"
 
 #include "def/wiodef.hpp"
 #include "def/usbdef.hpp"
@@ -13,25 +14,21 @@ WYLAND_BEGIN
 namespace RuntimeBuiltIns {
 
   class WylandBuiltInCache {
-  public:
-    static const constexpr size_t BLOCK_SIZE_BYTES = 4096;
-    static const constexpr size_t WUINTS_PER_BLOCK = BLOCK_SIZE_BYTES / sizeof(wuint);
-
   private:
     boost::container::flat_map<uint32_t, libcallc::DynamicLibrary::FunctionType> linked_funcs;
     std::vector<libcallc::DynamicLibrary> libraries;
-    IWylandGraphicsModule *GraphicsModulePtr;
-    WylandMMIOModule      *MMIOModule1Ptr;
-    WylandMMIOModule      *MMIOModule2Ptr;
-    WylandMMIOModule      *DiskModulePtr;
-    BIOS                  *BiosPtr;
+    IWylandGraphicsModule *GraphicsModulePtr = nullptr;
+    WylandMMIOModule      *MMIOModule1Ptr = nullptr;
+    WylandMMIOModule      *MMIOModule2Ptr = nullptr;
+    WylandMMIOModule      *DiskModulePtr = nullptr;
+    BIOS                  *BiosPtr = nullptr;
 
     std::vector<WylandMMIOModule*> SecurityMMIOPointers;
   
     std::vector<wuint> WylandDiskModuleBuffer;
-    std::array<wuint, WUINTS_PER_BLOCK> ReadBlockBuffer;
-    size_t ReadBlockIndex;
-    size_t ReadBlockSize;
+    std::array<wuint, WUINTS_PER_BLOCK> ReadBlockBuffer = {};
+    size_t ReadBlockIndex = 0;
+    size_t ReadBlockSize = 0;
 
     std::vector<DynamicLibraryHandle> IExternalGraphicsModuleHandles;
   
@@ -47,7 +44,7 @@ namespace RuntimeBuiltIns {
     WylandMMIOModule *GetMMIOModule2Pointer() { return MMIOModule2Ptr; }
     WylandMMIOModule *GetDiskModulePointer() { return DiskModulePtr; }
     BIOS *GetBiosPointer() { return BiosPtr; }
-    std::vector<WylandMMIOModule*>& GetSecurityMMIOPointers() { return SecurityMMIOPointers; }
+    std::vector<WylandMMIOModule*> &GetSecurityMMIOPointers() { return SecurityMMIOPointers; }
     std::vector<wuint>& GetWylandDiskModuleBuffer() { return WylandDiskModuleBuffer; }
     std::array<wuint, WUINTS_PER_BLOCK>& GetReadBlockBuffer() { return ReadBlockBuffer; }
     std::vector<DynamicLibraryHandle>& GetIExternalGraphicsModuleHandles() { return IExternalGraphicsModuleHandles; }
@@ -56,6 +53,43 @@ namespace RuntimeBuiltIns {
     std::vector<USBDrive*>& GetUSBDevices() { return USBDevices; }
     boost::container::flat_map<uint32_t, libcallc::DynamicLibrary::FunctionType>& GetLinkedFuncs() { return linked_funcs; }
     std::vector<libcallc::DynamicLibrary>& GetLibraries() { return libraries; }
+
+    void DestroyResources() {
+      static bool can_destroy_memory(true);
+      static bool can_destroy_gmptr(true);
+      static bool can_destroy_mmio1(true);
+      static bool can_destroy_mmio2(true);
+      static bool can_destroy_bios(true);
+
+      destroy(SecurityMMIOPointers);
+      destroy(linked_funcs);
+      destroy(libraries);
+      destroy(IExternalGraphicsModuleHandles);
+      destroy(WylandMMIOModuleHandles);
+      destroy(WylandDiskModuleBuffer);
+      ReadBlockBuffer.fill(0x00000000);
+      if (memory) delete[] memory;
+      if (GraphicsModulePtr) delete  GraphicsModulePtr;
+      if (MMIOModule1Ptr) delete  MMIOModule1Ptr;
+      if (MMIOModule2Ptr) delete  MMIOModule2Ptr;
+      if (DiskModulePtr) delete  DiskModulePtr;
+      if (BiosPtr) delete  BiosPtr;
+      memory = nullptr;
+      GraphicsModulePtr = nullptr;
+      MMIOModule1Ptr = nullptr;
+      MMIOModule2Ptr = nullptr;
+      DiskModulePtr = nullptr;
+      BiosPtr = nullptr;
+      ReadBlockIndex = 0;
+      
+      destroy(USBDevices);
+      destroy(USBDrivePointersCache);
+      can_destroy_memory = false;
+      can_destroy_gmptr  = false;
+      can_destroy_mmio1  = false;
+      can_destroy_mmio2  = false;
+      can_destroy_bios   = false;
+    }
   };
 
 }
@@ -64,10 +98,6 @@ WYLAND_END
 
 extern "C" {
   static wylma::wyland::RuntimeBuiltIns::WylandBuiltInCache g_WylandBuiltInCache;
-
-  wylma::wyland::RuntimeBuiltIns::WylandBuiltInCache* GetWylandBuiltInCache() {
-    return &g_WylandBuiltInCache;
-  }
 
   wylma::wyland::IWylandGraphicsModule* GetGraphicsModulePointer() {
     return g_WylandBuiltInCache.GetGraphicsModulePointer();
@@ -88,6 +118,7 @@ extern "C" {
   wylma::wyland::BIOS* GetBiosPointer() {
     return g_WylandBuiltInCache.GetBiosPointer();
   }
+
   std::vector<wylma::wyland::WylandMMIOModule*>* GetSecurityMMIOPointers() {
     return &g_WylandBuiltInCache.GetSecurityMMIOPointers();
   }
@@ -96,7 +127,7 @@ extern "C" {
     return &g_WylandBuiltInCache.GetWylandDiskModuleBuffer();
   }
 
-  std::array<wuint, wylma::wyland::RuntimeBuiltIns::WylandBuiltInCache::WUINTS_PER_BLOCK>* GetReadBlockBuffer() {
+  std::array<wuint, WUINTS_PER_BLOCK>* GetReadBlockBuffer() {
     return &g_WylandBuiltInCache.GetReadBlockBuffer();
   }
 

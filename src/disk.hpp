@@ -64,7 +64,7 @@ private:
   }
 
   bool read_block() {
-    handle.read(reinterpret_cast<char*>(cache::ReadBlockBuffer.data()), cache::BLOCK_SIZE_BYTES);
+    handle.read(reinterpret_cast<char*>(cache::ReadBlockBuffer.data()), BLOCK_SIZE_BYTES);
     cache::ReadBlockSize = static_cast<size_t>(handle.gcount()) / sizeof(wuint);
     cache::ReadBlockIndex = 0;
 
@@ -83,7 +83,7 @@ private:
 
   void write_wuint(wuint val) {
     cache::WylandDiskModuleBuffer.push_back(val);
-    if (cache::WylandDiskModuleBuffer.size() >= cache::WUINTS_PER_BLOCK) {
+    if (cache::WylandDiskModuleBuffer.size() >= WUINTS_PER_BLOCK) {
       flush();
     }
   }

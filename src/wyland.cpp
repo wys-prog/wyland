@@ -117,7 +117,7 @@ wuint towuint(const std::string &str, wuint default_value = 0) {
   try {
     return std::stoul(str);
   } catch (const std::exception &e) {
-    std::cerr << "[e]: towuint(): failled: " << e.what() << " [with str:" << str << "]" << std::endl;
+    std::cerr << "[e]: towuint(): failed: " << e.what() << " [with str:" << str << "]" << std::endl;
     return default_value;
   }
 }
@@ -131,7 +131,7 @@ void handle_arguments(std::vector<std::string> args, std::vector<std::string> &f
       task.target = ofname(args[++i].c_str());
       std::cout << "[i]: arch. set to: " << task.target << " (" << args[i] << ")" << std::endl;
     } else if (args[i].starts_with("-memory:")) {
-      task.memory = get_to_alloc(args[i]);
+      task.memory = static_cast<uint64_t>(get_to_alloc(args[i]));
     } else if (args[i] == "-GraphicsModule" || args[i] == "-gm") {
       if (args.size() <= i + 1) { std::cerr << "[e]: excepted argument after " << args[i] << std::endl; wyland_exit(-1); }
       task.GraphicsModulePath = args[++i];
@@ -164,11 +164,12 @@ void handle_arguments(std::vector<std::string> args, std::vector<std::string> &f
       files.push_back(args[i]);
     }
   }
-  for (wuint i = 0; i < task.usb_ports; i++) task.usb_devices.push_back("_wdefault");
+  for (wuint i = 0; i < task.usb_ports; i++) task.usb_devices.emplace_back("_wdefault");
 }
 
 void run_base_function(std::vector<std::string> &args, bool debug = false) {
-  if (args.size() == 0) {
+  cache::init_cache();
+  if (args.empty()) {
     std::cerr << "[e]: " << std::invalid_argument("Expected <x> disk after -run token.").what() << std::endl;
     wyland_exit(-1);
   }
@@ -186,8 +187,8 @@ void run_base_function(std::vector<std::string> &args, bool debug = false) {
       wyland_exit(-1);
     }
   
-    wblock *block = new wblock;
-    disk.read((char*)block->array, sizeof(block->array));
+    auto *block = new wblock;
+    disk.read(reinterpret_cast<char*>(block->array), sizeof(block->array));
     auto header = wyland_files_make_header(block);
     delete block;
     w_dfstream stream(disk, header.data); // TODO: Adding enabling/disabling of "append/extend disk's size"
@@ -213,7 +214,7 @@ void run_base_function(std::vector<std::string> &args, bool debug = false) {
       wyland_exit(-1);
     }
     
-    if (core == nullptr) {
+    if (core) {
       std::cerr << "[e]: *core is a bad pointer." << std::endl;
       wyland_exit(-400);
     }
@@ -314,6 +315,7 @@ TaskHandle run = [](std::vector<std::string> &args) {
 };
 
 TaskHandle run_raw = [](std::vector<std::string> &args) {
+  cache::init_cache();
   std::cerr << "[w]: Running -run-raw mode." << std::endl;
   if (args.size() == 0) {
     std::cerr << "[e]: " << std::invalid_argument("Expected <x> target after -target token.").what() << std::endl;
@@ -540,7 +542,7 @@ std::unordered_map<std::string, TaskHandle> handles {
   {"-debug", debug},
   //{"-parse", parse},
   //{"-new-env", new_env},
-  // Future tasks (Maybe in the std:wy4 standard !) (absolutly not..)
+  // Future tasks (Maybe in the std:wy4 standard !) (absolutely not..)
   {"-compile", compile},
   {"-c", compile},
   {"-libsof", libsof},
@@ -607,14 +609,14 @@ int main(int argc, char *const argv[]) {
   --n, --name:     prints the name
   --b, --build:    prints the build name
   --target:        prints the default target
-  --target-info:   prints informations about targers
+  --target-info:   prints information about targets
   --check:         finds all files in .disk in ./ and ../        
 
   -target <x>:     sets the target to x
   -run <file>:     run <file> 
   -parse <file>:   parses the <file>.
   -debug <file>:   debugs a <file>
-  -new-env <name>: creates a new environnement 
+  -new-env <name>: creates a new environment
 
   --- in the future --- 
   -compile <file>: compiles the <file>

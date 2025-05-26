@@ -107,6 +107,7 @@ bindings_src = f"{project_root}/wyland-runtime/bindings.cpp -D___WYLAND_NOT_MAIN
 runtime_src = f"{project_root}/wyland-runtime/wylrt.c -D___WYLAND_NOT_MAIN_BUILD___"
 wyland_src = f"{project_root}/wyland.cpp {project_root}/externdef.cpp"
 updater_src = f"{project_root}/updates/update.cpp -D___WYLAND_NOT_MAIN_BUILD___"
+cache_src = f"{project_root}/cache.cpp -D___WYLAND_NOT_MAIN_BUILD___"
 
 # === Configuration ===
 
@@ -161,8 +162,19 @@ def build_updater(build_type):
     elif enable_stacktrace: flags += f" {flags_stacktrace}"
     return f"{flags} -o {output}"
 
+def build_cache(build_type):
+    out_dir = release_dir if build_type == "release" else debug_dir
+    output = f"{out_dir}/cache"
+    
+    flags = f"{cxx} {cache_src} {common_flags} {cpp_std} {includes}"
+    if build_type == "debug":
+        flags += f" {debug_flag}"
+    elif enable_stacktrace: flags += f" {flags_stacktrace}"
+    return f"{flags} -o {output}"
+
 # === Command execution ===
 build_map = {
+    "cache": build_cache,
     "bios": build_bios,
     "bindings": build_bindings,
     "runtime": build_runtime,
@@ -173,7 +185,7 @@ build_map = {
 # === Argument parsing ===
 build_types = ["release", "debug"]
 selected_types = set(build_types)
-default_order = ["bios", "bindings", "runtime", "wyland", "updater"]
+default_order = ["cache", "bios", "bindings", "runtime", "wyland", "updater"]
 selected_targets = default_order.copy()
 cc = ccclang
 cxx = cxxclang
