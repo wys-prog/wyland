@@ -43,4 +43,10 @@
 # define ___WYLAND_BUILD_SYSTEM_BUILD_COUNT 0
 #endif // ___WYLAND_BUILD_SYSTEM_BUILD_COUNT ?
 
+#ifndef __WYLAND_BUILD_MODE
+#define WYLAND_BUILD_MODE "unknown"
+#else
+#define WYLAND_BUILD_MODE __WYLAND_BUILD_MODE
+#endif
+
 #endif // __WYLAND_H__

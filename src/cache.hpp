@@ -39,20 +39,20 @@ public:
   static std::vector<USBDrive*> USBDevices;
 
   static void init_cache() {
-    GraphicsModulePtr = GetGraphicsModulePointer();
-    MMIOModule1Ptr = GetMMIOModule1Pointer();
-    MMIOModule2Ptr = GetMMIOModule2Pointer();
-    DiskModulePtr = GetDiskModulePointer();
-    BiosPtr = GetBiosPointer();
-    SecurityMMIOPointers = *GetSecurityMMIOPointers();
-    WylandDiskModuleBuffer = *GetWylandDiskModuleBuffer();
-    ReadBlockBuffer = *GetReadBlockBuffer();
-    IExternalGraphicsModuleHandles = *GetIExternalGraphicsModuleHandles();
-    WylandMMIOModuleHandles = *GetWylandMMIOModuleHandles();
-    USBDrivePointersCache = *GetUSBDrivePointersCache();
-    USBDevices = *GetUSBDevices();
-    linked_funcs = *GetLinkedFuncs();
-    libraries = *GetLibraries();
+    GraphicsModulePtr = IWylandCache::GetGraphicsModulePointer();
+    MMIOModule1Ptr = IWylandCache::GetMMIOModule1Pointer();
+    MMIOModule2Ptr = IWylandCache::GetMMIOModule2Pointer();
+    DiskModulePtr = IWylandCache::GetDiskModulePointer();
+    BiosPtr = IWylandCache::GetBiosPointer();
+    SecurityMMIOPointers = *IWylandCache::GetSecurityMMIOPointers();
+    WylandDiskModuleBuffer = *IWylandCache::GetWylandDiskModuleBuffer();
+    ReadBlockBuffer = *IWylandCache::GetReadBlockBuffer();
+    IExternalGraphicsModuleHandles = *IWylandCache::GetIExternalGraphicsModuleHandles();
+    WylandMMIOModuleHandles = *IWylandCache::GetWylandMMIOModuleHandles();
+    USBDrivePointersCache = *IWylandCache::GetUSBDrivePointersCache();
+    USBDevices = *IWylandCache::GetUSBDevices();
+    linked_funcs = *IWylandCache::GetLinkedFuncs();
+    libraries = *IWylandCache::GetLibraries();
   }
 };
 

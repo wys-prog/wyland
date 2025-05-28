@@ -1,5 +1,7 @@
 #pragma once
 
+#include <icache.hpp>
+#include <icache.hpp>
 #include <vector>
 #include <string>
 #include <stdexcept>
@@ -10,9 +12,11 @@
 
 #include "../bios/bios_usb_types.h"
 #include "../cache.hpp"
-#include "cache.hpp"
+#include "icache.hpp"
 
 WYLAND_BEGIN
+
+class cache;
 
 class USBException : public runtime::wyland_runtime_error {
 public:
@@ -75,7 +79,8 @@ public:
   virtual void shutdown() override {}
   virtual USBDrive *Instantiate(const std::string &) { 
     USBDrive *Ptr = new USBDrive();
-    cache::USBDrivePointersCache.push_back(Ptr);
+    //cache::USBDrivePointersCache.push_back(Ptr);
+    IWylandCache::GetUSBDrivePointersCache()->push_back(Ptr);
     return Ptr;
   }
 };

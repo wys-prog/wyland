@@ -35,7 +35,7 @@ typedef struct {
   wvec2  size;
 } wpacked_frame;
 
-wuint encode_color(const wcolor *color) {
+inline wuint encode_color(const wcolor *color) {
   return (color->a << 24) | (color->r << 16) | (color->g << 8) | color->b;
 }
 

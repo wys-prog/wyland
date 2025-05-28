@@ -26,7 +26,7 @@ WYLAND_BEGIN
   }
 
   // std::string
-  void destroy(std::string& str) {
+  inline void destroy(std::string& str) {
     std::string().swap(str);
   }
 

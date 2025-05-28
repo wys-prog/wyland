@@ -289,6 +289,7 @@ TaskHandle infos = [](std::vector<std::string> &args) {
               "sizeof base-runtime:\t" << sizeof(wyland_base_core) << "\n"
               "sizeof warch64:\t\t" << sizeof(corewtarg64) << "\n"
               "sizeof warch128:\t" << sizeof(core_warch128) << "\n"
+              "runtime type:\t\t" WYLAND_BUILD_MODE "\n"
               "===== BIOS =====\n"
               "BIOS version:\t" << (bios_backend_version()) << "\n" 
               "===== COMPILER =====\n" 

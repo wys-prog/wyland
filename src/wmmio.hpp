@@ -27,6 +27,8 @@ typedef wulong (*EMMIOFuncSignU64)(void);
 typedef wuint (*EMMIOFuncSignU32)(void);
 typedef wbyte (*EMMIOFuncSignByte)(void);
 
+#ifndef ___WYLAND_BUILD_CACHE___
+
 class IWylandMMIOExternalModule : public WylandMMIOModule {
 public:
   EMMIOFuncSignBool Einit = nullptr;
@@ -43,9 +45,9 @@ public:
   // Destructor is not needed in this one, because... WE USE wylma::wyland::cache !!!! 
 };
 
-WylandMMIOModule *loadIExternalMMIOModule(const std::string &path) {
+inline WylandMMIOModule *loadIExternalMMIOModule(const std::string &path) {
 
-  auto handle = DynamicLibraryLoad(path.c_str());
+  const auto handle = DynamicLibraryLoad(path.c_str());
   if (!handle) {
     std::cerr << "Failed to load library: " << path << std::endl;
     return nullptr;
@@ -70,6 +72,8 @@ WylandMMIOModule *loadIExternalMMIOModule(const std::string &path) {
 
   return module;
 }
+
+#endif // ___WYLAND_BUILD_CACHE___
 
 class MMIOModuleException : public runtime::wyland_runtime_error {
 public:

@@ -3,6 +3,8 @@
 #include "libcallc.hpp"
 #include "wmmbase.hpp"
 #include "wmutiles.hpp"
+#include "wmmio.hpp"
+#include "cache.hpp"
 
 #include "def/wiodef.hpp"
 #include "def/usbdef.hpp"
@@ -99,59 +101,59 @@ WYLAND_END
 extern "C" {
   static wylma::wyland::RuntimeBuiltIns::WylandBuiltInCache g_WylandBuiltInCache;
 
-  wylma::wyland::IWylandGraphicsModule* GetGraphicsModulePointer() {
+  wylma::wyland::IWylandGraphicsModule* eGetGraphicsModulePointer() {
     return g_WylandBuiltInCache.GetGraphicsModulePointer();
   }
 
-  wylma::wyland::WylandMMIOModule* GetMMIOModule1Pointer() {
+  wylma::wyland::WylandMMIOModule* eGetMMIOModule1Pointer() {
     return g_WylandBuiltInCache.GetMMIOModule1Pointer();
   }
 
-  wylma::wyland::WylandMMIOModule* GetMMIOModule2Pointer() {
+  wylma::wyland::WylandMMIOModule* eGetMMIOModule2Pointer() {
     return g_WylandBuiltInCache.GetMMIOModule2Pointer();
   }
 
-  wylma::wyland::WylandMMIOModule* GetDiskModulePointer() {
+  wylma::wyland::WylandMMIOModule* eGetDiskModulePointer() {
     return g_WylandBuiltInCache.GetDiskModulePointer();
   }
 
-  wylma::wyland::BIOS* GetBiosPointer() {
+  wylma::wyland::BIOS* eGetBiosPointer() {
     return g_WylandBuiltInCache.GetBiosPointer();
   }
 
-  std::vector<wylma::wyland::WylandMMIOModule*>* GetSecurityMMIOPointers() {
+  std::vector<wylma::wyland::WylandMMIOModule*>* eGetSecurityMMIOPointers() {
     return &g_WylandBuiltInCache.GetSecurityMMIOPointers();
   }
 
-  std::vector<wuint>* GetWylandDiskModuleBuffer() {
+  std::vector<wuint>* eGetWylandDiskModuleBuffer() {
     return &g_WylandBuiltInCache.GetWylandDiskModuleBuffer();
   }
 
-  std::array<wuint, WUINTS_PER_BLOCK>* GetReadBlockBuffer() {
+  std::array<wuint, WUINTS_PER_BLOCK>* eGetReadBlockBuffer() {
     return &g_WylandBuiltInCache.GetReadBlockBuffer();
   }
 
-  std::vector<DynamicLibraryHandle>* GetIExternalGraphicsModuleHandles() {
+  std::vector<DynamicLibraryHandle>* eGetIExternalGraphicsModuleHandles() {
     return &g_WylandBuiltInCache.GetIExternalGraphicsModuleHandles();
   }
 
-  std::vector<DynamicLibraryHandle>* GetWylandMMIOModuleHandles() {
+  std::vector<DynamicLibraryHandle>* eGetWylandMMIOModuleHandles() {
     return &g_WylandBuiltInCache.GetWylandMMIOModuleHandles();
   }
 
-  std::vector<wylma::wyland::USBDrive*>* GetUSBDrivePointersCache() {
+  std::vector<wylma::wyland::USBDrive*>* eGetUSBDrivePointersCache() {
     return &g_WylandBuiltInCache.GetUSBDrivePointersCache();
   }
 
-  std::vector<wylma::wyland::USBDrive*>* GetUSBDevices() {
+  std::vector<wylma::wyland::USBDrive*>* eGetUSBDevices() {
     return &g_WylandBuiltInCache.GetUSBDevices();
   }
 
-  boost::container::flat_map<uint32_t, wylma::wyland::libcallc::DynamicLibrary::FunctionType>* GetLinkedFuncs() {
+  boost::container::flat_map<uint32_t, wylma::wyland::libcallc::DynamicLibrary::FunctionType>* eGetLinkedFuncs() {
     return &g_WylandBuiltInCache.GetLinkedFuncs();
   }
 
-  std::vector<wylma::wyland::libcallc::DynamicLibrary>* GetLibraries() {
+  std::vector<wylma::wyland::libcallc::DynamicLibrary>* eGetLibraries() {
     return &g_WylandBuiltInCache.GetLibraries();
   }
 
