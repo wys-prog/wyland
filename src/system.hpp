@@ -4,19 +4,26 @@
 #include <windows.h>
 #elif defined(__APPLE__)
 #include <mach-o/dyld.h>
-#endif 
+#include <unistd.h>
+#else
+#include <unistd.h>
+#endif
 
-#include <string>
+#include <filesystem>
 #include <sstream>
+#include <string>
+#include <iostream>
+#include <vector>
 
 #include "wmmbase.hpp"
+#include "wmutiles.hpp"
 
 WYLAND_BEGIN
 
 class OS {
 private: /* We'll add cool stuff here later */
 public:
-std::string name() const {
+  static std::string name() {
 #ifdef _WIN64
     return "Windows x64";
 #elif defined(_WIN32)
@@ -27,12 +34,12 @@ std::string name() const {
     return "Linux";
 #elif defined(__unix__)
     return "Unix";
-#else 
+#else
     return "CoolOS";
-#endif // Windows ?
+#endif // _WIN64
   }
 
-  std::string arch() const {
+  static std::string arch() {
 #if defined(__x86_64__) || defined(_M_X64)
     return "x86-64";
 #elif defined(__i386) || defined(_M_IX86)
@@ -46,31 +53,43 @@ std::string name() const {
 #endif // x64 ?
   }
 
-  std::string  endianness() const {
+  static std::string endianness() {
     unsigned int x = 1;
     return (*(char*)&x == 1) ? "Little Endian" : "Big Endian";
   }
 
-  std::string get_fmt_specs() const {
+  static std::string get_fmt_specs() {
     std::stringstream ss;
-    ss << "OS Name:\t" << this->name() << "\n"
-          "Architecture:\t" << this->arch() << "\n"
-          "Endianness:\t" << this->endianness() << "\n"
+    ss << "OS Name:\t" << name()
+       << "\n"
+          "Architecture:\t"
+       << arch()
+       << "\n"
+          "Endianness:\t"
+       << endianness()
+       << "\n"
           "===== TYPES =====\n"
-          "sizeof int:\t" << sizeof(int) << "\n"
-          "sizeof long:\t" << sizeof(long) << "\n"
-          "sizeof char:\t" << sizeof(char) << "\n"
-          "sizeof ptr:\t" << sizeof(void*) << "\n";
-    
+          "sizeof int:\t"
+       << sizeof(int)
+       << "\n"
+          "sizeof long:\t"
+       << sizeof(long)
+       << "\n"
+          "sizeof char:\t"
+       << sizeof(char)
+       << "\n"
+          "sizeof ptr:\t"
+       << sizeof(void*) << "\n";
+
     return ss.str();
   }
 
-std::string get_execution_path() {
+  static std::string get_execution_path() {
 #ifdef _WIN32
     char path[MAX_PATH];
     if (GetModuleFileNameA(NULL, path, MAX_PATH) == 0) {
-            std::cerr << "[e]: Unable to retrieve executable path." << std::endl;
-            wyland_exit(-1);
+      std::cerr << "[e]: Unable to retrieve executable path." << std::endl;
+      wyland_exit(-1);
     }
 
     std::string fullPath(path);
@@ -80,19 +99,19 @@ std::string get_execution_path() {
     char path[PATH_MAX];
     uint32_t size = sizeof(path);
     if (_NSGetExecutablePath(path, &size) != 0) {
-        std::cerr << "[e]: Unable to retrieve executable path (macOS)." << std::endl;
-        wyland_exit(-1);
+      std::cerr << "[e]: Unable to retrieve executable path (macOS)." << std::endl;
+      wyland_exit(-1);
     }
 
     std::string fullPath(path);
-    size_t pos = fullPath.find_last_of("/");
+    auto pos = fullPath.find_last_of('/');
     return (pos != std::string::npos) ? fullPath.substr(0, pos) : fullPath;
 #else
     char path[PATH_MAX];
     ssize_t count = readlink("/proc/self/exe", path, PATH_MAX);
     if (count == -1) {
-            std::cerr << "[e]: Unable to retrieve executable path." << std::endl;
-            wyland_exit(-1);
+      std::cerr << "[e]: Unable to retrieve executable path." << std::endl;
+      wyland_exit(-1);
     }
     path[count] = '\0';
 
@@ -100,23 +119,88 @@ std::string get_execution_path() {
     size_t pos = fullPath.find_last_of("/");
     return (pos != std::string::npos) ? fullPath.substr(0, pos) : fullPath;
 #endif
+  }
+
+  static std::string file_at_execution_path(const std::string& whichone) {
+    auto path = get_execution_path();
+#ifdef _WIN32
+    if (!path.ends_with('\\') && !path.ends_with('/'))
+      path += "\\";
+#else
+    if (!path.ends_with('/'))
+      path += "/";
+#endif
+    path += whichone;
+    return path;
+  }
+
+  static std::filesystem::path get_appdata_directory() {
+#ifdef _WIN32
+    const char* appdata = std::getenv("APPDATA");
+    if (appdata)
+      return fs::path(appdata);
+    // Fallback: use local AppData
+    const char* localAppData = std::getenv("LOCALAPPDATA");
+    if (localAppData)
+      return fs::path(localAppData);
+    // Ultimate fallback
+    const char* userProfile = std::getenv("USERPROFILE");
+    if (userProfile)
+      return std::filesystem::path(userProfile) / "AppData" / "Roaming";
+    return std::filesystem::current_path(); // fallback
+#elif __APPLE__
+    const char* home = std::getenv("HOME");
+    if (home)
+      return std::filesystem::path(home) / "Library" / "Application Support";
+    return std::filesystem::current_path(); // fallback
+#else // Linux and others
+    const char* xdg = std::getenv("XDG_CONFIG_HOME");
+    if (xdg)
+      return std::filesystem::path(xdg);
+    const char* home = std::getenv("HOME");
+    if (home)
+      return std::filesystem::path(home) / ".config";
+    return std::filesystem::current_path(); // fallback
+#endif
+  }
+
+  static std::string get_env() {
+    if (std::filesystem::exists("./.wyland/")) {
+      return std::filesystem::absolute("./.wyland/").string();
     }
 
-    std::string file_at_execution_path(const std::string &whichone) {
-        auto path = get_execution_path();
-    #ifdef _WIN32
-        if (!path.ends_with('\\') && !path.ends_with('/')) path += "\\";
-    #else
-        if (!path.ends_with('/')) path += "/";
-    #endif
-        path += whichone;
-        return path;
+    if (std::filesystem::exists(get_appdata_directory() / ".wyland/")) {
+      return std::filesystem::absolute(get_appdata_directory() / ".wyland/").string();
     }
-    
+
+    std::cout << "[e]: No global .wyland directory found. Do you want to create one ? [y/n]" << std::endl;
+    std::string answer;
+    std::cin >> answer;
+    if (is_answer_yes(answer)) {
+      create_env();
+      return get_appdata_directory() / ".wyland/";
+    }
+
+    wyland_exit(-1);
+
+    return "";
+  }
+
+  static void create_env() {
+    static const std::vector<std::filesystem::path> paths {
+      "/bin",  "/sbin", "/lib", "/cfg",
+      "/etc",  "/tmp",  "/var",  "/dev",
+      "/proc", "/mnt",  "/boot", "/sys",
+    };
+
+    std::filesystem::create_directory(get_appdata_directory() / ".wyland/");
+    const auto prefix = get_appdata_directory() / ".wyland/";
+    for (const auto &path:paths) {
+      std::filesystem::create_directory(prefix / path);
+    }
+  }
 };
 
-OS os; // Idk why I'm doing that, but for now I'll keep that.
-  
+inline OS os;
+
 WYLAND_END
-
-

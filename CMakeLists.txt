@@ -16,8 +16,8 @@ option(FLOAT128 "Use float128 with GCC 14+" OFF)
 set(BUILD_LINK_MODE "HYBRID" CACHE STRING "Link mode: STATIC, DYNAMIC, HYBRID")
 
 # === FLAGS ===
-set(COMMON_FLAGS -O3 -Wall -Wextra -funroll-loops -flto=auto -ferror-limit=no)
-set(DEBUG_FLAGS -g -D__WYLAND_DEBUG__ -D_GNU_SOURCE -DWYLAND_STACKTRACE)
+set(COMMON_FLAGS -O3 -Wall -Wextra -funroll-loops -flto=auto -ferror-limit=no -D_Alignof=alignof)
+set(DEBUG_FLAGS -g -D__WYLAND_DEBUG__ -D_GNU_SOURCE -DWYLAND_STACKTRACE  -D_Alignof=alignof)
 set(STACKTRACE_FLAGS -D_GNU_SOURCE -DWYLAND_STACKTRACE)
 set(SHARED_OBJECT_FLAGS -shared -fPIC)
 set(SWITCH_FLAGS -D___WYLAND_SWITCH_INSTRUCTIONS___)
@@ -64,6 +64,7 @@ set(BIOS_SRC       ${PROJECT_ROOT}/bios/bios_backend.cpp)
 set(BINDINGS_SRC   ${PROJECT_ROOT}/wyland-runtime/bindings.cpp)
 set(RUNTIME_SRC    ${PROJECT_ROOT}/wyland-runtime/wylrt.c)
 set(WYLAND_SRC     ${PROJECT_ROOT}/wyland.cpp)
+set(UPDATER_SRC    ${PROJECT_ROOT}/updates/update.cpp)
 
 # === OBJECT LIBS ===
 function(add_shared_object name srcs)
@@ -101,7 +102,13 @@ if (BUILD_LINK_MODE STREQUAL "STATIC")
 
 elseif (BUILD_LINK_MODE STREQUAL "DYNAMIC")
     message(STATUS "Building wyland dynamically (object files will be external)")
-    add_executable(wyland ${WYLAND_SRC}) # No object linkage
+    add_executable(wyland ${WYLAND_SRC}
+            $<TARGET_OBJECTS:ccache_obj>
+            $<TARGET_OBJECTS:cache_obj>
+            $<TARGET_OBJECTS:extern_def_obj>
+            $<TARGET_OBJECTS:bios_obj>
+            $<TARGET_OBJECTS:bindings_obj>
+            $<TARGET_OBJECTS:runtime_obj>)
     # Copy .o files to bin dir
     add_custom_command(TARGET wyland POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_OBJECTS:ccache_obj>     ${OBJ_OUTPUT_DIR}/ccache.o
@@ -117,3 +124,6 @@ else()
 endif()
 
 add_compile_definitions(__WYLAND_BUILD_MODE="${BUILD_LINK_MODE}")
+
+add_executable(updater ${UPDATER_SRC} ${WYLAND_OBJS})
+set_target_properties(updater PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${OBJ_OUTPUT_DIR})

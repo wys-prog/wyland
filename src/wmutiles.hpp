@@ -66,7 +66,14 @@ WYLAND_BEGIN
     boost::container::map<K, V>().swap(map);
   }
 
-  
+  inline bool is_answer_yes(const std::string &answer) {
+    std::string YES;
+    for (const auto &c:answer) {
+      YES += std::tolower(c);
+    }
+
+    return YES == "y" || YES == "yes" || YES == "yeesss";
+  }
 
 
 WYLAND_END
