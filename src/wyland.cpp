@@ -42,25 +42,25 @@
 #include "wtargmarch.hpp"
 #include "wtargetfast.hpp"
 
-#include "regs.hpp"
-#include "wformat.hpp"
-#include "wmmbase.hpp"
-#include "wtypes.h"
-#include "wfiles.h"
-#include "wtargb.hpp"
-#include "wyland.h"
-#include "wyland.hpp"
-#include "system.hpp"
-#include "security.hpp"
 #include "bios/bios.hpp"
 #include "bios/bios_backend.hpp"
+#include "cache.hpp"
+#include "compiler/iwysm.hpp"
 #include "filestream.hpp"
 #include "parser.hpp"
+#include "regs.hpp"
+#include "security.hpp"
 #include "sock2.h"
+#include "system.hpp"
 #include "updates/updater.hpp"
-#include "compiler/iwysm.hpp"
 #include "wc++std.hpp"
-#include "cache.hpp"
+#include "wfiles.h"
+#include "wformat.hpp"
+#include "wmmbase.hpp"
+#include "wtargb.hpp"
+#include "wtypes.h"
+#include "wyland.h"
+#include "wyland.hpp"
 
 #include "bios/bios.hpp"
 #include "bios/bios_usb.hpp"
@@ -514,7 +514,7 @@ TaskHandle check = [](std::vector<std::string> &args) {
 TaskHandle t_update = [](std::vector<std::string> &) {
   std::cout << "[i]: updating Wyland..." << std::endl;
   clear_ressources(); // if there was an execution before 
-  update(os.file_at_execution_path("updater"), os.file_at_execution_path("update_file"));
+  update(os.file_at_execution_path("updates"), os.file_at_execution_path("update_file"));
 };
 
 TaskHandle compile = [](std::vector<std::string> &args) {

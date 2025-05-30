@@ -1,9 +1,0 @@
-echo "🚀 Hello, Wys !"
-
-alias gs='git status'
-alias ll='ls -lah'
-
-alias compile='node "/Users/wys/Documents/wyland/js/wyscc.js"'
-alias wyland='/Users/wys/Documents/wyland/src/bin/Darwin/WylandExecutable'
-alias wysm='python3 "/Users/wys/Documents/wyland/python/wysm.py"'
-alias python='python3'

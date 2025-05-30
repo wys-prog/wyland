@@ -1,7 +1,6 @@
 # Godot 4+ specific ignores
 .godot/
 /android/
-wyland-runtime/
 wyland-godot/
 # compiler/
 debug/
@@ -23,8 +22,6 @@ src/cmake_install.cmake
 src/Makefile
 src/bin
 src/interfaces/SDL2
-src/updates
-.(IGNORE).wysc++.py
 
 # Ignore other temporary files
 *.o
@@ -48,3 +45,4 @@ src/updates
 .run
 python
 .DS_Store
+.wys/

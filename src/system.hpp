@@ -36,6 +36,7 @@ public:
     return "Unix";
 #else
     return "CoolOS";
+#error "WAIT WAIT WAIT ! YOU CAN'T COMPILE ON THIS OS !"
 #endif // _WIN64
   }
 
@@ -180,8 +181,6 @@ public:
       create_env();
       return get_appdata_directory() / ".wyland/";
     }
-
-    wyland_exit(-1);
 
     return "";
   }

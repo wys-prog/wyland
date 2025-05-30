@@ -12,7 +12,7 @@
 #pragma region TODO
 
 /*
-  in: (?)/updater.cpp/(?)/.../: add "source" key, that represent Wyland's source DIR.
+  in: (?)/updates.cpp/(?)/.../: add "source" key, that represent Wyland's source DIR.
 */
 
 #pragma endregion

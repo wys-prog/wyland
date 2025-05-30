@@ -154,7 +154,7 @@ def build_wyland(build_type):
 
 def build_updater(build_type):
     out_dir = release_dir if build_type == "release" else debug_dir
-    output = f"{out_dir}/updater"
+    output = f"{out_dir}/updates"
     
     flags = f"{cxx} {updater_src} {runtime_src} {bindings_src} {common_flags} {cpp_std} {includes} -lcurl"
     if build_type == "debug":
@@ -179,13 +179,13 @@ build_map = {
     "bindings": build_bindings,
     "runtime": build_runtime,
     "wyland": build_wyland,
-    "updater": build_updater,
+    "updates": build_updater,
 }
 
 # === Argument parsing ===
 build_types = ["release", "debug"]
 selected_types = set(build_types)
-default_order = ["cache", "bios", "bindings", "runtime", "wyland", "updater"]
+default_order = ["cache", "bios", "bindings", "runtime", "wyland", "updates"]
 selected_targets = default_order.copy()
 cc = ccclang
 cxx = cxxclang
