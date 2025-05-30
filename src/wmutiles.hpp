@@ -10,8 +10,8 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
-#include <boost/unordered_map.hpp>
-#include <boost/unordered_set.hpp>
+//#include <boost/unordered_map.hpp>
+//#include <boost/unordered_set.hpp>
 #include <boost/container/flat_map.hpp>
 #include <boost/container/map.hpp>
 
@@ -40,18 +40,6 @@ WYLAND_BEGIN
   template<typename T>
   void destroy(std::unordered_set<T>& set) {
     std::unordered_set<T>().swap(set);
-  }
-
-  // boost::unordered_map
-  template<typename K, typename V>
-  void destroy(boost::unordered_map<K, V>& map) {
-    boost::unordered_map<K, V>().swap(map);
-  }
-
-  // boost::unordered_set
-  template<typename T>
-  void destroy(boost::unordered_set<T>& set) {
-    boost::unordered_set<T>().swap(set);
   }
 
   // boost::container::flat_map

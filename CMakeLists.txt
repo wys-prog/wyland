@@ -4,10 +4,30 @@ project(WylandProject C CXX)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_C_STANDARD 17)
 
+# === CURL ===
+find_package(CURL REQUIRED)
+
+if (CURL_FOUND)
+    message(STATUS "libcurl found: ${CURL_INCLUDE_DIRS}")
+    include_directories(${CURL_INCLUDE_DIRS})
+    set(CURL_LIBS ${CURL_LIBRARIES})
+else()
+    message(FATAL_ERROR "libcurl not found")
+endif()
+
+
 # === STRUCTURE ===
 set(PROJECT_ROOT "${CMAKE_SOURCE_DIR}/src")
 set(INCLUDE_DIR "${PROJECT_ROOT}")
-include_directories(${INCLUDE_DIR})
+include_directories(
+    ${INCLUDE_DIR}
+    "${PROJECT_ROOT}/libs/boost/assert/include/"
+    "${PROJECT_ROOT}/libs/boost/config/include/"
+    "${PROJECT_ROOT}/libs/boost/container/include/"
+    "${PROJECT_ROOT}/libs/boost/core/include/"
+    "${PROJECT_ROOT}/libs/boost/intrusive/include/"
+    "${PROJECT_ROOT}/libs/boost/move/include/"
+)
 
 # === OPTIONS ===
 option(USE_STACKTRACE "Enable stacktrace" OFF)
@@ -42,7 +62,7 @@ if (USE_SWITCH)
 endif()
 
 # === DIRECTORIES ===
-set(BIN_DIR ${PROJECT_ROOT}/bin)
+set(BIN_DIR ${CMAKE_SOURCE_DIR}/bin) # And not in PROJECT_ROOT, 'cuz it's "PROJECT/src"
 set(RELEASE_DIR ${BIN_DIR}/release)
 set(DEBUG_DIR ${BIN_DIR}/debug)
 file(MAKE_DIRECTORY ${RELEASE_DIR})
@@ -124,6 +144,10 @@ else()
 endif()
 
 add_compile_definitions(__WYLAND_BUILD_MODE="${BUILD_LINK_MODE}")
+target_link_libraries(wyland ${CURL_LIBRARIES})
 
 add_executable(updater ${UPDATER_SRC} ${WYLAND_OBJS})
+target_link_libraries(wyland ${CURL_LIBRARIES})
+target_link_libraries(updater ${CURL_LIBRARIES})
 set_target_properties(updater PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${OBJ_OUTPUT_DIR})
+target_link_libraries(updater ${CURL_LIBRARIES})

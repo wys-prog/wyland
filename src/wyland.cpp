@@ -21,7 +21,7 @@
 #include <new>
 
 #ifdef WYLAND_STACKTRACE
-#include <boost/stacktrace.hpp>
+//#include <boost/stacktrace.hpp>
 #endif // ? WYLAND_STACKTRACE
 
 #include <boost/container/flat_map.hpp>
