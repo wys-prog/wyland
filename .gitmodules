@@ -10,3 +10,21 @@
 [submodule "src/updates"]
 	path = src/updates
 	url = https://github.com/wys-prog/updates
+[submodule "src/libs/boost/container"]
+	path = src/libs/boost/container
+	url = https://github.com/boostorg/container
+[submodule "src/libs/boost/assert"]
+	path = src/libs/boost/assert
+	url = https://github.com/boostorg/assert
+[submodule "src/libs/boost/config"]
+	path = src/libs/boost/config
+	url = https://github.com/boostorg/config
+[submodule "src/libs/boost/core"]
+	path = src/libs/boost/core
+	url = https://github.com/boostorg/core
+[submodule "src/libs/boost/move"]
+	path = src/libs/boost/move
+	url = https://github.com/boostorg/move
+[submodule "src/libs/boost/intrusive"]
+	path = src/libs/boost/intrusive
+	url = https://github.com/boostorg/intrusive
