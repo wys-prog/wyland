@@ -46,3 +46,4 @@ src/interfaces/SDL2
 python
 .DS_Store
 .wys/
+*.wys

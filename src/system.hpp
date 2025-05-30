@@ -90,7 +90,7 @@ public:
     char path[MAX_PATH];
     if (GetModuleFileNameA(NULL, path, MAX_PATH) == 0) {
       std::cerr << "[e]: Unable to retrieve executable path." << std::endl;
-      wyland_exit(-1);
+      return "";
     }
 
     std::string fullPath(path);
@@ -101,7 +101,7 @@ public:
     uint32_t size = sizeof(path);
     if (_NSGetExecutablePath(path, &size) != 0) {
       std::cerr << "[e]: Unable to retrieve executable path (macOS)." << std::endl;
-      wyland_exit(-1);
+      return "";
     }
 
     std::string fullPath(path);
@@ -112,7 +112,7 @@ public:
     ssize_t count = readlink("/proc/self/exe", path, PATH_MAX);
     if (count == -1) {
       std::cerr << "[e]: Unable to retrieve executable path." << std::endl;
-      wyland_exit(-1);
+      return "";
     }
     path[count] = '\0';
 

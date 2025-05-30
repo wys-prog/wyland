@@ -44,8 +44,6 @@ set(SWITCH_FLAGS -D___WYLAND_SWITCH_INSTRUCTIONS___)
 
 # === COMPILER ===
 if (FLOAT128)
-    set(CMAKE_C_COMPILER "gcc-14")
-    set(CMAKE_CXX_COMPILER "g++-14")
     add_compile_options(-D_Alignof=alignof -D___WYLAND_GNU_USE_FLOAT128___)
     link_libraries(quadmath)
 endif()
