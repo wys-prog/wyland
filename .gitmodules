@@ -1,0 +1,12 @@
+[submodule "src/warden"]
+	path = src/warden
+	url = https://github.com/wys-prog/warden
+[submodule "src/wyland-runtime"]
+	path = src/wyland-runtime
+	url = https://github.com/wys-prog/wyland-runtime
+[submodule "src/wyfs"]
+	path = src/wyfs
+	url = https://github.com/wys-prog/wyfs
+[submodule "src/updates"]
+	path = src/updates
+	url = https://github.com/wys-prog/updates
