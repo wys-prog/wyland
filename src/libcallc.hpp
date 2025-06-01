@@ -33,10 +33,15 @@
 #define DynamicLibraryFree(h) FreeLibrary(static_cast<HMODULE>(h))
 #define DynamicLibraryHandle HMODULE
 #else 
-#define DynamicLibraryLoad(x) dlopen(x, RTLD_LAZY)
+// Load a library
+#define DynamicLibraryLoad(PATH_CSTR) dlopen(PATH_CSTR, RTLD_LAZY)
+// Get last error
 #define DynamicLibraryError() dlerror()
+// Get a func
 #define DynamicLibraryFunc(h, n) dlsym(h, n) 
+// Free a library
 #define DynamicLibraryFree(h) dlclose(h);
+// Handle type
 #define DynamicLibraryHandle void*
 #endif // WIN ?
 
@@ -45,7 +50,7 @@ namespace wylma {
 
     namespace libcallc {
       class DynamicLibrary {
-        public:
+      public:
         using FunctionType = void(*)(arg_t*);
         
         explicit DynamicLibrary(const std::string& libName) {
@@ -103,7 +108,6 @@ namespace wylma {
 
           return func;
         }
-
         
         void unloadLibrary() {
           if (handle) {
@@ -116,7 +120,7 @@ namespace wylma {
           }
         }
         
-        private:
+      private:
         void* handle = nullptr;
       };
     }

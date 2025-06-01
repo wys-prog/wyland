@@ -1,0 +1,4 @@
+[ ] Fix some include errors on Linux 
+[ ] Fix CMakesList.txt with 'g++-14' and platforms
+[ ] Implement 'WYFS'
+[ ] IDK !

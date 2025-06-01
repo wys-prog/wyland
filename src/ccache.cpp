@@ -3,6 +3,7 @@
 //
 
 #include <boost/container/flat_map.hpp>
+#include <array>
 
 #include "libcallc.hpp"
 #include "wmmbase.hpp"

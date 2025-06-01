@@ -13,6 +13,7 @@
 #include <thread>
 #include <chrono>
 #include <mutex>
+#include <array>
 #include <new>
 
 #ifdef ___WYLAND_STACKTRACE___

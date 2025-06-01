@@ -288,7 +288,7 @@ protected:
       std::stringstream error;
       error << "linked function not found.\n"
                "\t\tcalling function: " << id << " but not found"; 
-      wthrow (runtime::wyland_invalid_pointer_exception(error.str().c_str(), "invalid pointer", memberofcstr, ip, thread_id, NULL, NULL, end - beg));
+      wthrow (runtime::wyland_invalid_pointer_exception(error.str().c_str(), "invalid pointer", that, ip, thread_id, NULL, NULL, end - beg));
     }
   }
 
@@ -437,7 +437,7 @@ protected:
       if (!GraphicsModule->init(800, 600, "Wyland")) {
         std::cerr << "[e]: unable to initialize <GraphicsModule*>" << std::endl;
         wthrow (GraphicsModuleException(
-          "Unable to initialize <GraphicsModule*>", memberofcstr 
+          "Unable to initialize <GraphicsModule*>", that 
         ));
       } else std::cout << "[i]: GraphicsModule initialized: " << GraphicsModule->name() << std::endl;
 
@@ -548,7 +548,7 @@ public:
         (this->*set[fetched])();
       } catch (const std::exception &e) {
         show_specs(start_time);
-        throw runtime::wyland_runtime_error(e.what(), "Instruction Invokation Exception", memberofcstr, typeid(e).name(), ip, thread_id, NULL, NULL, end-beg);
+        throw runtime::wyland_runtime_error(e.what(), "Instruction Invokation Exception", that, typeid(e).name(), ip, thread_id, NULL, NULL, end-beg);
       } catch (const runtime::wyland_runtime_error &e) {
         show_specs(start_time);
         throw runtime::wyland_runtime_error(e.what(), e.name(), e.caller(), typeid(e).name(), ip, thread_id, NULL, NULL, end-beg);
@@ -676,7 +676,7 @@ public:
         #endif
         (this->*set[fetched])();
       } catch (const std::exception &e) {
-        throw runtime::wyland_runtime_error(e.what(), "Instruction Invokation Exception", memberofcstr, typeid(e).name(), ip, thread_id, NULL, NULL, end-beg);
+        throw runtime::wyland_runtime_error(e.what(), "Instruction Invokation Exception", that, typeid(e).name(), ip, thread_id, NULL, NULL, end-beg);
       } catch (const runtime::wyland_runtime_error &e) {
         throw runtime::wyland_runtime_error(e.what(), e.name(), e.caller(), typeid(e).name(), ip, thread_id, NULL, NULL, end-beg);
       } 

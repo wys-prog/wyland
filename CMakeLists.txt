@@ -4,6 +4,14 @@ project(WylandProject C CXX)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_C_STANDARD 17)
 
+if(APPLE)
+    set(GCC gcc-14)
+    set(G++ g++-14)
+else()
+    set(GCC gcc)
+    set(G++ g++)
+endif()
+
 # === CURL ===
 find_package(CURL REQUIRED)
 
@@ -46,6 +54,8 @@ set(SWITCH_FLAGS -D___WYLAND_SWITCH_INSTRUCTIONS___)
 if (FLOAT128)
     add_compile_options(-D_Alignof=alignof -D___WYLAND_GNU_USE_FLOAT128___)
     link_libraries(quadmath)
+    set(CMAKE_C_COMPILER ${GCC})
+    set(CMAKE_CXX_COMPILER ${GXX})
 endif()
 
 # === BUILD FLAGS ===

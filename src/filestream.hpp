@@ -9,6 +9,7 @@
 #include <sstream>
 #include <cstdint>
 #include <vector>
+#include <array>
 
 namespace wylma {
   namespace wyland {

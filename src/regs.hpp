@@ -48,14 +48,14 @@ namespace wylma {
           case 16: r128[to - 80] = correct_byte_order_128(u); break; // Handle 128-bit registers
           default:
           std::string buff = "Unexpected register index: " + std::to_string(to);
-          wthrow (runtime::wyland_out_of_range(buff.c_str(), "out of range", memberofcstr, 0, 0, nullptr, nullptr, 0));
+          wthrow (runtime::wyland_out_of_range(buff.c_str(), "out of range", that, 0, 0, nullptr, nullptr, 0));
         }
       }
 
       inline constexpr void set(uint8_t to, __uint128_t u, char) {
         if (to < 80 || to >= 96) {
           std::string buff = "Unexpected register index: " + std::to_string(to);
-          wthrow(runtime::wyland_out_of_range(buff.c_str(), "out of range", memberofcstr, 0, 0, nullptr, nullptr, 0));
+          wthrow(runtime::wyland_out_of_range(buff.c_str(), "out of range", that, 0, 0, nullptr, nullptr, 0));
         }
         r128[to - 80] = (u); // Handle 128-bit registers
       }
@@ -69,7 +69,7 @@ namespace wylma {
           case 16: return static_cast<uint64_t>(r128[who - 80]); // Handle 128-bit registers (lower 64 bits)
           default:
           std::string buff = "Unexpected register index: " + std::to_string(who);
-          wthrow (runtime::wyland_out_of_range(buff.c_str(), "out of range", memberofcstr, 0, 0, nullptr, nullptr, 0));
+          wthrow (runtime::wyland_out_of_range(buff.c_str(), "out of range", that, 0, 0, nullptr, nullptr, 0));
         }
       }
 

@@ -18,7 +18,29 @@
 #include "wmmbase.hpp"
 #include "wmutiles.hpp"
 
+#ifndef WYLAND_WYFS_LIB_PATH
+#warning "WYLAND_WYFS_LIB_PATH not defined.."
+#define WYLAND_WYFS_LIB_PATH "./lib/wyfs"
+#define WYLAND_WYFS_USE_PREFIX 1
+#endif
+
+#define FROM_ME __PRETTY_FUNCTION__
+
 WYLAND_BEGIN
+
+class system_exception : public std::exception {
+private:
+  std::stringstream MyWhat;
+
+public:
+  system_exception(const std::string &what, const std::string &from) {
+    MyWhat << "from:\t" << from << ":\t" << what;
+  }
+
+  const char* what() const noexcept override {
+    return MyWhat.str().c_str();
+  }
+};
 
 class OS {
 private: /* We'll add cool stuff here later */
@@ -197,6 +219,20 @@ public:
     for (const auto &path:paths) {
       std::filesystem::create_directory(prefix / path);
     }
+  }
+
+  static std::string get_wyfslib() {
+#if WYLAND_WYFS_USE_PREFIX
+    std::filesystem::path prefix = get_env();
+#else 
+    std::filesystem::path prefix = "";
+#endif
+
+    if (!std::filesystem::exists(prefix / WYLAND_WYFS_LIB_PATH)) {
+      throw system_exception("cannot find wyfs dynamic library... (I'm very sad now..)", FROM_ME);
+    }
+
+    return std::filesystem::absolute(prefix / WYLAND_WYFS_LIB_PATH);
   }
 };
 
