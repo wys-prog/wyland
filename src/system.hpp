@@ -38,7 +38,7 @@ public:
   }
 
   const char* what() const noexcept override {
-    return MyWhat.str().c_str();
+    return STRDUP(MyWhat.str().c_str());
   }
 };
 

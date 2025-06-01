@@ -288,7 +288,7 @@ protected:
       std::stringstream error;
       error << "linked function not found.\n"
                "\t\tcalling function: " << id << " but not found"; 
-      wthrow (runtime::wyland_invalid_pointer_exception(error.str().c_str(), "invalid pointer", that, ip, thread_id, NULL, NULL, end - beg));
+      wthrow (runtime::wyland_invalid_pointer_exception(error.str().c_str(), "invalid pointer", that.c_str(), ip, thread_id, NULL, NULL, end - beg));
     }
   }
 
@@ -548,7 +548,7 @@ public:
         (this->*set[fetched])();
       } catch (const std::exception &e) {
         show_specs(start_time);
-        throw runtime::wyland_runtime_error(e.what(), "Instruction Invokation Exception", that, typeid(e).name(), ip, thread_id, NULL, NULL, end-beg);
+        throw runtime::wyland_runtime_error(e.what(), "Instruction Invokation Exception", that.c_str(), typeid(e).name(), ip, thread_id, NULL, NULL, end-beg);
       } catch (const runtime::wyland_runtime_error &e) {
         show_specs(start_time);
         throw runtime::wyland_runtime_error(e.what(), e.name(), e.caller(), typeid(e).name(), ip, thread_id, NULL, NULL, end-beg);

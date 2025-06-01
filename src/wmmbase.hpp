@@ -53,6 +53,7 @@
 
 #define mnameof(x) #x
 #define memberofstr std::string(typeid(this).name() + "::"s + __func__)
+#define that        std::string(typeid(this).name() + "::"s + __func__)
 #define memberofcstr (std::string(typeid(this).name() + "::"s + __func__).c_str())
 
 constexpr std::size_t operator""_MB(unsigned long long size) {
