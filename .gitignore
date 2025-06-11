@@ -47,3 +47,4 @@ python
 .DS_Store
 .wys/
 *.wys
+env/

@@ -224,7 +224,7 @@ std::vector<std::pair<uint32_t, std::string>> get_funcs_from_lib(const std::stri
 
   return funcs;
 }
-
+#warning "search in .env !!!!!!!"
 #pragma region IMPORTANT 
 /*
   Starting from std:wy2.6, the format for external functions has been updated.
